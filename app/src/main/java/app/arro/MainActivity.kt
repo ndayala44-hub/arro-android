@@ -4,6 +4,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.MotionEvent
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.arro.core.Appearance
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -22,7 +25,8 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         handleIntent(intent)
         setContent {
-            ArroTheme { ArroRoot() }
+            val state by container.backend.state.collectAsStateWithLifecycle()
+            ArroTheme(state.account?.settings?.appearance ?: Appearance.LIGHT) { ArroRoot() }
         }
     }
 

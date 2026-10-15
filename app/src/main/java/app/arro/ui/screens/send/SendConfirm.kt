@@ -330,7 +330,7 @@ fun SendSuccessScreen() {
     val t = a.transfer(c.session.send.transferId) ?: return
     val now = nowTicker(10_000)
     app.arro.ui.components.DarkSystemBars()
-    Box(Modifier.fillMaxSize().background(C.Ink)) {
+    Box(Modifier.fillMaxSize().background(C.Night)) {
         Box(Modifier.align(Alignment.TopCenter).offset(y = 60.dp).size(440.dp).background(haloBrush(alpha = 0.2f, stop = 0.65f), CircleShape))
         ArroScreen(
             background = androidx.compose.ui.graphics.Color.Transparent,
@@ -355,12 +355,12 @@ fun SendSuccessScreen() {
                 Txt(Money.format(t.receiveMinor, t.toCur), T.Amount.copy(fontSize = 46.sp), Modifier.padding(top = 4.dp), color = C.Lime, align = TextAlign.Center)
                 Txt(buildAnnotatedString {
                     append(if (t.payoutType == PayoutType.ARRO) "has arrived with " else "is on its way to ")
-                    withStyle(SpanStyle(color = C.White, fontWeight = FontWeight.SemiBold)) { append(t.recipientName) }
+                    withStyle(SpanStyle(color = C.OnNight, fontWeight = FontWeight.SemiBold)) { append(t.recipientName) }
                 }, T.Lede, Modifier.padding(top = 6.dp), color = C.DarkCap, align = TextAlign.Center)
             }
             Column(
-                Modifier.padding(top = 10.dp).fillMaxWidth().background(C.White.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
-                    .border(1.dp, C.White.copy(alpha = 0.12f), RoundedCornerShape(20.dp)).padding(16.dp),
+                Modifier.padding(top = 10.dp).fillMaxWidth().background(C.OnNight.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
+                    .border(1.dp, C.OnNight.copy(alpha = 0.12f), RoundedCornerShape(20.dp)).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 DarkLine("Expected", if (t.status == TransferStatus.DELIVERED) "Delivered at ${Text.time(t.deliveredAt)}" else Text.by(t.deliveredAt, now))
@@ -368,7 +368,7 @@ fun SendSuccessScreen() {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Cap("Reference", color = C.DarkCap)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Txt(t.reference, T.Num.copy(fontSize = 15.sp), color = C.White)
+                        Txt(t.reference, T.Num.copy(fontSize = 15.sp), color = C.OnNight)
                         RoundIcon(Icons.Copy, { Share.copy(context, "Arro reference", t.reference); banner.show("Reference copied", t.reference, BannerKind.Success) },
                             style = IconBtn.OnDark, size = 32.dp, iconSize = 16.dp, description = "Copy reference")
                     }
@@ -382,7 +382,7 @@ fun SendSuccessScreen() {
 private fun DarkLine(k: String, v: String) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Cap(k, color = C.DarkCap)
-        Txt(v, T.Num.copy(fontSize = 15.sp), color = C.White, align = TextAlign.End)
+        Txt(v, T.Num.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.End)
     }
 }
 
@@ -517,7 +517,7 @@ fun ScanQrScreen() {
     CameraScreen("Scan a QR code", { nav.back() }) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(130.dp))
-            Txt("Point at someone's Arro code", T.Cap.copy(fontSize = 15.sp), color = C.White)
+            Txt("Point at someone's Arro code", T.Cap.copy(fontSize = 15.sp), color = C.OnNight)
             Box(Modifier.padding(top = 28.dp).size(260.dp).clip(RoundedCornerShape(22.dp)).border(3.dp, C.Lime, RoundedCornerShape(22.dp))) {
                 if (permission.granted && cameraOk) CameraPreview(Modifier.fillMaxSize(), analyzer = analyzer)
                 else Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Ic(Icons.Scan, size = 64.dp, tint = C.DarkCap) }

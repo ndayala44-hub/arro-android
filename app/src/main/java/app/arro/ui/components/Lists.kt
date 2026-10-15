@@ -112,9 +112,17 @@ fun TrailingValue(value: String, sub: String? = null, subColor: Color = C.Slate,
     }
 }
 
-enum class TileStyle(val bg: Color, val fg: Color) {
-    Tint(C.Tint, C.Ink), Lime(C.Lime, C.Ink), Dark(C.Ink, C.Lime), Warn(C.WarnBg, C.Warn), Err(C.ErrBg, C.Err),
-    Info(C.InfoBg, C.Info), Soft(C.Soft, C.Ink), Ok(C.OkBg, C.Ok), White(C.White, C.Ink)
+enum class TileStyle {
+    Tint, Lime, Dark, Warn, Err, Info, Soft, Ok, White;
+
+    // Getters, not constructor values, so tiles recolour when the theme changes.
+    val bg: Color get() = when (this) {
+        Tint -> C.Tint; Lime -> C.Lime; Dark -> C.Night; Warn -> C.WarnBg; Err -> C.ErrBg
+        Info -> C.InfoBg; Soft -> C.Soft; Ok -> C.OkBg; White -> C.White
+    }
+    val fg: Color get() = when (this) {
+        Tint, Soft, White -> C.Ink; Lime -> C.OnLime; Dark -> C.Lime; Warn -> C.Warn; Err -> C.Err; Info -> C.Info; Ok -> C.Ok
+    }
 }
 
 /** 40dp rounded icon tile (.tile). */
@@ -140,9 +148,15 @@ fun Avatar(initials: String, color: Int = 1, size: Dp = 44.dp, flag: String? = n
     }
 }
 
-enum class PillKind(val bg: Color, val fg: Color) {
-    Ok(C.OkBg, C.Ok), Warn(C.WarnBg, C.Warn), Err(C.ErrBg, C.Err), Info(C.InfoBg, C.Info), Neutral(C.Neutral, C.Forest), Lime(C.Lime, C.Ink),
-    OnDark(Color(0x1FFFFFFF), C.White)
+enum class PillKind {
+    Ok, Warn, Err, Info, Neutral, Lime, OnDark;
+
+    val bg: Color get() = when (this) {
+        Ok -> C.OkBg; Warn -> C.WarnBg; Err -> C.ErrBg; Info -> C.InfoBg; Neutral -> C.Neutral; Lime -> C.Lime; OnDark -> Color(0x1FFFFFFF)
+    }
+    val fg: Color get() = when (this) {
+        Ok -> C.Ok; Warn -> C.Warn; Err -> C.Err; Info -> C.Info; Neutral -> C.Forest; Lime -> C.OnLime; OnDark -> C.OnNight
+    }
 }
 
 /** Status pill with optional dot (.pill). */
@@ -167,16 +181,16 @@ fun Chip(text: String, selected: Boolean = false, onClick: (() -> Unit)? = null,
         modifier
             .height(36.dp)
             .clip(shape)
-            .background(if (selected) C.Ink else C.White, shape)
-            .border(1.5.dp, if (selected) C.Ink else C.Line, shape)
+            .background(if (selected) C.Primary else C.White, shape)
+            .border(1.5.dp, if (selected) C.Primary else C.Line, shape)
             .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
             .padding(horizontal = if (flag != null) 6.dp else 14.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         if (flag != null) Flag(flag, 24.dp)
-        if (icon != null) Ic(icon, size = 16.dp, tint = if (selected) C.White else C.Ink)
-        Txt(text, T.Chip, color = if (selected) C.White else C.Ink, maxLines = 1)
+        if (icon != null) Ic(icon, size = 16.dp, tint = if (selected) C.OnPrimary else C.Ink)
+        Txt(text, T.Chip, color = if (selected) C.OnPrimary else C.Ink, maxLines = 1)
         if (flag != null) HSpace(4.dp)
     }
 }
@@ -190,7 +204,11 @@ fun ArroCard(modifier: Modifier = Modifier, padding: Dp = 16.dp, border: Color =
     )
 }
 
-enum class PanelKind(val bg: Color) { Grey(C.Panel), Lime(C.Lime3), Dark(C.Ink), White(C.White) }
+enum class PanelKind {
+    Grey, Lime, Dark, White;
+
+    val bg: Color get() = when (this) { Grey -> C.Panel; Lime -> C.Lime3; Dark -> C.Night; White -> C.White }
+}
 
 /** Filled panel (.panel): grey, lime or dark. */
 @Composable
@@ -216,10 +234,10 @@ fun Panel(
 @Composable
 fun KV(key: String, value: String, strong: Boolean = false, valueColor: Color = C.Ink, keyColor: Color = C.Slate, onDark: Boolean = false, trailing: (@Composable () -> Unit)? = null) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Txt(key, if (strong) T.Body14.copy(fontWeight = FontWeight.SemiBold) else T.Body14, color = if (strong) (if (onDark) C.White else C.Ink) else if (onDark) C.DarkCap else keyColor)
+        Txt(key, if (strong) T.Body14.copy(fontWeight = FontWeight.SemiBold) else T.Body14, color = if (strong) (if (onDark) C.OnNight else C.Ink) else if (onDark) C.DarkCap else keyColor)
         Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End), verticalAlignment = Alignment.CenterVertically) {
             Txt(value, if (strong) T.Body14.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum") else T.Body14.copy(fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum"),
-                color = if (onDark && valueColor == C.Ink) C.White else valueColor, align = TextAlign.End)
+                color = if (onDark && valueColor == C.Ink) C.OnNight else valueColor, align = TextAlign.End)
             trailing?.invoke()
         }
     }
@@ -228,8 +246,11 @@ fun KV(key: String, value: String, strong: Boolean = false, valueColor: Color = 
 @Composable
 fun HDivider(modifier: Modifier = Modifier, color: Color = C.Line) = Box(modifier.fillMaxWidth().height(1.dp).background(color))
 
-enum class NoteKind(val bg: Color, val fg: Color) {
-    Info(C.InfoBg, C.InfoText), Warn(C.WarnBg, C.WarnText), Ok(C.OkBg, C.OkText), Err(C.ErrBg, C.ErrText), Lime(C.Lime3, C.Ink)
+enum class NoteKind {
+    Info, Warn, Ok, Err, Lime;
+
+    val bg: Color get() = when (this) { Info -> C.InfoBg; Warn -> C.WarnBg; Ok -> C.OkBg; Err -> C.ErrBg; Lime -> C.Lime3 }
+    val fg: Color get() = when (this) { Info -> C.InfoText; Warn -> C.WarnText; Ok -> C.OkText; Err -> C.ErrText; Lime -> C.Ink }
 }
 
 /** Inline notice with icon (.note). */
@@ -264,7 +285,7 @@ fun PersonChip(name: String, initials: String, color: Int, flag: String?, onClic
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        if (add) Box(Modifier.size(44.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Ic(Icons.Plus, tint = C.Ink) }
+        if (add) Box(Modifier.size(44.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Ic(Icons.Plus, tint = C.OnLime) }
         else Avatar(initials, color, flag = flag)
         Txt(name, T.Cap, color = C.Ink, maxLines = 1, align = TextAlign.Center)
     }
@@ -281,7 +302,11 @@ fun FlagPair(from: String, to: String) {
 
 /** Gradient fill helper for the balance cards. */
 fun cardBrush(cur: String): Brush = when (cur) { "EUR" -> C.skyCard; "USD" -> C.peachCard; else -> C.limeCard }
-fun cardInk(cur: String): Color = when (cur) { "EUR" -> Color(0xFF134F86); "USD" -> Color(0xFF7A3A0C); else -> C.Forest }
+fun cardInk(cur: String): Color = when (cur) {
+    "EUR" -> if (C.dark) Color(0xFFA9D3F7) else Color(0xFF134F86)
+    "USD" -> if (C.dark) Color(0xFFF7C08C) else Color(0xFF7A3A0C)
+    else -> C.Forest
+}
 
 @Composable
 fun RowScope.Spring() = Box(Modifier.weight(1f))

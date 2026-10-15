@@ -47,13 +47,13 @@ fun BoxScope.OfflineBar(lastOnline: Long) {
             .padding(horizontal = 16.dp, vertical = 6.dp)
             .widthIn(max = MaxContentWidth)
             .fillMaxWidth()
-            .background(C.Ink, RoundedCornerShape(14.dp))
+            .background(C.Night, RoundedCornerShape(14.dp))
             .padding(horizontal = 14.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Ic(Icons.WifiOff, size = 16.dp, tint = C.WarnFill)
-        Txt("No internet connection", T.Cap, Modifier.weight(1f), color = C.White)
+        Txt("No internet connection", T.Cap, Modifier.weight(1f), color = C.OnNight)
         Txt("Last updated ${Text.time(lastOnline)}", T.Cap, color = C.DarkCap)
     }
 }

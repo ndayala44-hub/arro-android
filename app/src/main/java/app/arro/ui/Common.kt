@@ -169,7 +169,7 @@ fun BoxScope.BannerHost(state: BannerState) {
                 .widthIn(max = MaxContentWidth)
                 .fillMaxWidth()
                 .shadow(16.dp, RoundedCornerShape(18.dp))
-                .background(C.Ink, RoundedCornerShape(18.dp))
+                .background(C.Night, RoundedCornerShape(18.dp))
                 .tap { m.onAction?.invoke(); state.dismiss() }
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -181,11 +181,11 @@ fun BoxScope.BannerHost(state: BannerState) {
                 BannerKind.Code -> Icons.Chat
                 BannerKind.Info -> Icons.Bell
             }
-            Box(Modifier.background(if (m.kind == BannerKind.Error) C.Err else C.Lime, RoundedCornerShape(10.dp)).padding(6.dp)) {
-                Ic(icon, tint = if (m.kind == BannerKind.Error) C.White else C.Ink, size = 18.dp)
+            Box(Modifier.background(if (m.kind == BannerKind.Error) C.ErrFill else C.Lime, RoundedCornerShape(10.dp)).padding(6.dp)) {
+                Ic(icon, tint = if (m.kind == BannerKind.Error) C.OnNight else C.OnLime, size = 18.dp)
             }
             Column(Modifier.weight(1f)) {
-                Txt(m.title, T.H3, color = C.White)
+                Txt(m.title, T.H3, color = C.OnNight)
                 if (m.body.isNotEmpty()) Txt(m.body, T.Cap, color = C.DarkCap)
             }
             if (m.action != null) Txt(m.action, T.Link.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = C.Lime)

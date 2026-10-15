@@ -60,7 +60,7 @@ fun Keypad(
     bottomLeft: (@Composable () -> Unit)? = null,
 ) {
     val haptics = LocalHapticFeedback.current
-    val fg = if (dark) C.White else C.Ink
+    val fg = if (dark) C.OnNight else C.Ink
     val rows = listOf(listOf("1", "2", "3"), listOf("4", "5", "6"), listOf("7", "8", "9"))
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         rows.forEach { row ->
@@ -134,7 +134,7 @@ fun PasscodeDots(filled: Int, total: Int = 6, dark: Boolean = false, error: Bool
 @Composable
 fun Toggle(on: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val knobX by animateDpAsState(if (on) 23.dp else 3.dp, tween(160), label = "knob")
-    val track by animateColorAsState(if (on) C.Ink else C.ToggleOff, tween(160), label = "track")
+    val track by animateColorAsState(if (on) C.Primary else C.ToggleOff, tween(160), label = "track")
     Box(
         modifier
             .size(width = 50.dp, height = 30.dp)
@@ -145,7 +145,7 @@ fun Toggle(on: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifi
         Box(
             Modifier.offset(x = knobX, y = 3.dp).size(24.dp)
                 .shadow(2.dp, CircleShape)
-                .background(if (on) C.Lime else C.White, CircleShape),
+                .background(if (on) C.PrimaryAccent else C.White, CircleShape),
         )
     }
 }
@@ -166,12 +166,12 @@ fun CheckBox(on: Boolean, onChange: ((Boolean) -> Unit)? = null, modifier: Modif
     val shape = RoundedCornerShape(7.dp)
     Box(
         modifier.size(22.dp).clip(shape)
-            .background(if (on) C.Ink else Color.Transparent, shape)
-            .border(2.dp, if (on) C.Ink else C.Control, shape)
+            .background(if (on) C.Primary else Color.Transparent, shape)
+            .border(2.dp, if (on) C.Primary else C.Control, shape)
             .then(if (onChange != null) Modifier.clickable(role = Role.Checkbox) { onChange(!on) } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
-        if (on) Ic(Icons.Check, size = 14.dp, tint = C.Lime)
+        if (on) Ic(Icons.Check, size = 14.dp, tint = C.PrimaryAccent)
     }
 }
 
@@ -233,7 +233,7 @@ fun CarouselDots(index: Int, total: Int, modifier: Modifier = Modifier, dark: Bo
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         repeat(total) { i ->
             val w by animateDpAsState(if (i == index) 24.dp else 8.dp, label = "dot")
-            Box(Modifier.size(width = w, height = 8.dp).background(if (i == index) (if (dark) C.Lime else C.Ink) else (if (dark) C.White.copy(alpha = 0.3f) else C.DotOff), RoundedCornerShape(4.dp)))
+            Box(Modifier.size(width = w, height = 8.dp).background(if (i == index) (if (dark) C.Lime else C.Ink) else (if (dark) C.OnNight.copy(alpha = 0.3f) else C.DotOff), RoundedCornerShape(4.dp)))
         }
     }
 }
@@ -262,10 +262,10 @@ fun Timeline(items: List<TimelineItem>, modifier: Modifier = Modifier, compact: 
                         Box(Modifier.align(Alignment.TopCenter).padding(top = dot + 2.dp, bottom = 2.dp).width(2.dp).fillMaxHeight().background(lineColor))
                     }
                     val (bg, border, fg) = when (it.state) {
-                        StepState.Done -> Triple(C.Ink, C.Ink, C.Lime)
-                        StepState.Now -> Triple(C.Lime, C.Ink, C.Ink)
-                        StepState.Bad -> Triple(C.Err, C.Err, C.White)
-                        StepState.Hold -> Triple(C.WarnFill, C.WarnFill, C.White)
+                        StepState.Done -> Triple(C.Primary, C.Primary, C.PrimaryAccent)
+                        StepState.Now -> Triple(C.Lime, C.Ink, C.OnLime)
+                        StepState.Bad -> Triple(C.ErrFill, C.ErrFill, C.OnNight)
+                        StepState.Hold -> Triple(C.WarnFill, C.WarnFill, C.OnNight)
                         StepState.Todo -> Triple(C.White, C.TlDot, C.Slate)
                     }
                     Box(

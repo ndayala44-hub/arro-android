@@ -344,7 +344,7 @@ fun ReceiptScreen(id: String) {
         add("Reference" to t.reference)
     }
     ArroScreen(
-        background = Color(0xFFE9EFEB),
+        background = if (C.dark) Color(0xFF050C0A) else Color(0xFFE9EFEB),
         topBar = { TopBar(onBack = { nav.back() }, title = "Receipt · PDF") },
         footer = {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

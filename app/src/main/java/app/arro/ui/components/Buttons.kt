@@ -49,13 +49,13 @@ fun ArroButton(
 ) {
     val s = if (!enabled && !loading) Btn.Off else style
     val (bg, fg, border) = when (s) {
-        Btn.Dark -> Triple(C.Ink, C.White, null)
-        Btn.Lime -> Triple(C.Lime, C.Ink, null)
+        Btn.Dark -> Triple(C.Primary, C.OnPrimary, null)
+        Btn.Lime -> Triple(C.Lime, C.OnLime, null)
         Btn.Line -> Triple(C.White, C.Ink, BorderStroke(1.5.dp, C.Mist))
-        Btn.LineOnDark -> Triple(Color.Transparent, C.White, BorderStroke(1.5.dp, C.White.copy(alpha = 0.28f)))
+        Btn.LineOnDark -> Triple(Color.Transparent, C.OnNight, BorderStroke(1.5.dp, C.OnNight.copy(alpha = 0.28f)))
         Btn.Text -> Triple(Color.Transparent, C.Ink, null)
-        Btn.TextOnDark -> Triple(Color.Transparent, C.White, null)
-        Btn.Danger -> Triple(C.Err, C.White, null)
+        Btn.TextOnDark -> Triple(Color.Transparent, C.OnNight, null)
+        Btn.Danger -> Triple(C.ErrFill, C.OnNight, null)
         Btn.DangerText -> Triple(Color.Transparent, C.Err, null)
         Btn.Off -> Triple(C.OffBg, C.OffText, null)
     }
@@ -97,11 +97,11 @@ fun RoundIcon(
     badge: Boolean = false,
 ) {
     val (bg, fg) = when (style) {
-        IconBtn.Lime -> C.Lime to C.Ink
+        IconBtn.Lime -> C.Lime to C.OnLime
         IconBtn.Soft -> C.Soft to C.Ink
         IconBtn.Line -> C.White to C.Ink
-        IconBtn.OnDark -> C.White.copy(alpha = 0.12f) to C.White
-        IconBtn.Dark -> C.Ink to C.Lime
+        IconBtn.OnDark -> C.OnNight.copy(alpha = 0.12f) to C.OnNight
+        IconBtn.Dark -> C.Night to C.Lime
         IconBtn.Plain -> Color.Transparent to C.Ink
     }
     Box(

@@ -22,8 +22,8 @@ import app.arro.ui.theme.T
 /** The Arro mark on its rounded tile. [dark] gives the ink tile with a lime mark. */
 @Composable
 fun BrandTile(size: Dp, dark: Boolean = false, modifier: Modifier = Modifier) {
-    Box(modifier.size(size).background(if (dark) C.Ink else C.Lime, RoundedCornerShape(size * (14f / 48f))), contentAlignment = Alignment.Center) {
-        Icon(painterResource(R.drawable.brand_symbol), contentDescription = "Arro", modifier = Modifier.size(size), tint = if (dark) C.Lime else C.Ink)
+    Box(modifier.size(size).background(if (dark) C.Night else C.Lime, RoundedCornerShape(size * (14f / 48f))), contentAlignment = Alignment.Center) {
+        Icon(painterResource(R.drawable.brand_symbol), contentDescription = "Arro", modifier = Modifier.size(size), tint = if (dark) C.Lime else C.OnLime)
     }
 }
 

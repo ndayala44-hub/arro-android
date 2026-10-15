@@ -78,6 +78,7 @@ import app.arro.ui.components.BigAmount
 import app.arro.ui.components.Btn
 import app.arro.ui.components.BtnSize
 import app.arro.ui.components.Cap
+import app.arro.ui.components.DateSheet
 import app.arro.ui.components.Chevron
 import app.arro.ui.components.Chip
 import app.arro.ui.components.ConfirmDialog
@@ -588,10 +589,10 @@ fun ConvertScreen(fromCode: String) {
                 }
             }
             Box(
-                Modifier.align(Alignment.Center).size(44.dp).clip(CircleShape).background(C.Ink, CircleShape).border(4.dp, C.White, CircleShape)
+                Modifier.align(Alignment.Center).size(44.dp).clip(CircleShape).background(C.Primary, CircleShape).border(4.dp, C.White, CircleShape)
                     .clickable(role = Role.Button) { val f = from; from = to; to = f; text = cleanAmount(text, from.decimals) },
                 contentAlignment = Alignment.Center,
-            ) { Ic(Icons.SwapVertical, size = 16.dp, tint = C.Lime, contentDescription = "Swap currencies") }
+            ) { Ic(Icons.SwapVertical, size = 16.dp, tint = C.PrimaryAccent, contentDescription = "Swap currencies") }
         }
         if (short) FieldHint("You have ${Money.format(wf?.balanceMinor ?: 0, from)} in ${from.code}. Add money or enter a smaller amount.")
         Panel(gap = 10.dp) {
@@ -635,8 +636,8 @@ fun StatementsScreen() {
     var customTo by rememberSaveable { mutableStateOf(today.toString()) }
     var pdf by rememberSaveable { mutableStateOf(true) }
     var accountPicker by remember { mutableStateOf(false) }
-    var customSheet by remember { mutableStateOf(false) }
-    var monthPicker by remember { mutableStateOf<String?>(null) }
+    /** "from" or "to" while that end of the custom range is being picked on the calendar. */
+    var datePicker by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val call = rememberCall()
     val lastMonth = today.minusMonths(1)
@@ -660,33 +661,37 @@ fun StatementsScreen() {
             else banner.show("Statement ready", Share.saveToDownloads(context, file, mime) + if (lines.isEmpty()) ". No transactions in this period." else "", BannerKind.Success)
         }
     }
-    val months = (0..12).map { today.minusMonths(it.toLong()).withDayOfMonth(1) }
+    val earliest = today.minusYears(2)
+    // Picking one end keeps the range in order and no longer than 12 months.
+    fun pickFrom(d: LocalDate) {
+        customFrom = d.toString()
+        val to = LocalDate.parse(customTo)
+        if (to < d) customTo = d.toString()
+        else if (to > d.plusMonths(12).minusDays(1)) customTo = d.plusMonths(12).minusDays(1).let { if (it > today) today else it }.toString()
+    }
+    fun pickTo(d: LocalDate) {
+        customTo = d.toString()
+        val from = LocalDate.parse(customFrom)
+        if (from > d) customFrom = d.toString()
+        else if (from < d.minusMonths(12).plusDays(1)) customFrom = d.minusMonths(12).plusDays(1).toString()
+    }
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back() }) },
         overlay = {
             PickerSheet(accountPicker, "Statement for", a.wallets.map { it.currency }, cur.code, { cur = Currency.of(it) }, { accountPicker = false },
                 subtitles = a.wallets.associate { it.currency to "${it.cur.displayName} · •• ${it.last4}" }, leading = { code -> Flag(Currency.of(code).flag) })
-            Sheet(customSheet, { customSheet = false }) {
-                SheetHeader("Custom range", { customSheet = false }, "Choose the months to include. Statements cover up to 12 months.")
-                Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SelectField("From the start of", Text.monthYear(Text.startOfDay(LocalDate.parse(customFrom))), { monthPicker = "from" })
-                    SelectField("To the end of", Text.monthYear(Text.startOfDay(LocalDate.parse(customTo))), { monthPicker = "to" })
-                    ArroButton("Use this range", { period = 2; customSheet = false })
-                }
-            }
-            val mp = monthPicker
-            PickerSheet(mp != null, if (mp == "from") "Start month" else "End month", months.map { Text.monthYear(Text.startOfDay(it)) },
-                if (mp == "from") Text.monthYear(Text.startOfDay(LocalDate.parse(customFrom))) else Text.monthYear(Text.startOfDay(LocalDate.parse(customTo))), { label ->
-                    val m = months.first { Text.monthYear(Text.startOfDay(it)) == label }
-                    if (mp == "from") {
-                        customFrom = m.toString()
-                        if (LocalDate.parse(customTo) < m) customTo = m.withDayOfMonth(m.lengthOfMonth()).coerceAtMost(today).toString()
-                    } else {
-                        val end = m.withDayOfMonth(m.lengthOfMonth()).let { if (it > today) today else it }
-                        customTo = end.toString()
-                        if (LocalDate.parse(customFrom) > end) customFrom = m.toString()
-                    }
-                }, { monthPicker = null })
+            val dp = datePicker
+            DateSheet(
+                visible = dp != null,
+                title = if (dp == "from") "Statement from" else "Statement to",
+                selected = LocalDate.parse(if (dp == "from") customFrom else customTo),
+                min = earliest,
+                max = today,
+                onPick = { d -> if (dp == "from") pickFrom(d) else pickTo(d) },
+                onDismiss = { datePicker = null },
+                subtitle = if (dp == "from") "The first day to include." else "The last day to include.",
+                note = "Statements cover up to 12 months, as far back as ${Text.date(Text.startOfDay(earliest))}.",
+            )
         },
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -700,9 +705,14 @@ fun StatementsScreen() {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Chip("This month", period == 0, { period = 0 })
                 Chip(Text.monthName(Text.startOfDay(lastMonth)), period == 1, { period = 1 })
-                Chip("Custom range", period == 2, { customSheet = true })
+                Chip("Custom range", period == 2, { period = 2 })
             }
-            Cap(rangeLabel(fromDate, toDate), size = 12.5f)
+            if (period == 2) Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                SelectField("From", Text.date(Text.startOfDay(fromDate)), { datePicker = "from" }, Modifier.weight(1f), focused = datePicker == "from")
+                SelectField("To", Text.date(Text.startOfDay(toDate)), { datePicker = "to" }, Modifier.weight(1f), focused = datePicker == "to")
+            }
+            val days = java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1
+            Cap(rangeLabel(fromDate, toDate) + " · $days ${if (days == 1L) "day" else "days"}", size = 12.5f)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             FieldLabel("Format")

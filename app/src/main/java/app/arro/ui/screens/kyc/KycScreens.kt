@@ -191,8 +191,9 @@ fun KycIntroScreen() {
 
 @Composable
 private fun NumberTile(n: Int, done: Boolean, current: Boolean) {
-    Box(Modifier.size(32.dp).background(if (current) C.Lime else if (done) C.Ink else C.Tint, CircleShape), contentAlignment = Alignment.Center) {
-        if (done) Ic(Icons.Check, size = 16.dp, tint = C.Lime) else Txt("$n", T.H3.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+    Box(Modifier.size(32.dp).background(if (current) C.Lime else if (done) C.Primary else C.Tint, CircleShape), contentAlignment = Alignment.Center) {
+        if (done) Ic(Icons.Check, size = 16.dp, tint = C.PrimaryAccent)
+        else Txt("$n", T.H3.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold), color = if (current) C.OnLime else C.Ink)
     }
 }
 
@@ -411,7 +412,7 @@ fun CameraScreen(
             content()
             TopBar(
                 left = { RoundIcon(closeIcon, onClose, style = IconBtn.OnDark, description = "Close camera") },
-                title = title, titleColor = C.White,
+                title = title, titleColor = C.OnNight,
                 right = { if (right != null) right() else Spacer(Modifier.width(44.dp)) },
             )
         }
@@ -456,7 +457,7 @@ fun KycCaptureScreen() {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(120.dp))
             Txt(if (twoSided && side == 1) "Fit the back inside the frame" else "Fit the ${if (draft.docType == DocType.PASSPORT) "photo page" else "front"} inside the frame",
-                T.Cap.copy(fontSize = 15.sp), color = C.White, align = TextAlign.Center)
+                T.Cap.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.Center)
             Box(Modifier.padding(top = 28.dp).size(338.dp, 236.dp)) {
                 if (permission.granted && cameraOk) {
                     CameraPreview(Modifier.padding(6.dp).fillMaxSize().clip(RoundedCornerShape(14.dp)), capture = capture, torch = torch,
@@ -481,9 +482,9 @@ fun KycCaptureScreen() {
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 40.dp, end = 40.dp, bottom = 40.dp),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
             ) {
-                Txt("Upload", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { upload() }, color = C.White)
+                Txt("Upload", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { upload() }, color = C.OnNight)
                 Box(
-                    Modifier.size(78.dp).border(4.dp, C.White, CircleShape).padding(8.dp).background(if (busy) C.LimeDeep else C.Lime, CircleShape)
+                    Modifier.size(78.dp).border(4.dp, C.OnNight, CircleShape).padding(8.dp).background(if (busy) C.LimeDeep else C.Lime, CircleShape)
                         .clip(CircleShape)
                         .clickable(enabled = !busy) {
                             busy = true
@@ -495,7 +496,7 @@ fun KycCaptureScreen() {
                             }
                         },
                 )
-                Txt("Tips", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { nav.go(Routes.article("verify")) }, color = C.White, align = TextAlign.End)
+                Txt("Tips", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { nav.go(Routes.article("verify")) }, color = C.OnNight, align = TextAlign.End)
             }
         }
     }
@@ -663,7 +664,7 @@ fun KycSelfieScreen() {
     CameraScreen("4 of 4 · Selfie", { nav.back() }, closeIcon = Icons.ArrowLeft) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(124.dp))
-            Txt(if (step == 0) "Look straight ahead" else if (step == 1) "Now turn your head" else "Got it, thank you", T.H2.copy(fontSize = 22.sp), color = C.White)
+            Txt(if (step == 0) "Look straight ahead" else if (step == 1) "Now turn your head" else "Got it, thank you", T.H2.copy(fontSize = 22.sp), color = C.OnNight)
             Cap(if (step == 0) "Then slowly turn your head to the left" else if (step == 1) "Slowly, to the left" else "Checking it matches your ID", color = C.DarkCap, size = 15f)
             Box(Modifier.padding(top = 30.dp).size(268.dp, 340.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.padding(28.dp).fillMaxSize().clip(androidx.compose.foundation.shape.GenericShape { size, _ ->
@@ -672,7 +673,7 @@ fun KycSelfieScreen() {
                     if (permission.granted && cameraOk) CameraPreview(Modifier.fillMaxSize(), front = true, analyzer = analyzer)
                     else {
                         Box(Modifier.align(Alignment.TopCenter).padding(top = 30.dp).size(108.dp, 132.dp).background(Brush.verticalGradient(listOf(Color(0xFF7D6A5C), Color(0xFF5E4D41))), CircleShape))
-                        Box(Modifier.align(Alignment.BottomCenter).size(196.dp, 92.dp).background(Brush.verticalGradient(listOf(C.Forest, Color(0xFF1E3B31))), RoundedCornerShape(topStart = 98.dp, topEnd = 98.dp)))
+                        Box(Modifier.align(Alignment.BottomCenter).size(196.dp, 92.dp).background(Brush.verticalGradient(listOf(C.ForestFixed, Color(0xFF1E3B31))), RoundedCornerShape(topStart = 98.dp, topEnd = 98.dp)))
                     }
                 }
                 Canvas(Modifier.fillMaxSize()) {
@@ -743,7 +744,7 @@ fun KycStatusScreen() {
         KycStatus.APPROVED -> {
             val level = k.level
             DarkSystemBars()
-            Box(Modifier.fillMaxSize().background(C.Ink)) {
+            Box(Modifier.fillMaxSize().background(C.Night)) {
                 Box(Modifier.align(Alignment.TopCenter).offset(y = 80.dp).size(420.dp).background(haloBrush(alpha = 0.22f, stop = 0.65f), CircleShape))
                 ArroScreen(
                     background = Color.Transparent,
@@ -758,8 +759,8 @@ fun KycStatusScreen() {
                         Txt("Welcome to Arro, ${a.firstName}. Your account is ready to send.", T.Lede, color = C.DarkCap, align = TextAlign.Center)
                     }
                     Column(
-                        Modifier.padding(top = 8.dp).fillMaxWidth().background(C.White.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
-                            .border(1.dp, C.White.copy(alpha = 0.12f), RoundedCornerShape(20.dp)).padding(16.dp),
+                        Modifier.padding(top = 8.dp).fillMaxWidth().background(C.OnNight.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
+                            .border(1.dp, C.OnNight.copy(alpha = 0.12f), RoundedCornerShape(20.dp)).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

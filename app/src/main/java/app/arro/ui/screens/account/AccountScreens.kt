@@ -31,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
@@ -157,10 +158,12 @@ fun AccountScreen() {
     val state by appState()
     val a = state.account ?: return
     var logoutConfirm by remember { mutableStateOf(false) }
+    var appearanceOpen by remember { mutableStateOf(false) }
     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "1.0.0" }
     TabScreen(
         Tab.Account,
         overlay = {
+            AppearanceSheet(appearanceOpen, a.settings.appearance, { choice -> b.updateSettings { it.copy(appearance = choice) } }) { appearanceOpen = false }
             ConfirmDialog(logoutConfirm, "Log out of Arro?", "You'll need your email and password to log in again on this phone.", "Log out", {
                 logoutConfirm = false
                 b.logout()
@@ -177,7 +180,7 @@ fun AccountScreen() {
                         Modifier.align(Alignment.BottomEnd).size(28.dp).background(C.Lime, CircleShape).border(3.dp, C.White, CircleShape)
                             .then(Modifier.padding(0.dp)),
                         contentAlignment = Alignment.Center,
-                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Plain, size = 26.dp, iconSize = 13.dp, description = "Edit personal details") }
+                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Lime, size = 26.dp, iconSize = 13.dp, description = "Edit personal details") }
                 }
                 Txt(a.displayName, T.Title.copy(fontSize = 22.sp), Modifier.padding(top = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +198,7 @@ fun AccountScreen() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(C.Lime.copy(alpha = 0.16f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Ic(Icons.Gift, tint = C.Lime) }
                     Column(Modifier.weight(1f)) {
-                        Txt("Invite friends", T.H3, color = C.White)
+                        Txt("Invite friends", T.H3, color = C.OnNight)
                         Cap("Get £10 for every friend who sends", color = C.DarkCap, size = 12f)
                     }
                     Ic(Icons.ChevronRight, tint = C.Lime)
@@ -222,6 +225,8 @@ fun AccountScreen() {
                     GroupDivider()
                     SettingsRow("Notifications", Icons.Bell) { nav.go(Routes.NOTIFICATION_SETTINGS) }
                     GroupDivider()
+                    SettingsRow("Appearance", Icons.Sun, appearanceLabel(a.settings.appearance)) { appearanceOpen = true }
+                    GroupDivider()
                     SettingsRow("Language and region", Icons.Globe, a.settings.language) { nav.go(Routes.LANGUAGE) }
                 }
             }
@@ -244,6 +249,41 @@ fun AccountScreen() {
                 }
             }
         }
+    }
+}
+
+private fun appearanceLabel(a: Appearance) = when (a) { Appearance.LIGHT -> "Light"; Appearance.DARK -> "Dark"; Appearance.SYSTEM -> "Same as phone" }
+
+/** Light, dark or follow the phone. The change applies straight away, so the sheet itself switches theme. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.AppearanceSheet(visible: Boolean, current: Appearance, onChoose: (Appearance) -> Unit, onDismiss: () -> Unit) {
+    val lightBg = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
+    val darkBg = androidx.compose.ui.graphics.Color(0xFF0A1412)
+    Sheet(visible, onDismiss) {
+        SheetHeader("Appearance", onDismiss, "Choose how Arro looks on this phone.")
+        Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(
+                Triple(Appearance.LIGHT, "Light", "Bright screens, the classic Arro look"),
+                Triple(Appearance.DARK, "Dark", "Easier on the eyes at night"),
+                Triple(Appearance.SYSTEM, "Same as phone", "Switches with your phone's dark mode"),
+            ).forEach { (option, title, sub) ->
+                ListRow(title, subtitle = sub, selected = option == current, minHeight = 64.dp,
+                    leading = {
+                        val fill = when (option) {
+                            Appearance.LIGHT -> Brush.linearGradient(listOf(lightBg, lightBg))
+                            Appearance.DARK -> Brush.linearGradient(listOf(darkBg, darkBg))
+                            Appearance.SYSTEM -> Brush.horizontalGradient(0f to lightBg, 0.5f to lightBg, 0.5f to darkBg, 1f to darkBg)
+                        }
+                        Box(
+                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(fill).border(1.5.dp, C.Line, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) { Box(Modifier.size(12.dp).background(C.Lime, CircleShape)) }
+                    },
+                    trailing = { Radio(option == current) },
+                    onClick = { onChoose(option) })
+            }
+        }
+        ArroButton("Done", onDismiss, Modifier.padding(top = 16.dp), style = Btn.Line)
     }
 }
 
@@ -717,13 +757,6 @@ fun LanguageScreen() {
             GroupDivider()
             ListRow("Date format", flat = true, minHeight = 52.dp, trailing = { Cap(Text.numericDate(b.now)) })
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Appearance")
-            Segmented(listOf("System", "Light", "Dark"), when (s.appearance) { Appearance.SYSTEM -> 0; Appearance.LIGHT -> 1; Appearance.DARK -> 2 }, { i ->
-                b.updateSettings { it.copy(appearance = Appearance.entries[i]) }
-            })
-            if (s.appearance != Appearance.LIGHT) Cap("A dark theme is on the way. Until then Arro stays light so amounts are always easy to read.", size = 12f)
-        }
     }
 }
 
@@ -740,7 +773,7 @@ fun ReferScreen() {
     val code = a.referral.code.ifBlank { (a.profile.firstNames.uppercase().take(4).ifBlank { "ARRO" }) + "-" + a.id.take(4).uppercase() }
     val link = "https://arro.app/i/$code"
     ArroScreen(
-        background = C.Ink,
+        background = C.Night,
         topBar = { TopBar(onBack = { nav.back() }) },
         footer = {
             ArroButton("Share invite link", {
@@ -766,7 +799,7 @@ fun ReferScreen() {
         ) {
             Column(Modifier.weight(1f)) {
                 Cap("Your invite code", color = C.DarkCap, size = 12f)
-                Txt(code, T.Big22.copy(letterSpacing = 1.3.sp), Modifier.padding(top = 2.dp), color = C.White)
+                Txt(code, T.Big22.copy(letterSpacing = 1.3.sp), Modifier.padding(top = 2.dp), color = C.OnNight)
             }
             ArroButton("Copy", { Share.copy(context, "Arro invite code", code); banner.show("Invite code copied", kind = BannerKind.Success) },
                 style = Btn.LineOnDark, size = BtnSize.S, icon = Icons.Copy)

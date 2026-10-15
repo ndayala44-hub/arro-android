@@ -118,12 +118,12 @@ import kotlinx.coroutines.launch
 @Composable
 fun CardThumb(m: PaymentMethod, modifier: Modifier = Modifier) {
     val colors = when {
-        m.kind == MethodKind.BANK -> listOf(C.Forest, C.Ink)
+        m.kind == MethodKind.BANK -> listOf(C.ForestFixed, C.InkFixed)
         m.brand == CardBrand.MASTERCARD -> listOf(Color(0xFF2C6FB7), Color(0xFF164E8A))
         else -> listOf(Color(0xFFFF6B57), Color(0xFFE24A3B))
     }
     Box(modifier.size(48.dp, 32.dp).background(Brush.linearGradient(colors), RoundedCornerShape(6.dp))) {
-        Txt("•• ${m.last4}", T.Pill.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp), Modifier.align(Alignment.BottomStart).padding(start = 6.dp, bottom = 5.dp), color = C.White)
+        Txt("•• ${m.last4}", T.Pill.copy(fontSize = 8.sp, fontWeight = FontWeight.Bold, letterSpacing = 0.3.sp), Modifier.align(Alignment.BottomStart).padding(start = 6.dp, bottom = 5.dp), color = C.OnNight)
     }
 }
 
@@ -269,9 +269,9 @@ fun AddCardScreen() {
 private fun CardPreview(shown: String, expiry: String, holder: String, brandLabel: String) {
     Box(
         Modifier.fillMaxWidth().height(196.dp)
-            .shadow(18.dp, RoundedCornerShape(22.dp), ambientColor = C.Ink.copy(alpha = 0.25f), spotColor = C.Ink.copy(alpha = 0.25f))
+            .shadow(18.dp, RoundedCornerShape(22.dp), ambientColor = C.InkFixed.copy(alpha = 0.25f), spotColor = C.InkFixed.copy(alpha = 0.25f))
             .clip(RoundedCornerShape(22.dp))
-            .background(Brush.linearGradient(listOf(C.Ink2, C.Ink, Color(0xFF021E1B)))),
+            .background(Brush.linearGradient(listOf(C.Ink2Fixed, C.InkFixed, Color(0xFF021E1B)))),
     ) {
         Box(Modifier.align(Alignment.TopEnd).offset(40.dp, (-60).dp).size(220.dp).background(Brush.radialGradient(listOf(C.Lime.copy(alpha = 0.22f), C.Lime.copy(alpha = 0f))), CircleShape))
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp)) {
@@ -280,7 +280,7 @@ private fun CardPreview(shown: String, expiry: String, holder: String, brandLabe
                 Txt(brandLabel.ifEmpty { "Debit or credit card" }, T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Lime)
             }
             Spacer(Modifier.weight(1f))
-            Txt(shown, T.Big22.copy(fontSize = 21.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.5.sp), color = C.White, maxLines = 1)
+            Txt(shown, T.Big22.copy(fontSize = 21.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.5.sp), color = C.OnNight, maxLines = 1)
             Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 Txt(holder, T.Cap.copy(letterSpacing = 1.sp), color = C.DarkCap, maxLines = 1)
                 Txt(if (expiry.length >= 2) expiry.take(2) + "/" + expiry.drop(2) else "MM/YY", T.Cap.copy(fontFeatureSettings = "tnum"), color = C.DarkCap)
@@ -330,7 +330,7 @@ fun ScanCardScreen() {
     }) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(150.dp))
-            Txt("Hold the front of your card inside the frame", T.Cap.copy(fontSize = 15.sp), color = C.White, align = TextAlign.Center)
+            Txt("Hold the front of your card inside the frame", T.Cap.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.Center)
             Box(Modifier.padding(top = 30.dp).size(338.dp, 220.dp)) {
                 if (permission.granted && cameraOk) {
                     CameraPreview(Modifier.padding(6.dp).fillMaxSize().clip(RoundedCornerShape(16.dp)), analyzer = analyzer, torch = torch)
@@ -338,7 +338,7 @@ fun ScanCardScreen() {
                     Box(Modifier.padding(12.dp).fillMaxSize().rotate(1.5f).shadow(14.dp, RoundedCornerShape(16.dp))
                         .background(Brush.linearGradient(listOf(Color(0xFFFF6B57), Color(0xFFE24A3B))), RoundedCornerShape(16.dp)).padding(horizontal = 20.dp, vertical = 18.dp)) {
                         Box(Modifier.size(40.dp, 30.dp).background(Brush.linearGradient(listOf(Color(0xFFE9D9A8), Color(0xFFBFA761))), RoundedCornerShape(6.dp)))
-                        Txt("•••• •••• •••• ••••", T.Big22.copy(letterSpacing = 2.5.sp, fontWeight = FontWeight.Medium), Modifier.align(Alignment.BottomStart).padding(bottom = 24.dp), color = C.White)
+                        Txt("•••• •••• •••• ••••", T.Big22.copy(letterSpacing = 2.5.sp, fontWeight = FontWeight.Medium), Modifier.align(Alignment.BottomStart).padding(bottom = 24.dp), color = C.OnNight)
                     }
                 }
                 FrameCornersCard()
@@ -405,7 +405,8 @@ fun BankListScreen() {
                 ListRow(bank.name, flat = true, minHeight = 56.dp, subtitle = if (mine) "Already connected" else if (bank.id == "monzo" && a.demo) "You use Monzo for top-ups" else null,
                     leading = {
                         Box(Modifier.size(36.dp).background(if (mine || (bank.id == "monzo" && a.demo)) C.Lime else C.Tint, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
-                            Txt(bank.name.take(1).uppercase(), T.H3.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold))
+                            Txt(bank.name.take(1).uppercase(), T.H3.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
+                                color = if (mine || (bank.id == "monzo" && a.demo)) C.OnLime else C.Ink)
                         }
                     },
                     trailing = { Chevron() }, onClick = { nav.go(Routes.payConnect(bank.id)) })
