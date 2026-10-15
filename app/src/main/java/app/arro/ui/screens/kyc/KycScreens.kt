@@ -82,6 +82,8 @@ import app.arro.ui.rememberCall
 import app.arro.ui.resetTo
 import app.arro.ui.components.ArroButton
 import app.arro.ui.components.DarkSystemBars
+import app.arro.ui.components.longDate
+import app.arro.ui.components.DateSheet
 import app.arro.ui.components.ArroCard
 import app.arro.ui.components.ArroField
 import app.arro.ui.components.ArroScreen
@@ -204,16 +206,16 @@ fun KycPersonalScreen() {
     val p = a.profile
     var first by rememberSaveable { mutableStateOf(p.firstNames) }
     var last by rememberSaveable { mutableStateOf(p.lastName) }
-    val dobParts = p.dob.split("-")
-    var day by rememberSaveable { mutableStateOf(dobParts.getOrNull(2) ?: "") }
-    var month by rememberSaveable { mutableStateOf(dobParts.getOrNull(1) ?: "") }
-    var year by rememberSaveable { mutableStateOf(dobParts.getOrNull(0) ?: "") }
+    // Stored as yyyy-MM-dd; picked on a calendar.
+    var dob by rememberSaveable { mutableStateOf(p.dob) }
+    val dobDate = runCatching { java.time.LocalDate.parse(dob) }.getOrNull()
+    val today = Text.localDate(System.currentTimeMillis())
     var nationality by rememberSaveable { mutableStateOf(p.nationality.ifBlank { "British" }) }
     var occupation by rememberSaveable { mutableStateOf(p.occupation) }
     var picker by remember { mutableStateOf("") }
     var errors by remember { mutableStateOf(mapOf<String, String?>()) }
     fun submit() {
-        val (iso, dobErr) = Validation.dob(day, month, year, Text.localDate(System.currentTimeMillis()))
+        val (iso, dobErr) = Validation.dob(dobDate, today)
         val e = mapOf(
             "first" to Validation.personName(first, "first name"),
             "last" to Validation.personName(last, "last name"),
@@ -232,6 +234,18 @@ fun KycPersonalScreen() {
             PickerSheet(picker == "nat", "Nationality", Catalog.nationalities, nationality, { nationality = it }, { picker = "" },
                 leading = { o -> Flag(flagForNationality(o)) })
             PickerSheet(picker == "occ", "Occupation", Catalog.occupations, occupation, { occupation = it; errors = errors - "occupation" }, { picker = "" })
+            DateSheet(
+                visible = picker == "dob",
+                title = "Date of birth",
+                selected = dobDate,
+                min = today.minusYears(110),
+                max = today.minusYears(18),
+                onPick = { dob = it.toString(); errors = errors - "dob" },
+                onDismiss = { picker = "" },
+                subtitle = "Exactly as it appears on your ID.",
+                note = "You need to be 18 or over to use Arro.",
+                startYear = today.year - 30,
+            )
         },
     ) {
         StepBars(1, 4)
@@ -242,16 +256,8 @@ fun KycPersonalScreen() {
             ArroField(last, { last = it }, Modifier.weight(1f), label = "Last name", error = errors["last"],
                 capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
         }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel("Date of birth")
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                val centered = T.Input.copy(textAlign = TextAlign.Center, fontFeatureSettings = "tnum")
-                ArroField(day, { day = it.filter(Char::isDigit).take(2) }, Modifier.weight(1f), placeholder = "DD", keyboard = KeyboardType.Number, textStyle = centered)
-                ArroField(month, { month = it.filter(Char::isDigit).take(2) }, Modifier.weight(1f), placeholder = "MM", keyboard = KeyboardType.Number, textStyle = centered)
-                ArroField(year, { year = it.filter(Char::isDigit).take(4) }, Modifier.weight(1.5f), placeholder = "YYYY", keyboard = KeyboardType.Number, textStyle = centered)
-            }
-            FieldHint(errors["dob"])
-        }
+        SelectField("Date of birth", dobDate?.let { longDate(it) }, { picker = "dob" }, placeholder = "Choose on a calendar",
+            error = errors["dob"], focused = picker == "dob", leading = { Ic(Icons.Calendar, tint = C.Slate) })
         SelectField("Nationality", nationality, { picker = "nat" }, leading = { Flag(flagForNationality(nationality)) })
         SelectField("Occupation", occupation.ifBlank { null }, { picker = "occ" }, error = errors["occupation"],
             hint = "We ask because regulations require us to know how you earn the money you send.")
