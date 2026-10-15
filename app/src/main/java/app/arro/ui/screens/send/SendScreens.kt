@@ -344,9 +344,9 @@ fun SendAmountScreen() {
                     }
                 }
                 Box(
-                    Modifier.align(Alignment.Center).size(36.dp).background(C.Ink, CircleShape).border(3.dp, C.White, CircleShape),
+                    Modifier.align(Alignment.Center).size(36.dp).background(C.Primary, CircleShape).border(3.dp, C.White, CircleShape),
                     contentAlignment = Alignment.Center,
-                ) { Ic(Icons.ArrowDown, size = 16.dp, tint = C.Lime) }
+                ) { Ic(Icons.ArrowDown, size = 16.dp, tint = C.PrimaryAccent) }
             }
             // quote lines
             Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -517,7 +517,7 @@ fun SendRecipientScreen() {
             PayoutType.CASH -> "Name as it appears on their ID"
             else -> "Name and ${d.payoutType.short} number"
         }, dashed = true,
-            leading = { Box(Modifier.size(44.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Ic(Icons.Plus) } },
+            leading = { Box(Modifier.size(44.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Ic(Icons.Plus, tint = C.OnLime) } },
             trailing = { Chevron() },
             onClick = { c.session.recipient.reset(d.country, d.payoutType, forSend = true); nav.go(Routes.RCP_ADD) })
         if (able.isNotEmpty()) {

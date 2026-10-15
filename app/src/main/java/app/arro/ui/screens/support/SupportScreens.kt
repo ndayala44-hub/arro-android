@@ -204,7 +204,7 @@ fun HelpScreen() {
                     Avatar(Text.initials(latest.recipientName), latest.recipientColor)
                     Column(Modifier.weight(1f)) {
                         Cap("Your latest transfer", color = C.DarkCap, size = 12f)
-                        Txt("${Money.format(latest.receiveMinor, latest.toCur)} to ${latest.firstName}", T.Body.copy(fontWeight = FontWeight.SemiBold), color = C.White, maxLines = 1)
+                        Txt("${Money.format(latest.receiveMinor, latest.toCur)} to ${latest.firstName}", T.Body.copy(fontWeight = FontWeight.SemiBold), color = C.OnNight, maxLines = 1)
                     }
                     Pill("Get help", PillKind.OnDark)
                 }
@@ -514,10 +514,10 @@ private fun Bubble(m: ChatMessage, onAttachment: () -> Unit) {
         if (m.text.isNotBlank()) Column(
             Modifier.widthIn(max = 300.dp)
                 .then(if (mine) Modifier else Modifier.shadow(1.dp, RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp)))
-                .background(if (mine) C.Ink else C.White, if (mine) RoundedCornerShape(18.dp, 18.dp, 6.dp, 18.dp) else RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp))
+                .background(if (mine) C.Night else C.White, if (mine) RoundedCornerShape(18.dp, 18.dp, 6.dp, 18.dp) else RoundedCornerShape(18.dp, 18.dp, 18.dp, 6.dp))
                 .padding(horizontal = 14.dp, vertical = 12.dp),
         ) {
-            Txt(m.text, T.Body.copy(fontSize = 14.5.sp, lineHeight = 21.sp), color = if (mine) C.White else C.Ink)
+            Txt(m.text, T.Body.copy(fontSize = 14.5.sp, lineHeight = 21.sp), color = if (mine) C.OnNight else C.Ink)
             Txt(Text.time(m.at) + if (mine) " · Read" else "", T.Small.copy(fontSize = 11.sp), Modifier.padding(top = 4.dp).fillMaxWidth(),
                 color = if (mine) C.DarkCap else C.Slate, align = if (mine) TextAlign.End else TextAlign.Start)
         }
@@ -535,11 +535,11 @@ private fun Bubble(m: ChatMessage, onAttachment: () -> Unit) {
                 }
             } else {
                 Row(
-                    Modifier.background(C.Ink, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
+                    Modifier.background(C.Night, RoundedCornerShape(14.dp)).padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Ic(Icons.Image, size = 16.dp, tint = C.Lime)
-                    Txt("Photo sent", T.Cap, color = C.White)
+                    Txt("Photo sent", T.Cap, color = C.OnNight)
                 }
             }
         }

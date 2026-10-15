@@ -317,7 +317,7 @@ private fun Delivered(t: Transfer) {
                 Box(
                     Modifier.align(Alignment.BottomEnd).offset((-2).dp, (-6).dp).size(40.dp).background(C.Lime, CircleShape).border(4.dp, C.White, CircleShape),
                     contentAlignment = Alignment.Center,
-                ) { Ic(Icons.CheckBold, size = 20.dp) }
+                ) { Ic(Icons.CheckBold, size = 20.dp, tint = C.OnLime) }
             }
             Pill(if (t.payoutType == PayoutType.CASH) "Ready to collect" else "Delivered", PillKind.Ok, dot = true)
             Txt(Money.format(t.receiveMinor, t.toCur), T.AmountMd, Modifier.padding(top = 6.dp))
@@ -375,7 +375,7 @@ private fun Failed(t: Transfer) {
             Illustration(Art.Warning, 76.dp, Modifier.offset(y = (-6).dp))
             ScreenTitle("We couldn't deliver this transfer", modifier = Modifier.weight(1f), size = TitleSize.S)
         }
-        ArroCard(border = Color(0xFFF6C9C3), background = Color(0xFFFFF8F7)) {
+        ArroCard(border = if (C.dark) Color(0xFF5A2520) else Color(0xFFF6C9C3), background = if (C.dark) C.ErrBg else Color(0xFFFFF8F7)) {
             Over("What happened", color = C.Err)
             Txt(t.failReason, T.Body, Modifier.padding(top = 8.dp))
         }

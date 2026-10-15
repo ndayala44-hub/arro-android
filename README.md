@@ -103,6 +103,8 @@ The sample account has a year of transfers, six recipients, two cards, a connect
 
 The app locks after 5 minutes in the background or 5 minutes without a touch, and shows the offline state when the network drops.
 
+**Account → Appearance** switches between Light, Dark and "Same as phone".
+
 ---
 
 ## How it's put together
@@ -127,6 +129,6 @@ app/src/test/  Unit tests for the backend (16 tests)
 
 - This is a test build with a simulated backend. Accounts, transfers and balances exist only on the device. To go live you would replace `ArroBackend` with calls to a real API; the screens only talk to it through its public functions.
 - Legal text (terms, privacy, regulator details) is placeholder copy marked with brackets.
-- Only English is available; other languages show as coming soon. The app uses its light theme even when the phone is in dark mode.
+- Only English is available; other languages show as coming soon.
 - Release builds are signed with the debug key so they install for testing. Add your own signing config before publishing.
 - The code was compile-checked and the backend tests were run, but the first full Gradle build happens on your machine or in GitHub Actions. If anything fails there, send me the first error from the build output.

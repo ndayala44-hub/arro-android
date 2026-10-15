@@ -1,5 +1,6 @@
 package app.arro.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,6 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import app.arro.ui.components.refreshSystemBars
+import app.arro.ui.theme.C
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -40,8 +44,14 @@ fun ArroRoot() {
     val route = entry?.destination?.route ?: Routes.SPLASH
     var wasSignedIn by remember { mutableStateOf(state.signedIn) }
 
+    // Keep the status and navigation bar icons readable when the theme changes.
+    val view = LocalView.current
+    val dark = C.dark
+    LaunchedEffect(dark) { refreshSystemBars(view) }
+
     CompositionLocalProvider(LocalNav provides nav, LocalBanner provides banner) {
-        Box(Modifier.fillMaxSize()) {
+        // The background shows through while screens cross-fade, so it follows the theme too.
+        Box(Modifier.fillMaxSize().background(C.White)) {
             ArroNavHost(nav)
 
             val locked = state.signedIn && !unlocked && route !in publicRoutes

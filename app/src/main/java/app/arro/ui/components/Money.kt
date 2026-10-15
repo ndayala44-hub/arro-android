@@ -100,8 +100,8 @@ fun QuickAction(label: String, @DrawableRes icon: Int, onClick: () -> Unit, modi
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Box(Modifier.size(54.dp).background(if (lime) C.Lime else C.Ink, CircleShape), contentAlignment = Alignment.Center) {
-            Ic(icon, tint = if (lime) C.Ink else C.White)
+        Box(Modifier.size(54.dp).background(if (lime) C.Lime else C.Primary, CircleShape), contentAlignment = Alignment.Center) {
+            Ic(icon, tint = if (lime) C.OnLime else C.OnPrimary)
         }
         Txt(label, T.Cap.copy(fontSize = 12.5.sp, fontWeight = FontWeight.Medium), color = C.Ink, maxLines = 1)
     }
@@ -178,11 +178,11 @@ fun TabBar(selected: Tab, onSelect: (Tab) -> Unit, onSend: () -> Unit, modifier:
                         .border(1.dp, C.Line, CircleShape)
                         .padding(if (narrow) 4.dp else 5.dp)
                         .clip(CircleShape)
-                        .background(C.Ink, CircleShape)
+                        .background(C.Primary, CircleShape)
                         .clickable(role = Role.Button, onClick = onSend)
                         .semantics { contentDescription = "Send money" },
                     contentAlignment = Alignment.Center,
-                ) { Ic(Icons.ArrowUpRightBold, size = 26.dp, tint = C.Lime) }
+                ) { Ic(Icons.ArrowUpRightBold, size = 26.dp, tint = C.PrimaryAccent) }
             }
         }
     }
