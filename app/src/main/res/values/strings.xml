@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Arro</string>
+    <string name="channel_transfers">Transfers</string>
+    <string name="channel_transfers_desc">Updates when your money is delivered, held or refunded</string>
+    <string name="channel_security">Security codes</string>
+    <string name="channel_security_desc">Sign-in and verification codes</string>
+    <string name="channel_rates">Rate alerts</string>
+    <string name="channel_rates_desc">When a rate you are watching is reached</string>
+</resources>
