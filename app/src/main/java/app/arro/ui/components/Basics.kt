@@ -217,6 +217,7 @@ object Icons {
     val WifiOff = R.drawable.ic_wifi_off
     val Cross = R.drawable.ic_cross
     val SwapVertical = R.drawable.ic_swap_vertical
+    val Calendar = R.drawable.ic_calendar
 }
 
 /** Illustration resource ids. */

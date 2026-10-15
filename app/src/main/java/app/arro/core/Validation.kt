@@ -96,6 +96,12 @@ object Validation {
         val d = day.toIntOrNull(); val m = month.toIntOrNull(); val y = year.toIntOrNull()
         if (d == null || m == null || y == null || year.length != 4) return null to "Enter your date of birth, like 03 07 1991."
         val date = runCatching { LocalDate.of(y, m, d) }.getOrNull() ?: return null to "That date doesn't exist. Check the day and month."
+        return dob(date, today)
+    }
+
+    /** yyyy-MM-dd from a date picked on the calendar; the person must be 18 or over. */
+    fun dob(date: LocalDate?, today: LocalDate): Pair<String?, String?> {
+        if (date == null) return null to "Choose your date of birth."
         if (date.isAfter(today.minusYears(18))) return null to "You need to be 18 or over to use Arro."
         if (date.isBefore(today.minusYears(110))) return null to "Check the year of birth."
         return date.toString() to null

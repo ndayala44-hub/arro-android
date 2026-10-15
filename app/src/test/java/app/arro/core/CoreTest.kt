@@ -231,6 +231,15 @@ class CoreTest {
         assertEquals(1962.40, Rates.customer(snap, Currency.GBP, Currency.RWF), 0.0001)
     }
 
+    @Test fun birthdayFromTheCalendar() {
+        val today = LocalDate.of(2026, 10, 15)
+        assertEquals("1991-07-03" to null, Validation.dob(LocalDate.of(1991, 7, 3), today))
+        assertNotNull(Validation.dob(null, today).second)
+        assertNotNull(Validation.dob(LocalDate.of(2010, 1, 1), today).second)
+        assertEquals("2008-10-15", Validation.dob(LocalDate.of(2008, 10, 15), today).first)
+        assertNotNull(Validation.dob(LocalDate.of(1900, 1, 1), today).second)
+    }
+
     @Test fun phoneChangeNeedsTheTextedCode() = runBlocking {
         val (b, _) = backend()
         b.loadDemoAccount()
