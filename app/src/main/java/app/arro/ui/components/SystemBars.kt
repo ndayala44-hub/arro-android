@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import app.arro.ui.theme.C
 
 /** How many dark screens are showing right now (navigation briefly composes two at once). */
 private var darkRequests = 0
@@ -21,10 +22,14 @@ private fun Context.activity(): Activity? = when (this) {
 private fun applyBars(view: View) {
     val window = view.context.activity()?.window ?: return
     val controller = WindowCompat.getInsetsController(window, view)
-    val light = darkRequests == 0
+    // Dark icons only on a light theme with no dark screen showing.
+    val light = darkRequests == 0 && !C.dark
     controller.isAppearanceLightStatusBars = light
     controller.isAppearanceLightNavigationBars = light
 }
+
+/** Re-applies the system bar icon colours, for example after the theme changes. */
+fun refreshSystemBars(view: View) = applyBars(view)
 
 /** Call from a screen with a dark background so the clock, battery and navigation icons turn white. */
 @Composable

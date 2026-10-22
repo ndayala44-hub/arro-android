@@ -1,5 +1,6 @@
 package app.arro.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -11,6 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import app.arro.ui.components.refreshSystemBars
+import app.arro.ui.theme.C
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -18,6 +22,7 @@ import app.arro.MainActivity
 import app.arro.core.BackendEvent
 import app.arro.platform.Share
 import app.arro.ui.screens.auth.UnlockScreen
+import app.arro.ui.screens.send.startSend
 import app.arro.ui.screens.system.OfflineBar
 import kotlinx.coroutines.delay
 
@@ -40,8 +45,14 @@ fun ArroRoot() {
     val route = entry?.destination?.route ?: Routes.SPLASH
     var wasSignedIn by remember { mutableStateOf(state.signedIn) }
 
+    // Keep the status and navigation bar icons readable when the theme changes.
+    val view = LocalView.current
+    val dark = C.dark
+    LaunchedEffect(dark) { refreshSystemBars(view) }
+
     CompositionLocalProvider(LocalNav provides nav, LocalBanner provides banner) {
-        Box(Modifier.fillMaxSize()) {
+        // The background shows through while screens cross-fade, so it follows the theme too.
+        Box(Modifier.fillMaxSize().background(C.White)) {
             ArroNavHost(nav)
 
             val locked = state.signedIn && !unlocked && route !in publicRoutes
@@ -60,12 +71,21 @@ fun ArroRoot() {
         wasSignedIn = state.signedIn
     }
 
-    // Open a screen requested by a notification once the app is unlocked.
+    // Open a screen requested by a notification or a widget once the app is unlocked.
     LaunchedEffect(unlocked, c.session.pendingRoute, route) {
         val pending = c.session.pendingRoute
         if (pending != null && unlocked && state.signedIn && route !in publicRoutes) {
             c.session.pendingRoute = null
-            nav.go(pending)
+            when {
+                // Quick Send from the widget goes through the normal send checks, review and approval.
+                pending == Routes.QUICK_SEND -> startSend(c, nav, banner, hub = true)
+                pending.startsWith(Routes.QUICK_SEND_TO + ":") -> startSend(c, nav, banner, country = pending.substringAfter(':'))
+                pending.startsWith(Routes.QUICK_SEND + ":") -> {
+                    val r = state.account?.recipient(pending.substringAfter(':'))
+                    if (r != null) startSend(c, nav, banner, recipient = r) else startSend(c, nav, banner, hub = true)
+                }
+                else -> nav.go(pending)
+            }
         }
     }
 
@@ -99,6 +119,10 @@ fun ArroRoot() {
                     banner.show("Amina replied", e.text.take(90), BannerKind.Info, "Open") { nav.go(Routes.CHAT) }
                 }
                 is BackendEvent.Info -> banner.show(e.title, e.body, BannerKind.Success)
+                is BackendEvent.OfferAvailable -> if (nav.currentDestination?.route != Routes.LOCK_RATE) {
+                    banner.show(e.title, e.body, BannerKind.Info, "View") { nav.go(Routes.lockRate(e.to)) }
+                }
+                is BackendEvent.LockEnded -> banner.show(e.title, e.body, BannerKind.Info, "New offer") { nav.go(Routes.lockRate(e.to)) }
             }
         }
     }

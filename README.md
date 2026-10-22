@@ -81,6 +81,7 @@ The sample account has a year of transfers, six recipients, two cards, a connect
 | Add a Mastercard starting **51–53** | It's treated as a credit card (1.75% fee) |
 | Your first transfer up to £1,000 | No Arro fee |
 | Reset your password | New transfers are paused for 24 hours |
+| Stay on any screen for 25–90 seconds after unlocking | A **rate offer** appears (then every few minutes). Or use Demo controls → Show a rate offer now |
 
 ### Demo controls
 
@@ -92,6 +93,7 @@ The sample account has a year of transfers, six recipients, two cards, a connect
 - finish everything that's waiting right now
 - lift the 24-hour sending pause
 - reload the sample account, or erase everything on the phone
+- **Lock Rate and rewards:** turn random rate offers on or off, show an offer now, end a locked rate now, move the market up or down 1% (to see a locked rate stay put), have a sample friend join with your code, and have their first £120 transfer delivered (pays the £10 invite reward)
 
 ### Things that use the phone's hardware
 
@@ -102,6 +104,16 @@ The sample account has a year of transfers, six recipients, two cards, a connect
 - **Contacts:** pick a recipient from your contacts without granting contacts permission.
 
 The app locks after 5 minutes in the background or 5 minutes without a touch, and shows the offline state when the network drops.
+
+**Account → Appearance** switches between Light, Dark and "Same as phone".
+
+### Lock Rate, Loyalty and widgets
+
+- **Lock Rate:** rate offers (a better rate for a few minutes) appear on Home, as a banner, on the amount screen and in **Rates → a currency → Lock a rate**. Locking holds the rate on the backend for 10 minutes for one transfer, whatever the market does. Every quote still gets the existing 30-minute rate lock on the amount screen, now held and checked by the backend too.
+- **Loyalty and rewards:** the award button next to the bell on Home, or **Account → Loyalty and rewards**. Points (1 per 1p of Arro fee, on delivery, plus 250 on your first transfer) and referral money (£10 per qualifying friend, paid into your GBP balance) are shown separately. Swap points for fee credit.
+- **Home screen widgets:** long-press your home screen → Widgets → Arro. **Arro Quick Send** (4×2) shows your available balance, a Send button and the people you send to most, each one tap away; **Arro balance** (2×2) shows your GBP balance and a Send button; **Arro rate** shows today's rate, an offer or your locked rate. The balance and people are hidden until you turn on **Security → Show balance on home screen widgets** (the sample account has it on).
+
+Details, data changes and a test checklist: [docs/LOCK_RATE_LOYALTY_WIDGETS.md](docs/LOCK_RATE_LOYALTY_WIDGETS.md).
 
 ---
 
@@ -116,17 +128,20 @@ app/src/main/java/app/arro/
   ui/          Theme, components, navigation, session drafts, and screens by area:
                auth, kyc, home, send, track, recipients, payments, wallet, rates,
                support, account, system
-app/src/test/  Unit tests for the backend (16 tests)
+  widget/      Home screen widgets (balance and Quick Send, rate or offer)
+app/src/test/  Unit tests for the backend (29 tests)
 ```
 
 - **State:** everything is one JSON document (`filesDir/arro_state.json`), exposed as a `StateFlow` that the screens observe. It survives restarts, and transfer progress is worked out from timestamps, so a transfer keeps moving while the app is closed.
-- **Rates:** live mid-market rates from `open.er-api.com` every 5 minutes, with built-in fallback rates when offline. Arro's margin is 0.29% on transfers and 0.27% on conversions.
+- **Rates:** live mid-market rates from `open.er-api.com` every 5 minutes, with built-in fallback rates when offline. Arro's margin is 0.29% on transfers and 0.27% on conversions. Rate offers use 0.09% and are only priced from rates fetched in the last 30 minutes.
 - **Navigation:** one activity, Compose Navigation, a floating tab bar on the four main tabs.
 
 ## Limits to know about
 
 - This is a test build with a simulated backend. Accounts, transfers and balances exist only on the device. To go live you would replace `ArroBackend` with calls to a real API; the screens only talk to it through its public functions.
 - Legal text (terms, privacy, regulator details) is placeholder copy marked with brackets.
-- Only English is available; other languages show as coming soon. The app uses its light theme even when the phone is in dark mode.
+- Only English is available; other languages show as coming soon.
+- Rate offers are demo promotions, and friends joining with your code are simulated from Demo controls (they're labelled Sample). The rules behind them (lock expiry, one use per lock, points once per transfer, one referral reward per friend) are enforced by the backend.
+- Widgets redraw straight away while Arro is running. When it isn't, Android may delay the redraw after an offer or lock ends by up to about 10 minutes; the widget always shows the end time, and the backend refuses an ended lock.
 - Release builds are signed with the debug key so they install for testing. Add your own signing config before publishing.
 - The code was compile-checked and the backend tests were run, but the first full Gradle build happens on your machine or in GitHub Actions. If anything fails there, send me the first error from the build output.

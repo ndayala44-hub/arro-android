@@ -284,6 +284,23 @@ fun RateDetailScreen(code: String) {
             KV("Our margin", Money.percent(Rates.TRANSFER_MARGIN * 100, 2))
             KV("${Money.format(sample, Currency.GBP, false)} sends", Money.format(sends, cur), strong = true)
         }
+        val lockNow = a.offerLock(cur.code, now)
+        val offerNow = a.liveOffer(now)?.takeIf { it.to == cur.code }
+        ListRow(
+            when {
+                lockNow != null -> "Rate locked until ${Text.time(lockNow.expiresAt)}"
+                offerNow != null -> "Rate offer: ${Money.rate(offerNow.rate, decimals)} ${cur.code}"
+                else -> "Lock a rate"
+            },
+            subtitle = when {
+                lockNow != null -> "${Money.rateLine(Currency.GBP, cur, lockNow.rate)} for your next transfer"
+                offerNow != null -> "Lock it for ${offerNow.lockMinutes} minutes before ${Text.time(offerNow.expiresAt)}"
+                else -> "Hold a better rate for ${ArroBackend.OFFER_LOCK_MINUTES} minutes while you send"
+            },
+            minHeight = 56.dp,
+            leading = { app.arro.ui.components.Tile(Icons.Lock, app.arro.ui.components.TileStyle.Lime, 36.dp, iconSize = 16.dp) }, trailing = { Chevron() },
+            onClick = { nav.go(Routes.lockRate(cur.code)) },
+        )
         if (a.rateAlerts.any { it.to == cur.code && it.triggeredAt == 0L }) {
             val al = a.rateAlerts.first { it.to == cur.code && it.triggeredAt == 0L }
             ListRow("Alert at ${Money.rate(al.target, decimals)}", subtitle = "We'll tell you when £1 buys this much", minHeight = 56.dp,

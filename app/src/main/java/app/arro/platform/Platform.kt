@@ -163,11 +163,25 @@ class Notifier(private val app: Application) {
                 if (e.approved) "Your account is ready to send." else "Retake your ID photo to finish verifying.", "")
             is BackendEvent.ChatReply -> Quad(TRANSFERS, "Amina from Arro", e.text, "")
             is BackendEvent.Info -> Quad(TRANSFERS, e.title, e.body, "")
+            is BackendEvent.OfferAvailable -> {
+                if (settings?.rateAlerts == false || quiet(state)) return
+                Quad(RATES, e.title, e.body, "")
+            }
+            is BackendEvent.LockEnded -> {
+                if (settings?.rateAlerts == false || quiet(state)) return
+                Quad(RATES, e.title, e.body, "")
+            }
+        }
+        val rateRoute = when (e) {
+            is BackendEvent.OfferAvailable -> "lock_rate/${e.to}"
+            is BackendEvent.LockEnded -> "lock_rate/${e.to}"
+            else -> null
         }
         val intent = Intent(app, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
             if (transferId.isNotEmpty()) putExtra(EXTRA_TRANSFER, transferId)
             if (e is BackendEvent.ChatReply) putExtra(EXTRA_ROUTE, "chat")
+            if (rateRoute != null) putExtra(EXTRA_ROUTE, rateRoute)
         }
         val pi = PendingIntent.getActivity(app, (title + transferId).hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(app, channel)

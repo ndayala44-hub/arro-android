@@ -31,6 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
@@ -157,10 +158,12 @@ fun AccountScreen() {
     val state by appState()
     val a = state.account ?: return
     var logoutConfirm by remember { mutableStateOf(false) }
+    var appearanceOpen by remember { mutableStateOf(false) }
     val version = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull() ?: "1.0.0" }
     TabScreen(
         Tab.Account,
         overlay = {
+            AppearanceSheet(appearanceOpen, a.settings.appearance, { choice -> b.updateSettings { it.copy(appearance = choice) } }) { appearanceOpen = false }
             ConfirmDialog(logoutConfirm, "Log out of Arro?", "You'll need your email and password to log in again on this phone.", "Log out", {
                 logoutConfirm = false
                 b.logout()
@@ -177,7 +180,7 @@ fun AccountScreen() {
                         Modifier.align(Alignment.BottomEnd).size(28.dp).background(C.Lime, CircleShape).border(3.dp, C.White, CircleShape)
                             .then(Modifier.padding(0.dp)),
                         contentAlignment = Alignment.Center,
-                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Plain, size = 26.dp, iconSize = 13.dp, description = "Edit personal details") }
+                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Lime, size = 26.dp, iconSize = 13.dp, description = "Edit personal details") }
                 }
                 Txt(a.displayName, T.Title.copy(fontSize = 22.sp), Modifier.padding(top = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -195,7 +198,7 @@ fun AccountScreen() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(C.Lime.copy(alpha = 0.16f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Ic(Icons.Gift, tint = C.Lime) }
                     Column(Modifier.weight(1f)) {
-                        Txt("Invite friends", T.H3, color = C.White)
+                        Txt("Invite friends", T.H3, color = C.OnNight)
                         Cap("Get £10 for every friend who sends", color = C.DarkCap, size = 12f)
                     }
                     Ic(Icons.ChevronRight, tint = C.Lime)
@@ -212,6 +215,8 @@ fun AccountScreen() {
                     GroupDivider()
                     SettingsRow("Wallet and balances", Icons.WalletSimple, "${a.wallets.size}") { nav.go(Routes.WALLET) }
                     GroupDivider()
+                    SettingsRow("Loyalty and rewards", Icons.Award, "${Money.points(a.pointsBalance)} pts") { nav.go(Routes.LOYALTY) }
+                    GroupDivider()
                     SettingsRow("Statements", Icons.Statement) { nav.go(Routes.STATEMENTS) }
                 }
             }
@@ -221,6 +226,8 @@ fun AccountScreen() {
                     SettingsRow("Security", Icons.ShieldCheck, if (a.frozen) "Frozen" else null) { nav.go(Routes.SECURITY) }
                     GroupDivider()
                     SettingsRow("Notifications", Icons.Bell) { nav.go(Routes.NOTIFICATION_SETTINGS) }
+                    GroupDivider()
+                    SettingsRow("Appearance", Icons.Sun, appearanceLabel(a.settings.appearance)) { appearanceOpen = true }
                     GroupDivider()
                     SettingsRow("Language and region", Icons.Globe, a.settings.language) { nav.go(Routes.LANGUAGE) }
                 }
@@ -244,6 +251,41 @@ fun AccountScreen() {
                 }
             }
         }
+    }
+}
+
+private fun appearanceLabel(a: Appearance) = when (a) { Appearance.LIGHT -> "Light"; Appearance.DARK -> "Dark"; Appearance.SYSTEM -> "Same as phone" }
+
+/** Light, dark or follow the phone. The change applies straight away, so the sheet itself switches theme. */
+@Composable
+private fun androidx.compose.foundation.layout.BoxScope.AppearanceSheet(visible: Boolean, current: Appearance, onChoose: (Appearance) -> Unit, onDismiss: () -> Unit) {
+    val lightBg = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
+    val darkBg = androidx.compose.ui.graphics.Color(0xFF0A1412)
+    Sheet(visible, onDismiss) {
+        SheetHeader("Appearance", onDismiss, "Choose how Arro looks on this phone.")
+        Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            listOf(
+                Triple(Appearance.LIGHT, "Light", "Bright screens, the classic Arro look"),
+                Triple(Appearance.DARK, "Dark", "Easier on the eyes at night"),
+                Triple(Appearance.SYSTEM, "Same as phone", "Switches with your phone's dark mode"),
+            ).forEach { (option, title, sub) ->
+                ListRow(title, subtitle = sub, selected = option == current, minHeight = 64.dp,
+                    leading = {
+                        val fill = when (option) {
+                            Appearance.LIGHT -> Brush.linearGradient(listOf(lightBg, lightBg))
+                            Appearance.DARK -> Brush.linearGradient(listOf(darkBg, darkBg))
+                            Appearance.SYSTEM -> Brush.horizontalGradient(0f to lightBg, 0.5f to lightBg, 0.5f to darkBg, 1f to darkBg)
+                        }
+                        Box(
+                            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(fill).border(1.5.dp, C.Line, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) { Box(Modifier.size(12.dp).background(C.Lime, CircleShape)) }
+                    },
+                    trailing = { Radio(option == current) },
+                    onClick = { onChoose(option) })
+            }
+        }
+        ArroButton("Done", onDismiss, Modifier.padding(top = 16.dp), style = Btn.Line)
     }
 }
 
@@ -421,6 +463,8 @@ fun SecurityScreen() {
             ToggleRow("Confirm new devices by SMS", "A code to ${Text.maskPhoneShort(a.phone)}", a.security.confirmNewDevices) { v -> b.updateSecurity { it.copy(confirmNewDevices = v) } }
             GroupDivider()
             ToggleRow("Passcode for transfers over £1,000", "Even when biometric unlock is on", a.security.passcodeOverThreshold) { v -> b.updateSecurity { it.copy(passcodeOverThreshold = v) } }
+            GroupDivider()
+            ToggleRow("Show balance on home screen widgets", "Your GBP balance and recent recipients. Anyone who can see your home screen will see them", a.settings.widgetBalance) { v -> b.updateSettings { it.copy(widgetBalance = v) } }
             GroupDivider()
             ListRow("Change passcode", flat = true, minHeight = 52.dp,
                 subtitle = a.security.passcodeChangedAt.takeIf { it > 0 }?.let { "Changed ${Text.relativeDay(it, now)}" }, trailing = { Chevron() }, onClick = { passcodeSheet = true })
@@ -717,13 +761,6 @@ fun LanguageScreen() {
             GroupDivider()
             ListRow("Date format", flat = true, minHeight = 52.dp, trailing = { Cap(Text.numericDate(b.now)) })
         }
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Appearance")
-            Segmented(listOf("System", "Light", "Dark"), when (s.appearance) { Appearance.SYSTEM -> 0; Appearance.LIGHT -> 1; Appearance.DARK -> 2 }, { i ->
-                b.updateSettings { it.copy(appearance = Appearance.entries[i]) }
-            })
-            if (s.appearance != Appearance.LIGHT) Cap("A dark theme is on the way. Until then Arro stays light so amounts are always easy to read.", size = 12f)
-        }
     }
 }
 
@@ -740,7 +777,7 @@ fun ReferScreen() {
     val code = a.referral.code.ifBlank { (a.profile.firstNames.uppercase().take(4).ifBlank { "ARRO" }) + "-" + a.id.take(4).uppercase() }
     val link = "https://arro.app/i/$code"
     ArroScreen(
-        background = C.Ink,
+        background = C.Night,
         topBar = { TopBar(onBack = { nav.back() }) },
         footer = {
             ArroButton("Share invite link", {
@@ -766,7 +803,7 @@ fun ReferScreen() {
         ) {
             Column(Modifier.weight(1f)) {
                 Cap("Your invite code", color = C.DarkCap, size = 12f)
-                Txt(code, T.Big22.copy(letterSpacing = 1.3.sp), Modifier.padding(top = 2.dp), color = C.White)
+                Txt(code, T.Big22.copy(letterSpacing = 1.3.sp), Modifier.padding(top = 2.dp), color = C.OnNight)
             }
             ArroButton("Copy", { Share.copy(context, "Arro invite code", code); banner.show("Invite code copied", kind = BannerKind.Success) },
                 style = Btn.LineOnDark, size = BtnSize.S, icon = Icons.Copy)
@@ -877,6 +914,12 @@ fun DemoScreen() {
     var outagePicker by remember { mutableStateOf(false) }
     var erase by remember { mutableStateOf(false) }
     val providers = Catalog.providers.filter { it.id != "arro" }
+    val scope = rememberCoroutineScope()
+    val offerCall = rememberCall()
+    val now = nowTicker()
+    val offerCur = b.relevantCurrency(a)
+    val runningLock = a?.anyOfferLock(now)
+    val waitingFriend = a?.referral?.friends?.firstOrNull { it.status == app.arro.core.FriendStatus.SIGNED_UP }
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back() }, title = "Demo controls") },
         gap = 14.dp,
@@ -898,6 +941,46 @@ fun DemoScreen() {
             ListRow("Provider outage", flat = true, minHeight = 58.dp, subtitle = providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: "None", trailing = { Chevron() }, onClick = { outagePicker = true })
             GroupDivider()
             ToggleRow("Ask for a retake on the next ID check", "Tests the rejected-photo path", demo.rejectNextKyc) { v -> b.setDemo { it.copy(rejectNextKyc = v) } }
+        }
+        Over("Lock Rate and rewards")
+        Group {
+            ToggleRow("Random rate offers", "Offers appear 25 to 90 seconds after unlocking, then every few minutes while the app is open", demo.rateOffers) { v -> b.setDemo { it.copy(rateOffers = v) } }
+            GroupDivider()
+            ListRow("Show a rate offer now", flat = true, minHeight = 56.dp, subtitle = if (offerCall.busy.value) "Getting live rates…" else "GBP → ${offerCur.code}, open for 3 minutes",
+                leading = { Tile(Icons.Bolt, TileStyle.Lime, 36.dp, iconSize = 18.dp) }, enabled = a?.verified == true && !offerCall.busy.value,
+                onClick = {
+                    scope.launchCall(offerCall, onError = { e -> banner.show("No offer", e.message ?: "", BannerKind.Error); true }) {
+                        b.demoOfferNow(); nav.go(Routes.lockRate(offerCur.code))
+                    }
+                })
+            GroupDivider()
+            ListRow("End my locked rate now", flat = true, minHeight = 56.dp,
+                subtitle = runningLock?.let { "${it.to} locked until ${Text.time(it.expiresAt)}" } ?: "No locked rate running",
+                leading = { Tile(Icons.Clock, size = 36.dp, iconSize = 18.dp) }, enabled = runningLock != null,
+                onClick = { b.demoEndLocks() })
+            GroupDivider()
+            listOf(1.0, -1.0).forEachIndexed { i, pct ->
+                if (i > 0) GroupDivider()
+                ListRow("Move the market ${if (pct > 0) "up" else "down"} 1%", flat = true, minHeight = 56.dp,
+                    subtitle = "GBP → ${offerCur.code} mid-market rate, until the next live update",
+                    leading = { Tile(Icons.Trending, size = 36.dp, iconSize = 18.dp) },
+                    onClick = {
+                        b.demoMoveMarket(offerCur, pct)
+                        banner.show("Market moved ${if (pct > 0) "up" else "down"} 1%", "Live rate now ${Money.rateLine(Currency.GBP, offerCur, b.customerRate(offerCur))}. Locked rates don't change.")
+                    })
+            }
+            GroupDivider()
+            ListRow("A friend joins with my code", flat = true, minHeight = 56.dp, subtitle = "Adds a sample friend to Referrals",
+                leading = { Tile(Icons.Users, size = 36.dp, iconSize = 18.dp) }, enabled = a != null,
+                onClick = { val f = b.demoFriendJoins(); banner.show("${f.name} joined", "Sample data. Their first £100+ transfer earns you £10.", BannerKind.Success) })
+            GroupDivider()
+            ListRow("Their first £120 transfer is delivered", flat = true, minHeight = 56.dp,
+                subtitle = waitingFriend?.let { "${it.name} · pays £10 into your GBP balance" } ?: "No friend waiting",
+                leading = { Tile(Icons.Gift, size = 36.dp, iconSize = 18.dp) }, enabled = waitingFriend != null,
+                onClick = {
+                    val paid = waitingFriend?.let { b.referralTransferDelivered(it.id, 12_000) } ?: 0
+                    if (paid == 0L) banner.show("No reward paid", "Verify your identity first, or the yearly limit of ${app.arro.core.Loyalty.REFERRAL_YEARLY_CAP} rewards was reached.", BannerKind.Info)
+                })
         }
         Group {
             ListRow("Finish everything that's waiting", flat = true, minHeight = 56.dp, subtitle = "Deliver transfers, refunds and ID checks now",
@@ -926,6 +1009,7 @@ fun DemoScreen() {
                 "Security hold" to "Any transfer over £1,000",
                 "Card declined by the bank" to "Card number ending 0002",
                 "Credit card (1.75% fee)" to "Mastercard starting 51 to 53",
+                "Rate offers" to "Signed in and verified, with the app open. Or use Show a rate offer now",
             ).forEach { (k, v) ->
                 Column {
                     Txt(k, T.Body14.copy(fontWeight = FontWeight.Medium))

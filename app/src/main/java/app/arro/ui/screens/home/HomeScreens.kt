@@ -107,6 +107,7 @@ import app.arro.ui.components.TopBar
 import app.arro.ui.components.TrailingValue
 import app.arro.ui.components.Txt
 import app.arro.ui.components.tap
+import app.arro.ui.screens.rates.RateOfferCard
 import app.arro.ui.screens.send.startSend
 import app.arro.ui.screens.system.HomeSkeleton
 import app.arro.ui.screens.system.OfflineState
@@ -174,6 +175,7 @@ fun HomeScreen() {
                     ),
                     Modifier.padding(start = 20.dp, end = 20.dp, top = if (firstRun) 22.dp else 24.dp),
                 )
+                RateOfferCard(a, Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp))
                 if (firstRun) FirstRunBody(a) else DashboardBody(a, hidden, now)
             }
         }
@@ -198,6 +200,7 @@ private fun HomeHeader(a: Account, firstRun: Boolean) {
             if (!firstRun) RoundIcon(Icons.Search, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = "Search and help")
             RoundIcon(Icons.Bell, { nav.go(Routes.NOTIFICATIONS) }, style = IconBtn.Soft, badge = a.unreadCount > 0,
                 description = if (a.unreadCount > 0) "Notifications, ${a.unreadCount} unread" else "Notifications")
+            RoundIcon(Icons.Award, { nav.go(Routes.LOYALTY) }, style = IconBtn.Soft, description = "Loyalty and rewards, ${Money.points(a.pointsBalance)} points")
         }
     }
 }
@@ -239,11 +242,11 @@ private fun DashboardBody(a: Account, hidden: Boolean, now: Long) {
     Panel(Modifier.padding(start = 20.dp, end = 20.dp, top = 26.dp), PanelKind.Dark, gap = 12.dp, onClick = { nav.go(Routes.INSIGHTS) }) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Over("${Text.monthName(now)} so far", color = C.Lime)
-            Ic(Icons.ChevronRight, tint = C.White)
+            Ic(Icons.ChevronRight, tint = C.OnNight)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
-                Txt(Money.format(thisMonth.totalMinor, Currency.GBP), T.Big28, color = C.White)
+                Txt(Money.format(thisMonth.totalMinor, Currency.GBP), T.Big28, color = C.OnNight)
                 Cap("sent to $people ${if (people == 1) "person" else "people"}", Modifier.padding(top = 2.dp), color = C.DarkCap)
                 val diff = thisMonth.totalMinor - previous.totalMinor
                 Pill(
@@ -290,7 +293,7 @@ private fun MonthBars(values: List<Long>, firstLabel: String, lastLabel: String)
         val bw = 16.dp.toPx(); val gap = 6.dp.toPx(); val maxH = 64.dp.toPx(); val base = 70.dp.toPx()
         values.forEachIndexed { i, v ->
             val h = (v.toFloat() / max * maxH).coerceAtLeast(4.dp.toPx())
-            drawRoundRect(if (i == values.lastIndex) C.Lime else C.Forest, Offset(2.dp.toPx() + i * (bw + gap), base - h), Size(bw, h), CornerRadius(4.dp.toPx()))
+            drawRoundRect(if (i == values.lastIndex) C.Lime else C.ForestFixed, Offset(2.dp.toPx() + i * (bw + gap), base - h), Size(bw, h), CornerRadius(4.dp.toPx()))
         }
         val paint = android.graphics.Paint().apply { color = C.DarkCap.toArgb(); textSize = 8.dp.toPx(); textAlign = android.graphics.Paint.Align.CENTER; isAntiAlias = true }
         drawContext.canvas.nativeCanvas.drawText(firstLabel, 2.dp.toPx() + bw / 2, size.height, paint)
@@ -586,7 +589,7 @@ private fun InsightBars(bars: List<Pair<String, Long>>) {
             val last = i == n - 1
             val h = (v.toFloat() / max * maxH).coerceAtLeast(4.dp.toPx())
             val x = 2.dp.toPx() + i * (bw + gap)
-            drawRoundRect(if (last) C.Ink else Color(0xFFC6EBA6), Offset(x, base - h), Size(bw, h), CornerRadius(5.dp.toPx()))
+            drawRoundRect(if (last) C.Ink else if (C.dark) Color(0xFF2E5A2A) else Color(0xFFC6EBA6), Offset(x, base - h), Size(bw, h), CornerRadius(5.dp.toPx()))
             paint.color = (if (last) C.Ink else C.Forest).toArgb()
             paint.isFakeBoldText = last
             drawContext.canvas.nativeCanvas.drawText(label, x + bw / 2, size.height - 2.dp.toPx(), paint)

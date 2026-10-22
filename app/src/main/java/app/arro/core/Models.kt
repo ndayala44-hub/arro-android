@@ -22,6 +22,8 @@ data class DemoSettings(
     val outageProviderId: String = "",
     /** Force the next identity check to ask for a retake. */
     val rejectNextKyc: Boolean = false,
+    /** Show Lock Rate offers at random moments while the app is open. */
+    val rateOffers: Boolean = true,
 )
 
 @Serializable
@@ -33,6 +35,8 @@ data class RatesSnapshot(
     /** The previous day's rates, used for 24-hour change. */
     val previous: Map<String, Double> = emptyMap(),
     val previousAt: Long = 0,
+    /** Set when a demo control nudged these rates; the next live refresh replaces them. */
+    val demoMoved: Boolean = false,
 )
 
 @Serializable
@@ -72,6 +76,16 @@ data class Account(
     val firstTransferFree: Boolean = true,
     val setupDismissed: Boolean = false,
     val demo: Boolean = false,
+    /** Rate locks, newest first; the active one (if any) is applied to the next transfer in that currency. */
+    val rateLocks: List<RateLock> = emptyList(),
+    /** A time-limited offer to lock a better rate. */
+    val rateOffer: RateOffer? = null,
+    /** Arro Rewards points ledger, newest first. The balance is the sum. */
+    val points: List<PointsEntry> = emptyList(),
+    /** Fee credit from redeemed points, taken off the next transfer fees. */
+    val feeCreditMinor: Long = 0,
+    /** Data version for Arro Rewards; older saved accounts are backfilled once. */
+    val loyaltyVersion: Int = 0,
 ) {
     val displayName: String get() = profile.displayName.ifBlank { "there" }
     val firstName: String get() = profile.firstNames.split(" ").firstOrNull()?.takeIf { it.isNotBlank() } ?: "there"
@@ -83,6 +97,12 @@ data class Account(
     val activeMethods: List<PaymentMethod> get() = paymentMethods.filter { it.status == MethodStatus.ACTIVE }
     val unreadCount: Int get() = notifications.count { !it.read }
     val verified: Boolean get() = kyc.status == KycStatus.APPROVED
+    val pointsBalance: Int get() = points.sumOf { it.points }
+    fun activeLock(to: String, now: Long): RateLock? = rateLocks.firstOrNull { it.to == to && it.activeAt(now) }
+    /** The locked offer rate for [to], if one is running (quote holds are not shown as locks outside the send flow). */
+    fun offerLock(to: String, now: Long): RateLock? = activeLock(to, now)?.takeIf { it.kind == LockKind.OFFER }
+    fun anyOfferLock(now: Long): RateLock? = rateLocks.firstOrNull { it.kind == LockKind.OFFER && it.activeAt(now) }
+    fun liveOffer(now: Long): RateOffer? = rateOffer?.takeIf { it.liveAt(now) }
 }
 
 @Serializable
@@ -286,7 +306,13 @@ data class Transfer(
     val willHold: Boolean = false,
     val willFail: Boolean = false,
     val repeatMonthly: Boolean = false,
+    /** The rate lock this transfer used, if any. */
+    val rateLockId: String = "",
+    /** Points credit taken off the Arro fee. */
+    val pointsDiscountMinor: Long = 0,
 ) {
+    /** Everything charged on top of the amount sent: Arro fee less points credit, plus any card fee. */
+    val chargesMinor: Long get() = feeMinor - pointsDiscountMinor + fundingFeeMinor
     val fromCur: Currency get() = Currency.of(from)
     val toCur: Currency get() = Currency.of(to)
     val providerName: String get() = Catalog.providerName(providerId)
@@ -409,6 +435,8 @@ data class Settings(
     val appearance: Appearance = Appearance.LIGHT,
     val analytics: Boolean = true,
     val marketing: Boolean = false,
+    /** Show the balance on home screen widgets. Off by default: widgets can be seen without unlocking Arro. */
+    val widgetBalance: Boolean = false,
 )
 
 @Serializable
@@ -420,7 +448,92 @@ data class SecuritySettings(
 )
 
 @Serializable
-data class Referral(val code: String = "", val friendsJoined: Int = 0, val earnedMinor: Long = 0)
+data class Referral(
+    val code: String = "",
+    val friendsJoined: Int = 0,
+    /** Referral rewards paid into the GBP balance. */
+    val earnedMinor: Long = 0,
+    val friends: List<ReferredFriend> = emptyList(),
+)
+
+@Serializable
+enum class FriendStatus { SIGNED_UP, QUALIFIED }
+
+/**
+ * Someone who joined with this account's invite code. [sample] marks demo data, which the app labels as such.
+ * [qualifyingMinor] is the friend's first transfer of £100 or more; [rewardMinor] is what it paid (0 over the yearly cap).
+ */
+@Serializable
+data class ReferredFriend(
+    val id: String,
+    val name: String,
+    val status: FriendStatus,
+    val joinedAt: Long,
+    val qualifyingMinor: Long = 0,
+    val qualifiedAt: Long = 0,
+    val rewardMinor: Long = 0,
+    val sample: Boolean = false,
+)
+
+@Serializable
+enum class PointsKind { TRANSFER, BONUS, REDEEMED }
+
+/** One line of the points ledger. [ref] ties earned points to a transfer so they are never counted twice. */
+@Serializable
+data class PointsEntry(
+    val id: String,
+    val kind: PointsKind,
+    val points: Int,
+    val ref: String,
+    val title: String,
+    val subtitle: String,
+    val createdAt: Long,
+)
+
+/** A short offer to lock a better-than-usual rate. Offers in this build are demo promotions. */
+@Serializable
+data class RateOffer(
+    val id: String,
+    val to: String,
+    val rate: Double,
+    val mid: Double,
+    /** Today's normal customer rate when the offer was made, for comparison. */
+    val standardRate: Double,
+    val createdAt: Long,
+    val expiresAt: Long,
+    val lockMinutes: Int,
+    val demo: Boolean = true,
+) {
+    fun liveAt(now: Long) = now < expiresAt
+}
+
+/**
+ * Why a rate is guaranteed. [QUOTE] is the 30-minute hold every transfer quote gets on the amount screen;
+ * [OFFER] is a rate offer the person chose to lock for a few minutes.
+ */
+@Serializable
+enum class LockKind { QUOTE, OFFER }
+
+/** A rate held on the server for one transfer to [to] until [expiresAt]. Transfers are checked against it. */
+@Serializable
+data class RateLock(
+    val id: String,
+    val to: String,
+    val rate: Double,
+    val mid: Double,
+    val createdAt: Long,
+    val expiresAt: Long,
+    val kind: LockKind = LockKind.QUOTE,
+    val offerId: String = "",
+    /** Set when a transfer uses the lock; a lock is used once. */
+    val transferId: String = "",
+    val releasedAt: Long = 0,
+    /** The app has told the person this lock ran out unused. */
+    val endNoticed: Boolean = false,
+) {
+    fun activeAt(now: Long) = transferId.isEmpty() && releasedAt == 0L && now < expiresAt
+    fun expiredUnused(now: Long) = transferId.isEmpty() && releasedAt == 0L && now >= expiresAt
+}
 
 /** Price of a transfer, valid until [lockedUntil]. */
 data class Quote(
@@ -436,9 +549,14 @@ data class Quote(
     val lockedUntil: Long,
     val payoutType: PayoutType,
     val feeWaived: Boolean,
+    /** Set when the rate comes from an active rate lock. */
+    val lockId: String = "",
+    /** Points credit taken off the Arro fee. */
+    val discountMinor: Long = 0,
 ) {
-    val totalMinor: Long get() = sendMinor + feeMinor + fundingFeeMinor
-    val totalCostMinor: Long get() = feeMinor + fundingFeeMinor + marginMinor
+    val totalMinor: Long get() = sendMinor + feeMinor - discountMinor + fundingFeeMinor
+    val totalCostMinor: Long get() = feeMinor - discountMinor + fundingFeeMinor + marginMinor
+    val locked: Boolean get() = lockId.isNotEmpty()
     val marginPercent: Double get() = if (mid == 0.0) 0.0 else (mid - rate) / mid * 100
 }
 
@@ -457,6 +575,10 @@ sealed class BackendEvent {
     data class KycDecided(val approved: Boolean) : BackendEvent()
     data class ChatReply(val text: String) : BackendEvent()
     data class Info(val title: String, val body: String) : BackendEvent()
+    /** A new Lock Rate offer for [to]. */
+    data class OfferAvailable(val to: String, val title: String, val body: String) : BackendEvent()
+    /** A rate lock for [to] ran out without being used. */
+    data class LockEnded(val to: String, val title: String, val body: String) : BackendEvent()
 }
 
 /** Thrown by the simulated API for anything the user can fix. [message] is shown as is. */

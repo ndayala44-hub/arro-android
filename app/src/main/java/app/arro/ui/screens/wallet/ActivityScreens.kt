@@ -250,9 +250,15 @@ fun TransferDetailScreen(id: String) {
         Panel(gap = 10.dp) {
             KV("You sent", Money.format(t.sendMinor, t.fromCur))
             KV("Arro fee", if (t.feeMinor == 0L) "Free · first transfer" else Money.format(t.feeMinor, t.fromCur), valueColor = if (t.feeMinor == 0L) C.Ok else C.Ink)
+            if (t.pointsDiscountMinor > 0) KV("Points credit", "− " + Money.format(t.pointsDiscountMinor, t.fromCur), valueColor = C.Ok)
             if (t.fundingFeeMinor > 0) KV("Card fee", Money.format(t.fundingFeeMinor, t.fromCur))
             KV("Exchange rate", Money.rateLine(t.fromCur, t.toCur, t.rate))
+            if (a.rateLocks.any { it.id == t.rateLockId && it.kind == app.arro.core.LockKind.OFFER }) KV("Rate", "Locked offer rate", valueColor = C.Ok)
             KV("Total paid", Money.format(t.totalMinor, t.fromCur), strong = true)
+            val earned = a.points.firstOrNull { it.ref == app.arro.core.Loyalty.earnedRef(t.id) }?.points
+            val toCome = if (t.isOpen) app.arro.core.Loyalty.preview(t.feeMinor, t.pointsDiscountMinor) else 0
+            if (earned != null) KV("Arro Rewards", "+${Money.points(earned)} points", valueColor = C.Ok)
+            else if (toCome > 0) KV("Arro Rewards", "+${Money.points(toCome)} points on delivery")
         }
         Panel(gap = 10.dp) {
             KV("To", t.recipientName, valueColor = C.Ok)
@@ -335,6 +341,7 @@ fun ReceiptScreen(id: String) {
         add("Delivered to" to "${t.providerName} ${if (t.payoutType == PayoutType.MOBILE_MONEY || t.payoutType == PayoutType.EWALLET) Text.formatPhone(t.payoutAccount) else t.payoutAccount}")
         add("Amount sent" to Money.format(t.sendMinor, t.fromCur))
         add("Arro fee" to Money.format(t.feeMinor, t.fromCur))
+        if (t.pointsDiscountMinor > 0) add("Points credit" to "− " + Money.format(t.pointsDiscountMinor, t.fromCur))
         if (t.fundingFeeMinor > 0) add("Card fee" to Money.format(t.fundingFeeMinor, t.fromCur))
         add("Total paid" to Money.format(t.totalMinor, t.fromCur))
         add("Exchange rate" to Money.rateLine(t.fromCur, t.toCur, t.rate))
@@ -344,7 +351,7 @@ fun ReceiptScreen(id: String) {
         add("Reference" to t.reference)
     }
     ArroScreen(
-        background = Color(0xFFE9EFEB),
+        background = if (C.dark) Color(0xFF050C0A) else Color(0xFFE9EFEB),
         topBar = { TopBar(onBack = { nav.back() }, title = "Receipt · PDF") },
         footer = {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

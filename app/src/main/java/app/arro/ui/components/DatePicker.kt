@@ -133,15 +133,15 @@ private fun HeaderChip(text: String, active: Boolean, description: String, onCli
         Modifier
             .height(40.dp)
             .clip(RoundedCornerShape(999.dp))
-            .background(if (active) C.Ink else C.White, RoundedCornerShape(999.dp))
-            .border(1.5.dp, if (active) C.Ink else C.Line, RoundedCornerShape(999.dp))
+            .background(if (active) C.Primary else C.White, RoundedCornerShape(999.dp))
+            .border(1.5.dp, if (active) C.Primary else C.Line, RoundedCornerShape(999.dp))
             .clickable(role = Role.Button, onClickLabel = description, onClick = onClick)
             .padding(start = 14.dp, end = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Txt(text, T.Chip.copy(fontWeight = FontWeight.SemiBold), color = if (active) C.White else C.Ink)
-        Ic(Icons.ChevronDown, Modifier.rotate(if (active) 180f else 0f), size = 16.dp, tint = if (active) C.Lime else C.Slate)
+        Txt(text, T.Chip.copy(fontWeight = FontWeight.SemiBold), color = if (active) C.OnPrimary else C.Ink)
+        Ic(Icons.ChevronDown, Modifier.rotate(if (active) 180f else 0f), size = 16.dp, tint = if (active) C.PrimaryAccent else C.Slate)
     }
 }
 
@@ -169,13 +169,13 @@ private fun DayGrid(view: YearMonth, pending: LocalDate?, min: LocalDate, max: L
                                 Modifier
                                     .size(40.dp)
                                     .clip(CircleShape)
-                                    .background(if (on) C.Ink else Color.Transparent, CircleShape)
+                                    .background(if (on) C.Primary else Color.Transparent, CircleShape)
                                     .then(if (allowed) Modifier.clickable(role = Role.Button) { onDay(date) } else Modifier)
                                     .semantics { contentDescription = longDate(date) + if (allowed) "" else ", not available" },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Txt(n.toString(), T.Body.copy(fontFeatureSettings = "tnum", fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal),
-                                    color = when { on -> C.White; allowed -> C.Ink; else -> C.Control })
+                                    color = when { on -> C.OnPrimary; allowed -> C.Ink; else -> C.Control })
                             }
                         }
                     }
@@ -227,11 +227,11 @@ private fun GridCell(text: String, on: Boolean, enabled: Boolean, modifier: Modi
         modifier
             .height(44.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(if (on) C.Ink else C.Field, RoundedCornerShape(14.dp))
+            .background(if (on) C.Primary else C.Field, RoundedCornerShape(14.dp))
             .then(if (enabled) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         Txt(text, T.Body14.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"),
-            color = when { on -> C.White; enabled -> C.Ink; else -> C.Control })
+            color = when { on -> C.OnPrimary; enabled -> C.Ink; else -> C.Control })
     }
 }

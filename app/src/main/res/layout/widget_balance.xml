@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Balance and Quick Send, 2 x 2 and narrower. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:clipToOutline="true"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:src="@drawable/brand_mark" />
+
+        <TextView
+            android:id="@+id/balance_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:fontFamily="@font/outfit_medium"
+            android:maxLines="1"
+            android:text="@string/widget_balance_label_gbp"
+            android:textColor="@color/widget_slate"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/balance_amount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:ellipsize="end"
+        android:fontFamily="@font/outfit_bold"
+        android:maxLines="1"
+        android:text="@string/widget_sample_balance"
+        android:textColor="@color/widget_ink"
+        android:textSize="24sp" />
+
+    <TextView
+        android:id="@+id/balance_sub"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="@font/outfit_regular"
+        android:maxLines="2"
+        android:text="@string/widget_sample_balance_sub"
+        android:textColor="@color/widget_slate"
+        android:textSize="11sp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="8dp" />
+
+    <LinearLayout
+        android:id="@+id/send_button"
+        android:layout_width="match_parent"
+        android:layout_height="38dp"
+        android:background="@drawable/widget_button"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="12dp">
+
+        <ImageView
+            android:id="@+id/send_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_arrow_up_right"
+            android:tint="@color/widget_accent" />
+
+        <TextView
+            android:id="@+id/send_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:fontFamily="@font/outfit_semibold"
+            android:maxLines="1"
+            android:text="@string/widget_send_money"
+            android:textColor="@color/widget_on_primary"
+            android:textSize="14sp" />
+    </LinearLayout>
+</LinearLayout>

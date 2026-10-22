@@ -13,6 +13,7 @@ import app.arro.ui.screens.account.AccountScreen
 import app.arro.ui.screens.account.DemoScreen
 import app.arro.ui.screens.account.LanguageScreen
 import app.arro.ui.screens.account.LegalScreen
+import app.arro.ui.screens.account.LoyaltyScreen
 import app.arro.ui.screens.account.ManageScreen
 import app.arro.ui.screens.account.NotificationSettingsScreen
 import app.arro.ui.screens.account.PersonalScreen
@@ -50,6 +51,7 @@ import app.arro.ui.screens.payments.PaymentMethodsScreen
 import app.arro.ui.screens.payments.ScanCardScreen
 import app.arro.ui.screens.rates.RateAlertScreen
 import app.arro.ui.screens.rates.RateCompareScreen
+import app.arro.ui.screens.rates.LockRateScreen
 import app.arro.ui.screens.rates.RateDetailScreen
 import app.arro.ui.screens.rates.RatesScreen
 import app.arro.ui.screens.recipients.AddRecipientScreen
@@ -169,6 +171,21 @@ object Routes {
     fun rateAlert(cur: String) = "rate_alert/$cur"
     const val RATE_COMPARE = "rate_compare/{cur}"
     fun rateCompare(cur: String = "RWF") = "rate_compare/$cur"
+    const val LOCK_RATE = "lock_rate/{cur}"
+    fun lockRate(cur: String) = "lock_rate/$cur"
+    const val LOYALTY = "loyalty"
+
+    /** Opened from the home screen widget: starts a transfer once the app is unlocked (not a screen of its own). */
+    const val QUICK_SEND = "quicksend"
+    fun quickSend(recipientId: String) = "quicksend:$recipientId"
+    /** Starts a transfer to a country, from the widget's locked rate. */
+    const val QUICK_SEND_TO = "quicksend_to"
+    fun quickSendTo(country: String) = "$QUICK_SEND_TO:$country"
+
+    /** Routes another app or a widget may ask MainActivity to open. Everything else in an intent is ignored. */
+    fun isDeepLink(route: String): Boolean =
+        route == CHAT || route == LOYALTY || route == QUICK_SEND || route.startsWith("$QUICK_SEND:") || route.startsWith("$QUICK_SEND_TO:") ||
+            route.startsWith("lock_rate/") || route.startsWith("rate/") || route.startsWith("track/")
 
     const val HELP = "help"
     const val ARTICLE = "article/{id}"
@@ -280,6 +297,7 @@ fun ArroNavHost(nav: NavHostController) {
         screen(Routes.RATE) { RateDetailScreen(it.arg("cur")) }
         screen(Routes.RATE_ALERT) { RateAlertScreen(it.arg("cur")) }
         screen(Routes.RATE_COMPARE) { RateCompareScreen(it.arg("cur")) }
+        screen(Routes.LOCK_RATE) { LockRateScreen(it.arg("cur")) }
 
         screen(Routes.HELP) { HelpScreen() }
         screen(Routes.ARTICLE) { ArticleScreen(it.arg("id")) }
@@ -295,6 +313,7 @@ fun ArroNavHost(nav: NavHostController) {
         screen(Routes.NOTIFICATION_SETTINGS) { NotificationSettingsScreen() }
         screen(Routes.LANGUAGE) { LanguageScreen() }
         screen(Routes.REFER) { ReferScreen() }
+        screen(Routes.LOYALTY) { LoyaltyScreen() }
         screen(Routes.MANAGE) { ManageScreen() }
         screen(Routes.DEMO) { DemoScreen() }
         screen(Routes.LEGAL) { LegalScreen(it.arg("doc")) }

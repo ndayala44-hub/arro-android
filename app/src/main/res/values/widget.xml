@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home screen widget colours: the app's light tokens. values-night has the dark ones. -->
+<resources>
+    <color name="widget_bg">#FFFFFF</color>
+    <color name="widget_ink">#042D29</color>
+    <color name="widget_slate">#5A6366</color>
+    <color name="widget_warn">#9A4507</color>
+    <color name="widget_ok">#1A7340</color>
+    <color name="widget_line">#E2EBE5</color>
+    <color name="widget_tint">#F4FBEE</color>
+    <color name="widget_soft">#EFF4F0</color>
+    <color name="widget_primary">#042D29</color>
+    <color name="widget_on_primary">#FFFFFF</color>
+    <color name="widget_accent">#B0FE78</color>
+    <color name="widget_lime">#B0FE78</color>
+    <color name="widget_on_lime">#042D29</color>
+    <color name="widget_ok_bg">#E3F5E9</color>
+    <color name="widget_lime_bg">#D4FFB4</color>
+    <dimen name="widget_radius">24dp</dimen>
+    <dimen name="widget_inner_radius">16dp</dimen>
+</resources>

@@ -149,11 +149,11 @@ fun SplashScreen() {
         )
     }
     app.arro.ui.components.DarkSystemBars()
-    Box(Modifier.fillMaxSize().background(C.Ink), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(C.Night), contentAlignment = Alignment.Center) {
         Box(Modifier.offset(y = (-40).dp).size(520.dp).background(haloBrush(alpha = 0.18f, stop = 0.62f), CircleShape))
         Column(Modifier.offset(y = (-60).dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
             BrandTile(104.dp)
-            Wordmark(52f, C.White)
+            Wordmark(52f, C.OnNight)
             Cap("Money home, in minutes.", color = C.DarkCap, size = 15f)
         }
         Column(
@@ -161,7 +161,7 @@ fun SplashScreen() {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            ProgressBar(progress.value, Modifier.width(120.dp), track = C.White.copy(alpha = 0.14f), fill = C.Lime, height = 4.dp)
+            ProgressBar(progress.value, Modifier.width(120.dp), track = C.OnNight.copy(alpha = 0.14f), fill = C.Lime, height = 4.dp)
             Cap("Securing your connection", color = C.DarkCap, size = 12f)
         }
     }
@@ -603,7 +603,7 @@ fun UnlockScreen(expired: Boolean) {
         }
     }
     app.arro.ui.components.DarkSystemBars()
-    Box(Modifier.fillMaxSize().background(C.Ink).tap { }) {
+    Box(Modifier.fillMaxSize().background(C.Night).tap { }) {
         if (!showPad) {
             // 12.08 Session ended
             Box(Modifier.align(Alignment.TopCenter).offset(y = 90.dp).size(420.dp).background(Brush.radialGradient(listOf(Color(0x2E6CC5F4), Color(0x006CC5F4))), CircleShape))
@@ -614,18 +614,18 @@ fun UnlockScreen(expired: Boolean) {
                 Spacer(Modifier.statusBarsPadding().height(100.dp))
                 Illustration(Art.Lock, 240.dp, description = "A glass padlock")
                 Column(Modifier.padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ScreenTitle("Session ended", size = TitleSize.XL, color = C.White, align = TextAlign.Center)
+                    ScreenTitle("Session ended", size = TitleSize.XL, color = C.OnNight, align = TextAlign.Center)
                     Txt("For your security we locked Arro after 5 minutes without activity. Nothing was lost.", T.Lede, color = C.DarkCap, align = TextAlign.Center)
                 }
                 val open = account.transfers.firstOrNull { it.isOpen }
                 Row(
                     Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp).fillMaxWidth()
-                        .background(C.White.copy(alpha = 0.06f), RoundedCornerShape(18.dp))
+                        .background(C.OnNight.copy(alpha = 0.06f), RoundedCornerShape(18.dp))
                         .padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Ic(Icons.Check, tint = C.Lime)
-                    Txt(if (open != null) "Your transfer to ${open.firstName} is still on its way." else "Your balances and transfers are safe.", T.Body14, color = C.White)
+                    Txt(if (open != null) "Your transfer to ${open.firstName} is still on its way." else "Your balances and transfers are safe.", T.Body14, color = C.OnNight)
                 }
                 Spacer(Modifier.weight(1f))
                 Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -638,8 +638,8 @@ fun UnlockScreen(expired: Boolean) {
             // 1.11 Quick unlock
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = MaxContentWidth).fillMaxSize()) {
                 Column(Modifier.fillMaxWidth().statusBarsPadding().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Box(Modifier.size(64.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Txt(account.initials, T.H2.copy(fontSize = 22.sp)) }
-                    Txt("Welcome back, ${account.firstName}", T.H2.copy(fontSize = 22.sp), color = C.White)
+                    Box(Modifier.size(64.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Txt(account.initials, T.H2.copy(fontSize = 22.sp), color = C.OnLime) }
+                    Txt("Welcome back, ${account.firstName}", T.H2.copy(fontSize = 22.sp), color = C.OnNight)
                     Cap(error ?: "Enter your passcode", color = if (error != null) Color(0xFFFF9B8F) else C.DarkCap)
                     val dx = remember { Animatable(0f) }
                     LaunchedEffect(shake) { if (shake > 0) { for (x in listOf(14f, -12f, 9f, -6f, 3f, 0f)) dx.animateTo(x, tween(45)) } }
@@ -654,7 +654,7 @@ fun UnlockScreen(expired: Boolean) {
                     bottomLeft = if (bio) ({ Box(Modifier.size(58.dp).tap { promptBio() }, contentAlignment = Alignment.Center) { Ic(Icons.FaceId, size = 28.dp, tint = C.Lime, contentDescription = "Use $BIO_NAME") } }) else null,
                 )
                 Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 28.dp, end = 28.dp, top = 20.dp, bottom = 28.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    LinkText("Forgot passcode?", { c.session.sessionExpired = false; b.logout() }, color = C.White, strong = true)
+                    LinkText("Forgot passcode?", { c.session.sessionExpired = false; b.logout() }, color = C.OnNight, strong = true)
                     LinkText("Not ${account.firstName}? Switch", { c.session.sessionExpired = false; b.logout() }, color = C.DarkCap)
                 }
             }

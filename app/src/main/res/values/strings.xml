@@ -7,4 +7,29 @@
     <string name="channel_security_desc">Sign-in and verification codes</string>
     <string name="channel_rates">Rate alerts</string>
     <string name="channel_rates_desc">When a rate you are watching is reached</string>
+    <string name="widget_balance_label">Arro balance</string>
+    <string name="widget_balance_description">Your GBP balance and a Quick Send button. The balance shows only if you turn it on in Security.</string>
+    <string name="widget_quick_send_label">Arro Quick Send</string>
+    <string name="widget_quick_send_description">Your available balance and the people you send to most. Tap someone to send to them.</string>
+    <string name="widget_available_balance">Available balance</string>
+    <string name="widget_send_again_caps">SEND AGAIN</string>
+    <string name="widget_send">Send</string>
+    <string name="widget_rate_label">Arro rate</string>
+    <string name="widget_rate_description">Today\'s rate for where you send, or a rate offer you can lock.</string>
+    <string name="widget_loading">Arro</string>
+    <string name="widget_balance_label_gbp">GBP balance</string>
+    <string name="widget_send_money">Send money</string>
+    <string name="widget_send_again">Send again</string>
+    <string name="widget_recents_hidden">Turn on “Show balance on home screen widgets” in Arro, Security, to see the people you send to here.</string>
+    <string name="widget_refresh">Refresh rate</string>
+    <string name="widget_lock_rate">Lock a rate</string>
+    <string name="widget_badge_live">Live</string>
+    <!-- Shown only in the widget picker preview. -->
+    <string name="widget_sample_balance">£2,486.35</string>
+    <string name="widget_sample_balance_sub">+2 more currencies</string>
+    <string name="widget_sample_pair">GBP → RWF</string>
+    <string name="widget_sample_rate">1,962.11</string>
+    <string name="widget_sample_unit">RWF for £1</string>
+    <string name="widget_sample_status">Updated 14:02 · not guaranteed</string>
+    <string name="widget_sample_extra">£250 sends RWF 490,527.50</string>
 </resources>

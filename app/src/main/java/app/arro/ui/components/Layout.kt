@@ -61,7 +61,7 @@ fun ArroScreen(
     overlay: (@Composable BoxScope.() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (background == C.Ink) DarkSystemBars()
+    if (background == C.Night) DarkSystemBars()
     Box(modifier.fillMaxSize().background(background)) {
         Column(
             Modifier
