@@ -218,6 +218,7 @@ object Icons {
     val Cross = R.drawable.ic_cross
     val SwapVertical = R.drawable.ic_swap_vertical
     val Calendar = R.drawable.ic_calendar
+    val Award = R.drawable.ic_award
 }
 
 /** Illustration resource ids. */

@@ -93,7 +93,21 @@ class ArroBackend(
 
     private fun load(): AppState {
         val text = runCatching { store.read() }.getOrNull() ?: return AppState()
-        return runCatching { json.decodeFromString<AppState>(text) }.getOrElse { AppState() }
+        val saved = runCatching { json.decodeFromString<AppState>(text) }.getOrElse { return AppState() }
+        return migrate(saved)
+    }
+
+    /**
+     * One-off upgrades for data saved by older versions. Every new field has a default, so old files still load; this
+     * only fills in Arro Rewards for accounts that existed before it: points for transfers already delivered (each
+     * transfer at most once) and, for the sample account only, its sample referral records.
+     */
+    private fun migrate(s: AppState): AppState {
+        val a = s.account ?: return s
+        if (a.loyaltyVersion >= LOYALTY_VERSION) return s
+        var acc = Loyalty.backfill(a, clock.now())
+        if (acc.demo && acc.referral.friends.isEmpty()) acc = acc.copy(referral = Seed.sampleReferral(acc.referral.code, clock.now()))
+        return s.copy(account = acc.copy(loyaltyVersion = LOYALTY_VERSION))
     }
 
     /** Starts persistence, the status engine and periodic rate refreshes. Call once. */
@@ -194,6 +208,7 @@ class ArroBackend(
             wallets = listOf(Wallet("GBP", 0, Ids.sortCode(), Ids.accountNumber(), main = true, openedAt = t)),
             devices = listOf(Device(Ids.id(), DEVICE_NAME, "London", t, current = true)),
             referral = Referral(code = (handle.take(4).ifBlank { "ARRO" }).uppercase() + "-" + Ids.short(4)),
+            loyaltyVersion = LOYALTY_VERSION,
             settings = Settings(news = r.marketing, marketing = r.marketing),
             security = SecuritySettings(passcodeChangedAt = t, passwordChangedAt = t),
             notifications = listOf(AppNotification(Ids.id(), NoticeKind.ACCOUNT, "Welcome to Arro",
@@ -400,19 +415,37 @@ class ArroBackend(
     fun feeFor(country: String, type: PayoutType): Long =
         if (type == PayoutType.ARRO) 0 else Catalog.country(country).option(type)?.feeMinor ?: 199
 
-    fun quote(to: Currency, sendMinor: Long, type: PayoutType, country: String, fundingId: String? = null): Quote {
+    /**
+     * Prices a transfer. When a rate is held for [to] (a quote hold or a locked offer) the quote uses it and carries
+     * its id, so [createTransfer] can check it; otherwise it uses today's live rate and isn't guaranteed.
+     * [useHeld] false prices at today's rate regardless (rate alerts that send automatically).
+     */
+    fun quote(to: Currency, sendMinor: Long, type: PayoutType, country: String, fundingId: String? = null, useHeld: Boolean = true): Quote {
         val a = _state.value.account
         val isArro = type == PayoutType.ARRO
         val target = if (isArro) Currency.GBP else to
-        val mid = if (isArro) 1.0 else midRate(target)
-        val rate = if (isArro) 1.0 else customerRate(target)
+        val lock = if (isArro || !useHeld) null else a?.activeLock(target.code, now)
+        val mid = when { isArro -> 1.0; lock != null -> lock.mid; else -> midRate(target) }
+        val rate = when { isArro -> 1.0; lock != null -> lock.rate; else -> customerRate(target) }
         val receive = Money.convert(sendMinor, Currency.GBP, target, rate)
+        val ch = charges(a, sendMinor, type, country, fundingId)
+        val margin = if (isArro || mid == 0.0) 0L else Math.round(sendMinor * (mid - rate) / mid)
+        return Quote(Currency.GBP, target, sendMinor, receive, rate, mid, ch.fee, ch.fundingFee, margin, lock?.expiresAt ?: 0L, type, ch.waived,
+            lockId = lock?.id ?: "", discountMinor = ch.discount)
+    }
+
+    private data class Charges(val fee: Long, val waived: Boolean, val fundingFee: Long, val discount: Long)
+
+    /** Fees for a transfer, worked out the same way for the quote and when the transfer is created. */
+    private fun charges(a: Account?, sendMinor: Long, type: PayoutType, country: String, fundingId: String?): Charges {
+        val isArro = type == PayoutType.ARRO
         val waived = !isArro && a != null && a.firstTransferFree && a.transfers.isEmpty() && sendMinor <= 100_000 && sendMinor > 0
         val fee = if (sendMinor <= 0 || waived) 0 else feeFor(country, type)
         val method = a?.paymentMethod(fundingId)
         val fundingFee = if (method != null && method.kind == MethodKind.CARD && method.credit) Math.round(sendMinor * 0.0175) else 0L
-        val margin = if (isArro || mid == 0.0) 0L else Math.round(sendMinor * (mid - rate) / mid)
-        return Quote(Currency.GBP, target, sendMinor, receive, rate, mid, fee, fundingFee, margin, now + 30 * 60_000, type, waived)
+        // Fee credit from redeemed points comes off the Arro fee, never off the amount sent or the card fee.
+        val discount = if (a == null) 0L else minOf(a.feeCreditMinor, fee).coerceAtLeast(0)
+        return Charges(fee, waived, fundingFee, discount)
     }
 
     /** Card fee for paying [sendMinor] with [fundingId] (credit cards add 1.75%). */
@@ -427,8 +460,156 @@ class ArroBackend(
     /** True when [providerId] is the one marked as briefly offline. */
     fun isProviderDown(providerId: String?): Boolean = providerId != null && providerId == _state.value.demo.outageProviderId
 
-    /** A fresh price for the same transfer, used when a rate lock runs out. */
-    fun requote(q: Quote, country: String, fundingId: String?): Quote = quote(q.to, q.sendMinor, q.payoutType, country, fundingId)
+    /** A fresh price for the same transfer, used when a rate lock runs out: holds today's rate again first. */
+    fun requote(q: Quote, country: String, fundingId: String?): Quote {
+        if (q.payoutType != PayoutType.ARRO) holdRate(q.to)
+        return quote(q.to, q.sendMinor, q.payoutType, country, fundingId)
+    }
+
+    // ------------------------------------------------------------------ rate locks and offers
+
+    /** Set by the app while an Arro screen is visible. Random demo offers only appear then. */
+    @Volatile var foreground: Boolean = false
+    private var nextOfferAt = 0L
+
+    /** True when rates came from the live provider recently enough to price an offer. */
+    fun ratesLive(): Boolean {
+        val r = _state.value.rates
+        return r.fetchedAt > 0 && now - r.fetchedAt <= RATES_FRESH_MS
+    }
+
+    /** The currency rate offers and the rate widget use: where this person sent money most recently. */
+    fun relevantCurrency(a: Account? = account): Currency {
+        if (a == null) return Currency.RWF
+        a.transfers.firstOrNull { it.payoutType != PayoutType.ARRO && it.to != "GBP" }?.let { return it.toCur }
+        val r = a.recipients.firstOrNull { it.favourite } ?: a.recipients.firstOrNull()
+        return r?.let { Catalog.countryOrNull(it.country)?.currency }?.takeIf { it != Currency.GBP } ?: Currency.RWF
+    }
+
+    /**
+     * Holds today's rate to [to] for 30 minutes for the transfer being priced, or returns the rate already held for
+     * that currency (a locked offer rate takes priority). The send screens call this when the amount screen opens.
+     */
+    fun holdRate(to: Currency): RateLock? {
+        if (to == Currency.GBP) return null
+        val a = _state.value.account ?: return null
+        val t = now
+        a.activeLock(to.code, t)?.let { return it }
+        val hold = RateLock(Ids.id(), to.code, customerRate(to), midRate(to), t, t + QUOTE_HOLD_MS, LockKind.QUOTE)
+        mutateAccount { acc -> if (acc.activeLock(to.code, t) != null) acc else acc.copy(rateLocks = trimLocks(listOf(hold) + acc.rateLocks)) }
+        return account?.activeLock(to.code, t)
+    }
+
+    /**
+     * After fresh rates arrive, moves an unused quote hold for [to] to today's rate. A locked offer is never changed:
+     * its rate stays the same until it ends, whatever the market does.
+     */
+    fun refreshHold(to: Currency): RateLock? {
+        val t = now
+        val held = account?.activeLock(to.code, t)
+        if (held != null && held.kind == LockKind.QUOTE && held.rate != customerRate(to)) {
+            mutateAccount { acc -> acc.copy(rateLocks = acc.rateLocks.map { if (it.id == held.id) it.copy(releasedAt = t) else it }) }
+        }
+        return holdRate(to)
+    }
+
+    private fun trimLocks(locks: List<RateLock>): List<RateLock> = locks.take(30)
+
+    /**
+     * Asks for a rate offer for [to]. Offers in this build are demo promotions: a smaller margin on the live
+     * mid-market rate from the rate provider, open for a few minutes. Returns the running offer if there is one.
+     */
+    suspend fun requestOffer(to: Currency = relevantCurrency(), replace: Boolean = false): RateOffer {
+        sendBlocker()?.let { throw it }
+        val a = requireAccount()
+        if (!replace) a.liveOffer(now)?.takeIf { it.to == to.code }?.let { return it }
+        net(700)
+        if (!ratesLive() && !refreshRates()) {
+            throw ArroException("We can't reach live rates right now, so we can't make an offer. Check your connection and try again.", "offline")
+        }
+        return makeOffer(to) ?: throw ArroException("There isn't a better rate for ${to.code} right now. Try again in a few minutes.", "no_offer")
+    }
+
+    private fun makeOffer(to: Currency): RateOffer? {
+        if (to == Currency.GBP || !ratesLive() || _state.value.account == null) return null
+        val t = now
+        val standard = customerRate(to)
+        val rate = Rates.offer(_state.value.rates, Currency.GBP, to)
+        if (rate <= standard) return null
+        val offer = RateOffer(Ids.id(), to.code, rate, midRate(to), standard, t, t + OFFER_WINDOW_MS, OFFER_LOCK_MINUTES)
+        mutateAccount { it.copy(rateOffer = offer) }
+        nextOfferAt = offer.expiresAt + offerGap()
+        emit(BackendEvent.OfferAvailable(to.code, "Rate offer for ${to.code}",
+            "${Money.rateLine(Currency.GBP, to, rate)}. Lock it for $OFFER_LOCK_MINUTES minutes before ${Text.time(offer.expiresAt)}."))
+        return offer
+    }
+
+    /** Locks the rate in the running offer [offerId] for the offer's lock period, for one transfer. */
+    suspend fun lockOffer(offerId: String): RateLock {
+        sendBlocker()?.let { throw it }
+        val o = requireAccount().rateOffer
+        if (o == null || o.id != offerId) throw ArroException("This offer has ended. You can ask for a new one.", "offer_ended")
+        net(600)
+        val t = now
+        if (!o.liveAt(t)) throw ArroException("This offer ended at ${Text.time(o.expiresAt)}. You can ask for a new one.", "offer_ended")
+        val lock = RateLock(Ids.id(), o.to, o.rate, o.mid, t, t + o.lockMinutes * 60_000L, LockKind.OFFER, o.id)
+        var taken = false
+        mutateAccount { acc ->
+            taken = acc.rateOffer?.id == o.id
+            if (!taken) acc
+            else acc.copy(rateOffer = null, rateLocks = trimLocks(listOf(lock) + acc.rateLocks.map {
+                // A locked offer replaces the quote hold for that currency.
+                if (it.to == o.to && it.activeAt(t)) it.copy(releasedAt = t) else it
+            }))
+        }
+        if (!taken) throw ArroException("This offer has ended. You can ask for a new one.", "offer_ended")
+        nextOfferAt = lock.expiresAt + offerGap()
+        return lock
+    }
+
+    fun dismissOffer() {
+        mutateAccount { it.copy(rateOffer = null) }
+        nextOfferAt = now + offerGap()
+    }
+
+    private fun offerGap(): Long = (3 * 60_000L..8 * 60_000L).random()
+
+    /** Ends offers that ran out, tells the person when a locked offer rate ends unused, and makes random demo offers. */
+    private fun tickRates(a: Account, t: Long) {
+        a.rateOffer?.let { o -> if (!o.liveAt(t)) mutateAccount { acc -> if (acc.rateOffer?.id == o.id) acc.copy(rateOffer = null) else acc } }
+        a.rateLocks.filter { it.kind == LockKind.OFFER && it.expiredUnused(t) && !it.endNoticed }.forEach { l ->
+            mutateAccount { acc -> acc.copy(rateLocks = acc.rateLocks.map { if (it.id == l.id) it.copy(endNoticed = true) else it }) }
+            val cur = Currency.of(l.to)
+            val title = "Your locked rate has ended"
+            val body = "${Money.rateLine(Currency.GBP, cur, l.rate)} was held until ${Text.time(l.expiresAt)}. Ask for a new offer or send at today's rate."
+            notify(NoticeKind.RATE, title, body)
+            emit(BackendEvent.LockEnded(l.to, title, body))
+        }
+        if (!_state.value.demo.rateOffers || !foreground || !_unlocked.value || sendBlocker() != null) return
+        if (a.liveOffer(t) != null) return
+        if (nextOfferAt == 0L) { nextOfferAt = t + (25_000L..90_000L).random(); return }
+        if (t < nextOfferAt) return
+        if (a.anyOfferLock(t) != null) { nextOfferAt = t + 60_000; return }
+        if (makeOffer(relevantCurrency(a)) == null) nextOfferAt = t + 60_000
+    }
+
+    /** Checks the rate in [q] is one the server is holding (or today's live rate) before money moves. */
+    private fun checkRate(a: Account, q: Quote) {
+        if (q.lockId.isEmpty()) {
+            if (q.rate != customerRate(q.to)) throw ArroException("The rate has changed since your quote. Check the new amount and send again.", "expired")
+            return
+        }
+        val l = a.rateLocks.firstOrNull { it.id == q.lockId }
+        when {
+            l == null || l.to != q.to.code || l.rate != q.rate ->
+                throw ArroException("We couldn't match your quote to a rate we're holding. Check the new quote and send again.", "expired")
+            l.transferId.isNotEmpty() -> throw ArroException("That rate has already been used for another transfer. Here's a fresh quote.", "expired")
+            l.releasedAt > 0 -> throw ArroException("That rate was replaced by a newer lock. Check the new quote and send again.", "expired")
+            now >= l.expiresAt -> throw ArroException(
+                if (l.kind == LockKind.OFFER) "Your locked rate ended at ${Text.time(l.expiresAt)}. Here's a fresh quote at today's rate."
+                else "Your rate lock ran out. Here's a fresh quote.", "expired")
+        }
+    }
 
     // ------------------------------------------------------------------ limits
 
@@ -472,10 +653,16 @@ class ArroBackend(
         val r = a.recipient(d.recipientId) ?: throw ArroException("Choose who you're sending to.")
         val m = r.method(d.payoutMethodId) ?: r.defaultMethod ?: throw ArroException("Add a way for ${r.firstName} to receive money.")
         if (m.providerId == _state.value.demo.outageProviderId) throw ArroException("${m.providerName} is briefly offline.", "outage")
-        if (d.quote.lockedUntil < now) throw ArroException("Your rate lock ran out. Here's a fresh quote.", "expired")
-        limitProblem(d.quote.sendMinor)?.let { throw ArroException(it, "limit") }
-        if (d.quote.sendMinor < 100) throw ArroException("The smallest amount you can send is £1.00.")
         val q = d.quote
+        // Server-side checks on the price: the rate must be one we're holding (or today's), and the fees must match.
+        if (q.payoutType != PayoutType.ARRO) checkRate(a, q)
+        val expected = charges(a, q.sendMinor, q.payoutType, r.country, d.fundingId)
+        if (expected.fee != q.feeMinor || expected.waived != q.feeWaived || expected.fundingFee != q.fundingFeeMinor ||
+            expected.discount != q.discountMinor || q.receiveMinor != Money.convert(q.sendMinor, Currency.GBP, q.to, q.rate)) {
+            throw ArroException("Your quote has changed. Check the new amount and send again.", "expired")
+        }
+        limitProblem(q.sendMinor)?.let { throw ArroException(it, "limit") }
+        if (q.sendMinor < 100) throw ArroException("The smallest amount you can send is £1.00.")
         val fundingLabel: String
         if (d.fundingId == BALANCE) {
             val w = a.wallet(Currency.GBP)
@@ -502,11 +689,24 @@ class ArroBackend(
             holdAt = if (willHold) plan[0] + 1_000 else 0,
             failAt = if (willFail) plan[2] + (if (fast) 6_000 else 300_000) else 0,
             willHold = willHold, willFail = willFail,
+            rateLockId = q.lockId, pointsDiscountMinor = q.discountMinor,
         )
+        var conflict: String? = null
         mutateAccount { acc ->
+            conflict = when {
+                q.lockId.isNotEmpty() && acc.rateLocks.none { it.id == q.lockId && it.transferId.isEmpty() && it.releasedAt == 0L } ->
+                    "That rate has already been used for another transfer. Here's a fresh quote."
+                acc.feeCreditMinor < q.discountMinor -> "Your fee credit has changed. Check the new amount and send again."
+                else -> null
+            }
+            if (conflict != null) return@mutateAccount acc
             val wallets = if (d.fundingId == BALANCE) acc.wallets.map { w -> if (w.currency == "GBP") w.copy(balanceMinor = w.balanceMinor - q.totalMinor) else w } else acc.wallets
-            acc.copy(transfers = listOf(tr) + acc.transfers, wallets = wallets, firstTransferFree = acc.firstTransferFree && !q.feeWaived)
+            acc.copy(transfers = listOf(tr) + acc.transfers, wallets = wallets, firstTransferFree = acc.firstTransferFree && !q.feeWaived,
+                // A held rate is used once; points credit is spent.
+                rateLocks = if (q.lockId.isEmpty()) acc.rateLocks else acc.rateLocks.map { if (it.id == q.lockId) it.copy(transferId = tr.id) else it },
+                feeCreditMinor = acc.feeCreditMinor - q.discountMinor)
         }
+        conflict?.let { throw ArroException(it, "expired") }
         return tr
     }
 
@@ -558,7 +758,9 @@ class ArroBackend(
     private fun startRefund(transferId: String, status: TransferStatus, cancelReason: String = "", failReason: String = "") {
         val t = now
         var credit: Pair<Long, String>? = null
+        var feeCredit = 0L
         updateTransfer(transferId) { tr ->
+            feeCredit = tr.pointsDiscountMinor
             val toBalance = tr.fundingId == BALANCE
             val due = when {
                 toBalance -> t + 2_000
@@ -575,6 +777,8 @@ class ArroBackend(
                     ledger = listOf(LedgerEntry(Ids.id(), LedgerType.REFUND, "GBP", amount, title = "Refund", subtitle = ref, createdAt = t)) + acc.ledger)
             }
         }
+        // Points credit used on a transfer that is cancelled or fails goes back to the account.
+        if (feeCredit > 0) mutateAccount { it.copy(feeCreditMinor = it.feeCreditMinor + feeCredit) }
     }
 
     fun setRepeatMonthly(transferId: String, on: Boolean) = updateTransfer(transferId) { it.copy(repeatMonthly = on) }
@@ -588,6 +792,7 @@ class ArroBackend(
         val a = _state.value.account ?: return
         val t = now
         for (tr in a.transfers) advance(tr, t)
+        tickRates(a, t)
         // identity decision
         val k = a.kyc
         if (k.status == KycStatus.IN_REVIEW && k.decideAt in 1..t) {
@@ -634,6 +839,8 @@ class ArroBackend(
                 }
                 !tr.willFail && t >= tr.deliveredAt -> {
                     updateTransfer(tr.id) { it.copy(status = TransferStatus.DELIVERED, providerRef = Ids.providerRef(it.providerId, it.deliveredAt)) }
+                    // Points are earned on delivery; Loyalty.award skips transfers that already earned theirs.
+                    mutateAccount { acc -> acc.transfer(tr.id)?.let { Loyalty.award(acc, it, t) } ?: acc }
                     if (tr.payoutType == PayoutType.ARRO) creditArroUser(tr)
                     val title = if (tr.payoutType == PayoutType.CASH) "Ready to collect" else "Delivered to ${tr.firstName}"
                     val body = when (tr.payoutType) {
@@ -942,7 +1149,8 @@ class ArroBackend(
         val a = _state.value.account ?: return
         val r = a.recipient(al.autoSendRecipientId) ?: return
         val m = r.defaultMethod ?: return
-        val q = quote(cur, al.autoSendMinor, m.type, r.country, BALANCE)
+        // The alert fired on today's rate, so that's the rate it sends at.
+        val q = quote(cur, al.autoSendMinor, m.type, r.country, BALANCE, useHeld = false)
         scope.launch {
             runCatching { createTransfer(TransferDraft(r.id, m.id, q, BALANCE, "Family support")) }
                 .onSuccess { emit(BackendEvent.TransferUpdate(it.id, "Sent automatically", "Your rate was reached, so we sent ${Money.format(q.receiveMinor, cur)} to ${r.firstName}.")) }
@@ -1085,9 +1293,91 @@ class ArroBackend(
 
     fun exportData(): String = Json { prettyPrint = true; encodeDefaults = true }.encodeToString(requireAccount().copy(passwordHash = "•", passcodeHash = "•"))
 
+    // ------------------------------------------------------------------ Arro Rewards
+
+    /** Swaps [points] (one of [Loyalty.tiers]) for fee credit, which comes off the next transfer fees. */
+    suspend fun redeemPoints(points: Int): Long {
+        val tier = Loyalty.tiers.firstOrNull { it.first == points } ?: throw ArroException("Choose one of the rewards.")
+        val a = requireAccount()
+        if (a.frozen) throw ArroException("Your account is frozen. Unfreeze it in Security to use your points.", "frozen")
+        if (a.pointsBalance < points) throw ArroException("You need ${Money.points(points - a.pointsBalance)} more points for this reward.", "points")
+        net(700)
+        val t = now
+        var done = false
+        mutateAccount { acc ->
+            done = acc.pointsBalance >= points
+            if (!done) acc
+            else acc.copy(
+                points = listOf(PointsEntry(Ids.id(), PointsKind.REDEEMED, -points, "redeem:" + Ids.id(), "Swapped for fee credit",
+                    "${Money.format(tier.second, Currency.GBP)} off your next transfer fees", t)) + acc.points,
+                feeCreditMinor = acc.feeCreditMinor + tier.second,
+            )
+        }
+        if (!done) throw ArroException("You don't have enough points for this reward.", "points")
+        return tier.second
+    }
+
+    /**
+     * Applies the invite rules when the referred friend [friendId] has a transfer of [minor] delivered: the first one
+     * of £100 or more pays £10 into the GBP balance, once per friend, up to 20 a year. Returns the reward paid.
+     */
+    fun referralTransferDelivered(friendId: String, minor: Long): Long {
+        val t = now
+        var reward = 0L
+        var name = ""
+        mutateAccount { acc ->
+            if (!acc.verified) return@mutateAccount acc
+            val (r, pay) = Loyalty.qualify(acc.referral, friendId, minor, t)
+            reward = pay
+            name = acc.referral.friends.firstOrNull { it.id == friendId }?.name ?: ""
+            if (r === acc.referral) acc
+            else acc.copy(
+                referral = r,
+                wallets = if (pay > 0) acc.wallets.map { w -> if (w.currency == "GBP") w.copy(balanceMinor = w.balanceMinor + pay) else w } else acc.wallets,
+                ledger = if (pay > 0) listOf(LedgerEntry(Ids.id(), LedgerType.REWARD, "GBP", pay, title = "Invite reward", subtitle = "$name joined Arro", createdAt = t)) + acc.ledger else acc.ledger,
+            )
+        }
+        if (reward > 0) {
+            val first = name.substringBefore(' ')
+            notify(NoticeKind.ACCOUNT, "You earned ${Money.format(reward, Currency.GBP, false)}", "$first's first transfer was delivered, so your invite reward is in your GBP balance.")
+            emit(BackendEvent.Info("You earned ${Money.format(reward, Currency.GBP, false)}", "$first's first transfer was delivered. It's in your GBP balance."))
+        }
+        return reward
+    }
+
     // ------------------------------------------------------------------ demo controls
 
     fun setDemo(block: (DemoSettings) -> DemoSettings) = mutate { it.copy(demo = block(it.demo)) }
+
+    /** Demo: shows a rate offer straight away instead of waiting for a random one. */
+    suspend fun demoOfferNow(): RateOffer = requestOffer(relevantCurrency(), replace = true)
+
+    /** Demo: ends every running locked offer rate now, to show what happens when a lock runs out. */
+    fun demoEndLocks() {
+        val t = now
+        mutateAccount { acc -> acc.copy(rateLocks = acc.rateLocks.map { if (it.kind == LockKind.OFFER && it.activeAt(t)) it.copy(expiresAt = t) else it }) }
+        tick()
+    }
+
+    /**
+     * Demo: moves today's mid-market rate for [to] by [percent]%, as if the market moved, so you can see a locked rate
+     * stay the same. The snapshot is marked [RatesSnapshot.demoMoved]; the next live refresh replaces it.
+     */
+    fun demoMoveMarket(to: Currency, percent: Double) = mutate { s ->
+        val r = s.rates
+        s.copy(rates = r.copy(mid = r.mid + (to.code to Rates.mid(r, to) * (1 + percent / 100)), demoMoved = true))
+    }
+
+    /** Demo: a friend signs up with this account's invite code. They're sample data and labelled as such. */
+    fun demoFriendJoins(): ReferredFriend {
+        val a = requireAccount()
+        val used = a.referral.friends.map { it.name }.toSet()
+        val name = SAMPLE_FRIENDS.firstOrNull { it !in used } ?: "Sample friend ${a.referral.friends.size + 1}"
+        val f = ReferredFriend(Ids.id(), name, FriendStatus.SIGNED_UP, now, sample = true)
+        mutateAccount { acc -> acc.copy(referral = acc.referral.copy(friends = listOf(f) + acc.referral.friends, friendsJoined = acc.referral.friendsJoined + 1)) }
+        notify(NoticeKind.ACCOUNT, "${name.substringBefore(' ')} joined with your code", "You'll get £10 once their first transfer of £100 or more is delivered.")
+        return f
+    }
 
     fun clearSendPause() = mutateAccount { it.copy(sendPauseUntil = 0) }
 
@@ -1098,6 +1388,7 @@ class ArroBackend(
     }
 
     fun resetEverything() {
+        nextOfferAt = 0
         _unlocked.value = false
         _registration.value = Registration()
         mutate { AppState(rates = it.rates) }
@@ -1115,6 +1406,16 @@ class ArroBackend(
         const val BALANCE = "balance"
         const val HOLD_THRESHOLD = 100_000L
         var DEVICE_NAME = "This phone"
+        /** How long a transfer quote's rate is held (the existing 30-minute rate lock). */
+        const val QUOTE_HOLD_MS = 30 * 60_000L
+        /** How long a rate offer stays open, and how long a locked offer rate is held. */
+        const val OFFER_WINDOW_MS = 3 * 60_000L
+        const val OFFER_LOCK_MINUTES = 10
+        /** Offers are only priced from rates fetched within this time. */
+        const val RATES_FRESH_MS = 30 * 60_000L
+        /** Data version for Arro Rewards, see [migrate]. */
+        const val LOYALTY_VERSION = 1
+        private val SAMPLE_FRIENDS = listOf("Ngozi Okafor", "Jean Habimana", "Grace Achieng", "Musa Bello", "Priya Nair")
     }
 }
 

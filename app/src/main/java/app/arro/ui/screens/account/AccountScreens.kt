@@ -215,6 +215,8 @@ fun AccountScreen() {
                     GroupDivider()
                     SettingsRow("Wallet and balances", Icons.WalletSimple, "${a.wallets.size}") { nav.go(Routes.WALLET) }
                     GroupDivider()
+                    SettingsRow("Loyalty and rewards", Icons.Award, "${Money.points(a.pointsBalance)} pts") { nav.go(Routes.LOYALTY) }
+                    GroupDivider()
                     SettingsRow("Statements", Icons.Statement) { nav.go(Routes.STATEMENTS) }
                 }
             }
@@ -461,6 +463,8 @@ fun SecurityScreen() {
             ToggleRow("Confirm new devices by SMS", "A code to ${Text.maskPhoneShort(a.phone)}", a.security.confirmNewDevices) { v -> b.updateSecurity { it.copy(confirmNewDevices = v) } }
             GroupDivider()
             ToggleRow("Passcode for transfers over £1,000", "Even when biometric unlock is on", a.security.passcodeOverThreshold) { v -> b.updateSecurity { it.copy(passcodeOverThreshold = v) } }
+            GroupDivider()
+            ToggleRow("Show balance on home screen widgets", "Your GBP balance and recent recipients. Anyone who can see your home screen will see them", a.settings.widgetBalance) { v -> b.updateSettings { it.copy(widgetBalance = v) } }
             GroupDivider()
             ListRow("Change passcode", flat = true, minHeight = 52.dp,
                 subtitle = a.security.passcodeChangedAt.takeIf { it > 0 }?.let { "Changed ${Text.relativeDay(it, now)}" }, trailing = { Chevron() }, onClick = { passcodeSheet = true })
@@ -910,6 +914,12 @@ fun DemoScreen() {
     var outagePicker by remember { mutableStateOf(false) }
     var erase by remember { mutableStateOf(false) }
     val providers = Catalog.providers.filter { it.id != "arro" }
+    val scope = rememberCoroutineScope()
+    val offerCall = rememberCall()
+    val now = nowTicker()
+    val offerCur = b.relevantCurrency(a)
+    val runningLock = a?.anyOfferLock(now)
+    val waitingFriend = a?.referral?.friends?.firstOrNull { it.status == app.arro.core.FriendStatus.SIGNED_UP }
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back() }, title = "Demo controls") },
         gap = 14.dp,
@@ -931,6 +941,46 @@ fun DemoScreen() {
             ListRow("Provider outage", flat = true, minHeight = 58.dp, subtitle = providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: "None", trailing = { Chevron() }, onClick = { outagePicker = true })
             GroupDivider()
             ToggleRow("Ask for a retake on the next ID check", "Tests the rejected-photo path", demo.rejectNextKyc) { v -> b.setDemo { it.copy(rejectNextKyc = v) } }
+        }
+        Over("Lock Rate and rewards")
+        Group {
+            ToggleRow("Random rate offers", "Offers appear 25 to 90 seconds after unlocking, then every few minutes while the app is open", demo.rateOffers) { v -> b.setDemo { it.copy(rateOffers = v) } }
+            GroupDivider()
+            ListRow("Show a rate offer now", flat = true, minHeight = 56.dp, subtitle = if (offerCall.busy.value) "Getting live rates…" else "GBP → ${offerCur.code}, open for 3 minutes",
+                leading = { Tile(Icons.Bolt, TileStyle.Lime, 36.dp, iconSize = 18.dp) }, enabled = a?.verified == true && !offerCall.busy.value,
+                onClick = {
+                    scope.launchCall(offerCall, onError = { e -> banner.show("No offer", e.message ?: "", BannerKind.Error); true }) {
+                        b.demoOfferNow(); nav.go(Routes.lockRate(offerCur.code))
+                    }
+                })
+            GroupDivider()
+            ListRow("End my locked rate now", flat = true, minHeight = 56.dp,
+                subtitle = runningLock?.let { "${it.to} locked until ${Text.time(it.expiresAt)}" } ?: "No locked rate running",
+                leading = { Tile(Icons.Clock, size = 36.dp, iconSize = 18.dp) }, enabled = runningLock != null,
+                onClick = { b.demoEndLocks() })
+            GroupDivider()
+            listOf(1.0, -1.0).forEachIndexed { i, pct ->
+                if (i > 0) GroupDivider()
+                ListRow("Move the market ${if (pct > 0) "up" else "down"} 1%", flat = true, minHeight = 56.dp,
+                    subtitle = "GBP → ${offerCur.code} mid-market rate, until the next live update",
+                    leading = { Tile(Icons.Trending, size = 36.dp, iconSize = 18.dp) },
+                    onClick = {
+                        b.demoMoveMarket(offerCur, pct)
+                        banner.show("Market moved ${if (pct > 0) "up" else "down"} 1%", "Live rate now ${Money.rateLine(Currency.GBP, offerCur, b.customerRate(offerCur))}. Locked rates don't change.")
+                    })
+            }
+            GroupDivider()
+            ListRow("A friend joins with my code", flat = true, minHeight = 56.dp, subtitle = "Adds a sample friend to Referrals",
+                leading = { Tile(Icons.Users, size = 36.dp, iconSize = 18.dp) }, enabled = a != null,
+                onClick = { val f = b.demoFriendJoins(); banner.show("${f.name} joined", "Sample data. Their first £100+ transfer earns you £10.", BannerKind.Success) })
+            GroupDivider()
+            ListRow("Their first £120 transfer is delivered", flat = true, minHeight = 56.dp,
+                subtitle = waitingFriend?.let { "${it.name} · pays £10 into your GBP balance" } ?: "No friend waiting",
+                leading = { Tile(Icons.Gift, size = 36.dp, iconSize = 18.dp) }, enabled = waitingFriend != null,
+                onClick = {
+                    val paid = waitingFriend?.let { b.referralTransferDelivered(it.id, 12_000) } ?: 0
+                    if (paid == 0L) banner.show("No reward paid", "Verify your identity first, or the yearly limit of ${app.arro.core.Loyalty.REFERRAL_YEARLY_CAP} rewards was reached.", BannerKind.Info)
+                })
         }
         Group {
             ListRow("Finish everything that's waiting", flat = true, minHeight = 56.dp, subtitle = "Deliver transfers, refunds and ID checks now",
@@ -959,6 +1009,7 @@ fun DemoScreen() {
                 "Security hold" to "Any transfer over £1,000",
                 "Card declined by the bank" to "Card number ending 0002",
                 "Credit card (1.75% fee)" to "Mastercard starting 51 to 53",
+                "Rate offers" to "Signed in and verified, with the app open. Or use Show a rate offer now",
             ).forEach { (k, v) ->
                 Column {
                     Txt(k, T.Body14.copy(fontWeight = FontWeight.Medium))

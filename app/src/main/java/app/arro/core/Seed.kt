@@ -176,11 +176,28 @@ object Seed {
                 Device("D1", ArroBackend.DEVICE_NAME, "London", now, current = true),
                 Device("D2", "Web browser, Mac", "London", t(3, 20 * 60), laptop = true),
             ),
-            referral = Referral("ERIC-7Q4K", 2, 2_000),
+            referral = sampleReferral("ERIC-7Q4K", now),
+            // The sample account shows its balance on home screen widgets so they can be demonstrated.
+            // New accounts start with the balance hidden (see Settings.widgetBalance).
+            settings = Settings(widgetBalance = true),
             firstTransferFree = false,
             setupDismissed = true,
             demo = true,
+        ).let { Loyalty.backfill(it, now).copy(loyaltyVersion = ArroBackend.LOYALTY_VERSION) }
+    }
+
+    /**
+     * Friends who joined with the sample account's code. They match the two invite rewards in its ledger, plus one
+     * friend who hasn't made a qualifying transfer yet. Marked [ReferredFriend.sample] so the app labels them.
+     */
+    fun sampleReferral(code: String, now: Long): Referral {
+        val t = { days: Int, minuteOfDay: Int -> Text.startOfDay(Text.localDate(now).minusDays(days.toLong())) + minuteOfDay * MIN }
+        val friends = listOf(
+            ReferredFriend("F_ALINE", "Aline Ingabire", FriendStatus.SIGNED_UP, t(6, 18 * 60), sample = true),
+            ReferredFriend("F_AMANI", "Amani Mugisha", FriendStatus.QUALIFIED, t(36, 19 * 60), 15_000, t(33, 12 * 60), Loyalty.REFERRAL_REWARD_MINOR, sample = true),
+            ReferredFriend("F_KOFI", "Kofi Boateng", FriendStatus.QUALIFIED, t(97, 9 * 60), 20_000, t(90, 12 * 60), Loyalty.REFERRAL_REWARD_MINOR, sample = true),
         )
+        return Referral(code, friends.size, friends.sumOf { it.rewardMinor }, friends)
     }
 
     private fun seedCode(i: Int, n: Int): String {

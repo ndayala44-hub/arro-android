@@ -34,6 +34,31 @@
             </intent-filter>
         </activity>
 
+        <!-- Home screen widgets. Not exported: only the system and Arro itself can send them updates. -->
+        <receiver
+            android:name=".widget.BalanceWidget"
+            android:exported="false"
+            android:label="@string/widget_balance_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_balance_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.RateWidget"
+            android:exported="false"
+            android:label="@string/widget_rate_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_rate_info" />
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.files"

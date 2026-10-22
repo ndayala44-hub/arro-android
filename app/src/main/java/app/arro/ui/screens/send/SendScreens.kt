@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.sp
 import app.arro.core.ArroBackend
 import app.arro.core.Catalog
 import app.arro.core.Country
+import app.arro.core.LockKind
+import app.arro.core.Loyalty
 import app.arro.core.Currency
 import app.arro.core.MethodKind
 import app.arro.core.Money
@@ -53,6 +55,7 @@ import app.arro.ui.go
 import app.arro.ui.launchCall
 import app.arro.ui.nowTicker
 import app.arro.ui.rememberCall
+import app.arro.ui.screens.rates.offerError
 import app.arro.ui.components.ArroButton
 import app.arro.ui.components.ArroScreen
 import app.arro.ui.components.Art
@@ -267,21 +270,36 @@ fun SendAmountScreen() {
     val to = if (arro) Currency.GBP else country.currency
     val amount = Money.parse(d.amountText, Currency.GBP) ?: 0L
     val fundingForQuote = d.fundingId ?: a.paymentMethods.firstOrNull { it.isDefault }?.id
-    val quote = b.quote(to, amount, d.payoutType, d.country, fundingForQuote)
-    var lockUntil by remember { mutableLongStateOf(System.currentTimeMillis() + 30 * 60_000) }
     val now = nowTicker()
+    // The rate is held on the server for this quote: a 30-minute hold, or a locked offer rate if one is running.
+    val lock = if (arro) null else a.activeLock(to.code, now)
+    val offer = if (arro || lock?.kind == LockKind.OFFER) null else a.liveOffer(now)?.takeIf { it.to == to.code }
+    val quote = b.quote(to, amount, d.payoutType, d.country, fundingForQuote)
+    var heldId by remember { mutableStateOf<String?>(null) }
     var feesOpen by remember { mutableStateOf(false) }
     var countryPicker by remember { mutableStateOf(false) }
-    LaunchedEffect(now >= lockUntil) {
-        if (now >= lockUntil) {
-            b.refreshRates()
-            lockUntil = System.currentTimeMillis() + 30 * 60_000
-            banner.show("Your rate was refreshed", "Here's a new 30-minute rate lock.", BannerKind.Info)
+    val scope = rememberCoroutineScope()
+    val lockCall = rememberCall()
+    LaunchedEffect(to, arro, lock?.id) {
+        if (arro) return@LaunchedEffect
+        if (lock == null) {
+            val previous = heldId?.let { id -> b.account?.rateLocks?.firstOrNull { it.id == id } }
+            b.holdRate(to)
+            // A locked offer ending is announced app-wide; a quote hold running out is announced here, as before.
+            if (previous != null && previous.to == to.code && previous.kind == LockKind.QUOTE && previous.expiredUnused(b.now)) {
+                banner.show("Your rate was refreshed", "Here's a new 30-minute rate lock.", BannerKind.Info)
+            }
         }
+        heldId = b.account?.activeLock(to.code, b.now)?.id
+    }
+    // Rates saved from an earlier session may be old: fetch today's and re-price the hold once they arrive.
+    LaunchedEffect(to, arro) {
+        if (!arro && !b.ratesLive() && b.refreshRates()) b.refreshHold(to)
     }
     val limit = b.limitProblem(amount)
     val tooSmall = amount in 1..99
-    val canGo = amount >= 100 && limit == null
+    val canGo = amount >= 100 && limit == null && (arro || lock != null)
+    val earn = Loyalty.pointsToEarn(a, quote)
     fun press(k: String) {
         var s = d.amountText
         if (k == ".") { if (!s.contains('.')) s += "." }
@@ -306,12 +324,12 @@ fun SendAmountScreen() {
         scroll = false,
         footer = {
             ArroButton("Continue", {
-                d.quote = quote.copy(lockedUntil = lockUntil)
+                d.quote = quote
                 nav.go(if (d.recipientId != null && d.methodId != null) Routes.SEND_FUNDING else Routes.SEND_RECIPIENT)
             }, enabled = canGo)
         },
         overlay = {
-            FeesSheet(feesOpen, { feesOpen = false }, quote, recipient?.firstName ?: "They", lockUntil) { feesOpen = false; nav.go(Routes.rateCompare(to.code)) }
+            FeesSheet(feesOpen, { feesOpen = false }, quote, recipient?.firstName ?: "They", lock) { feesOpen = false; nav.go(Routes.rateCompare(to.code)) }
             PickerSheet(countryPicker, "Where are you sending?", Catalog.countries.map { it.name }, country.name, { name ->
                 val ct = Catalog.countries.first { it.name == name }
                 val keep = d.amountText
@@ -352,15 +370,41 @@ fun SendAmountScreen() {
             Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (!arro) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Ic(Icons.Lock, size = 16.dp, tint = C.Slate)
-                        Txt("Rate locked ${Text.countdown(lockUntil - now)}", T.Body14, color = C.Slate)
+                        Ic(Icons.Lock, size = 16.dp, tint = if (lock?.kind == LockKind.OFFER) C.Ok else C.Slate)
+                        Txt(when {
+                            lock == null -> "Getting today's rate"
+                            lock.kind == LockKind.OFFER -> "Offer rate locked ${Text.countdown(lock.expiresAt - now)}"
+                            else -> "Rate locked ${Text.countdown(lock.expiresAt - now)}"
+                        }, T.Body14, color = if (lock?.kind == LockKind.OFFER) C.Ok else C.Slate)
                     }
                     Txt(Money.rateLine(Currency.GBP, to, quote.rate), T.Body14.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"))
                 }
+                if (offer != null) {
+                    // A running rate offer can be locked without leaving the transfer.
+                    Row(
+                        Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(C.Lime3)
+                            .clickable(enabled = !lockCall.busy.value, role = androidx.compose.ui.semantics.Role.Button) {
+                                scope.launchCall(lockCall, onError = { banner.offerError(it) }) {
+                                    val l = b.lockOffer(offer.id)
+                                    banner.show("Rate locked", "${Money.rateLine(Currency.GBP, to, l.rate)} until ${Text.time(l.expiresAt)}.", BannerKind.Success)
+                                }
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Ic(Icons.Bolt, size = 16.dp, tint = C.Forest)
+                        Txt("Offer: ${Money.rate(offer.rate, Money.rateDecimals(offer.rate))} for ${offer.lockMinutes} min · ${Text.countdown(offer.expiresAt - now)} left",
+                            T.Body14, Modifier.weight(1f), color = C.Forest, maxLines = 1)
+                        Txt(if (lockCall.busy.value) "Locking…" else "Lock", T.Link.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
+                    }
+                }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Txt("Arro fee", T.Body14, color = C.Slate)
-                    Txt(if (quote.feeWaived) "Free on your first transfer" else Money.format(quote.feeMinor, Currency.GBP), T.Body14.copy(fontFeatureSettings = "tnum"),
-                        color = if (quote.feeWaived) C.Ok else C.Ink)
+                    Txt(when {
+                        quote.feeWaived -> "Free on your first transfer"
+                        quote.discountMinor > 0 -> "${Money.format(quote.feeMinor, Currency.GBP)} − ${Money.format(quote.discountMinor, Currency.GBP)} credit"
+                        else -> Money.format(quote.feeMinor, Currency.GBP)
+                    }, T.Body14.copy(fontFeatureSettings = "tnum"), color = if (quote.feeWaived) C.Ok else C.Ink)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Txt("Total to pay", T.Body14, color = C.Slate)
@@ -368,7 +412,11 @@ fun SendAmountScreen() {
                 }
                 if (limit != null) FieldHint(limit)
                 else if (tooSmall) FieldHint("The smallest amount you can send is £1.00.")
-                if (!arro) LinkText("See the full price breakdown", { feesOpen = true }, color = C.Ink, strong = true, underline = true)
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    if (!arro) LinkText("See the full price breakdown", { feesOpen = true }, color = C.Ink, strong = true, underline = true)
+                    androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+                    if (earn > 0 && amount >= 100) Txt("You'll earn ${Money.points(earn)} points", T.Cap.copy(fontWeight = FontWeight.Medium), color = C.Ok)
+                }
             }
             // delivery method
             if (!arro) {
@@ -393,13 +441,14 @@ fun SendAmountScreen() {
 
 @Composable
 private fun androidx.compose.foundation.layout.BoxScope.FeesSheet(
-    visible: Boolean, onDismiss: () -> Unit, q: app.arro.core.Quote, name: String, lockUntil: Long, onCompare: () -> Unit,
+    visible: Boolean, onDismiss: () -> Unit, q: app.arro.core.Quote, name: String, lock: app.arro.core.RateLock?, onCompare: () -> Unit,
 ) {
     Sheet(visible, onDismiss) {
         SheetHeader("Price breakdown", onDismiss, "Everything you pay, and exactly what arrives.")
         Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             KV("You send", Money.format(q.sendMinor, Currency.GBP))
             KV("Arro fee · ${q.payoutType.short}", if (q.feeWaived) "Free" else "+ " + Money.format(q.feeMinor, Currency.GBP))
+            if (q.discountMinor > 0) KV("Points credit", "− " + Money.format(q.discountMinor, Currency.GBP), valueColor = C.Ok)
             if (q.fundingFeeMinor > 0) KV("Credit card fee", "+ " + Money.format(q.fundingFeeMinor, Currency.GBP))
             KV("Total you pay", Money.format(q.totalMinor, Currency.GBP), strong = true)
         }
@@ -419,7 +468,11 @@ private fun androidx.compose.foundation.layout.BoxScope.FeesSheet(
                 Txt(Money.format(q.totalCostMinor, Currency.GBP), T.Num.copy(fontSize = 14.sp))
             }
         }
-        Note("Your rate is guaranteed until ${Text.time(lockUntil)}. Nothing is deducted on arrival.", NoteKind.Info, Icons.Lock, Modifier.padding(top = 14.dp))
+        Note(when {
+            lock == null -> "We're getting today's rate. Nothing is deducted on arrival."
+            lock.kind == LockKind.OFFER -> "Your locked offer rate is guaranteed until ${Text.time(lock.expiresAt)}, for this transfer. Nothing is deducted on arrival."
+            else -> "Your rate is guaranteed until ${Text.time(lock.expiresAt)}. Nothing is deducted on arrival."
+        }, NoteKind.Info, Icons.Lock, Modifier.padding(top = 14.dp))
         Row(Modifier.padding(top = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ArroButton("Compare prices", onCompare, Modifier.weight(1f), style = Btn.Line)
             ArroButton("Got it", onDismiss, Modifier.weight(1f))

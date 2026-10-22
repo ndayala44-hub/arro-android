@@ -15,6 +15,8 @@ object Rates {
     /** Arro's margin on transfers and on balance conversions. */
     const val TRANSFER_MARGIN = 0.0029
     const val CONVERSION_MARGIN = 0.0027
+    /** Margin on a rate offer: a smaller markup than usual, for a short time. */
+    const val OFFER_MARGIN = 0.0009
 
     /** Mid-market rates used until live rates arrive (units per 1 GBP). */
     val fallbackMid: Map<String, Double> = mapOf(
@@ -34,6 +36,9 @@ object Rates {
     /** The rate a customer gets, with the margin taken out. */
     fun customer(snapshot: RatesSnapshot, from: Currency, to: Currency, margin: Double = TRANSFER_MARGIN): Double =
         if (from == to) 1.0 else round(cross(snapshot, from, to) * (1 - margin), to)
+
+    /** The rate a rate offer gives: the live mid-market rate with the smaller offer margin. */
+    fun offer(snapshot: RatesSnapshot, from: Currency, to: Currency): Double = customer(snapshot, from, to, OFFER_MARGIN)
 
     /** Rates are quoted to 2 decimals for large numbers and 4 for small ones. */
     fun round(v: Double, to: Currency? = null): Double {

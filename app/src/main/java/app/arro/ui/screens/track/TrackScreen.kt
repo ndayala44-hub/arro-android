@@ -186,7 +186,7 @@ private fun InProgress(t: Transfer) {
                 Panel(Modifier.padding(top = 16.dp), gap = 10.dp) {
                     KV("You'd get back", Money.format(t.totalMinor, t.fromCur), strong = true)
                     KV("Refunded to", if (t.fundingId == ArroBackend.BALANCE) "Your GBP balance" else t.fundingLabel)
-                    KV("Includes the fee", Money.format(t.feeMinor + t.fundingFeeMinor, t.fromCur))
+                    KV("Includes the fee", Money.format(t.chargesMinor, t.fromCur))
                 }
                 FieldLabel("Why are you cancelling?", Modifier.padding(top = 18.dp))
                 ReasonChips(listOf("Wrong amount", "Wrong recipient", "Sent by mistake", "Other"), reason) { reason = it }
@@ -214,7 +214,7 @@ private fun InProgress(t: Transfer) {
             Cap(stage, Modifier.padding(top = 10.dp), color = C.Forest)
         }
         Timeline(listOf(
-            TimelineItem("Transfer created", "${Money.format(t.sendMinor, t.fromCur)} plus ${Money.format(t.feeMinor + t.fundingFeeMinor, t.fromCur)} fee", Text.time(t.createdAt), StepState.Done),
+            TimelineItem("Transfer created", "${Money.format(t.sendMinor, t.fromCur)} plus ${Money.format(t.chargesMinor, t.fromCur)} fee", Text.time(t.createdAt), StepState.Done),
             TimelineItem("Payment received", t.fundingLabel, if (now >= t.paidAt) Text.time(t.paidAt) else "", if (now >= t.paidAt) StepState.Done else StepState.Now, if (now >= t.paidAt) null else Icons.Refresh),
             TimelineItem(if (t.payoutType == PayoutType.ARRO) "Sent to ${t.firstName}'s Arro account" else "Converted to ${t.to}", if (t.payoutType == PayoutType.ARRO) null else Money.rateLine(t.fromCur, t.toCur, t.rate),
                 if (now >= t.convertedAt) Text.time(t.convertedAt) else "", when { now >= t.convertedAt -> StepState.Done; now >= t.paidAt -> StepState.Now; else -> StepState.Todo }),
@@ -480,7 +480,7 @@ private fun Refunded(t: Transfer) {
             ScreenTitle("Refund complete", size = TitleSize.XL, align = TextAlign.Center)
             Txt(buildAnnotatedString {
                 withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(Money.format(t.totalMinor, t.fromCur)) }
-                append(" is back on ${if (t.fundingId == ArroBackend.BALANCE) "your GBP balance" else "your " + t.fundingLabel}, including the ${Money.format(t.feeMinor + t.fundingFeeMinor, t.fromCur)} fee.")
+                append(" is back on ${if (t.fundingId == ArroBackend.BALANCE) "your GBP balance" else "your " + t.fundingLabel}, including the ${Money.format(t.chargesMinor, t.fromCur)} fee.")
             }, T.Lede, color = C.Slate, align = TextAlign.Center)
         }
         ArroCard(Modifier.padding(top = 8.dp)) {

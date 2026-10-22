@@ -10,12 +10,15 @@ import app.arro.platform.FileStore
 import app.arro.platform.HttpRateSource
 import app.arro.platform.Notifier
 import app.arro.ui.Session
+import app.arro.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import java.io.File
 
@@ -58,6 +61,12 @@ class AppContainer(val app: Application) {
                 // Codes always go out as a notification so they can be copied from the shade, like a real SMS.
                 if (e is BackendEvent.Code || !inForeground) notifier.post(e, state)
             }
+        }
+        // Home screen widgets redraw when what they show changes (balance, rates, offers, locks, sign-in).
+        scope.launch {
+            combine(backend.state, connectivity.online) { s, online -> Widgets.key(this@AppContainer, s, online) }
+                .distinctUntilChanged()
+                .collect { runCatching { Widgets.update(app) } }
         }
     }
 }

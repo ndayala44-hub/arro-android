@@ -49,6 +49,8 @@ import app.arro.core.ArroException
 import app.arro.core.ArroUser
 import app.arro.core.Catalog
 import app.arro.core.Currency
+import app.arro.core.LockKind
+import app.arro.core.Loyalty
 import app.arro.core.Money
 import app.arro.core.PayoutType
 import app.arro.core.Text
@@ -148,7 +150,10 @@ fun SendReviewScreen() {
     val fundingId = d.fundingId ?: ArroBackend.BALANCE
     val fundingLabel = if (fundingId == ArroBackend.BALANCE) "Arro GBP balance" else a.paymentMethod(fundingId)?.label ?: ""
     val now = nowTicker()
-    val expired = now >= q.lockedUntil
+    // The rate in this quote is held on the server; it can end, be used, or be replaced by a locked offer.
+    val lock = a.rateLocks.firstOrNull { it.id == q.lockId }
+    val expired = m.type != PayoutType.ARRO && (lock == null || !lock.activeAt(now))
+    val earn = Loyalty.pointsToEarn(a, q)
     var reasonPicker by remember { mutableStateOf(false) }
     var approve by remember { mutableStateOf(false) }
     var usePasscode by remember { mutableStateOf(false) }
@@ -162,7 +167,7 @@ fun SendReviewScreen() {
     fun send() = scope.launchCall(call, onError = { e ->
         approve = false; code = ""
         when (e.code) {
-            "expired" -> { d.quote = b.requote(q, r.country, fundingId).copy(fundingFeeMinor = b.fundingFee(q.sendMinor, fundingId)); banner.show("Your rate lock ran out", "We've refreshed your quote. Check it and send again.", BannerKind.Info); true }
+            "expired" -> { d.quote = b.requote(q, r.country, fundingId).copy(fundingFeeMinor = b.fundingFee(q.sendMinor, fundingId)); banner.show("We've refreshed your quote", e.message ?: "Check it and send again.", BannerKind.Info); true }
             "insufficient" -> { banner.show("Not enough in your balance", "Choose another way to pay.", BannerKind.Error); nav.back(); true }
             "outage" -> { nav.go(Routes.SEND_UNAVAILABLE); true }
             else -> { banner.show("Transfer not sent", e.message ?: "", BannerKind.Error); true }
@@ -249,13 +254,18 @@ fun SendReviewScreen() {
             Cap("${m.providerName} · ${m.full}")
             Txt(Money.format(q.receiveMinor, q.to), T.AmountMd, Modifier.padding(top = 8.dp))
             if (m.type != PayoutType.ARRO) {
-                if (expired) Pill("Rate lock ended", PillKind.Warn, icon = Icons.Clock)
-                else Pill("Rate locked for ${Text.countdown(q.lockedUntil - now)}", PillKind.Neutral, icon = Icons.Lock)
+                when {
+                    expired && lock != null && lock.releasedAt > 0 -> Pill("Rate updated", PillKind.Info, icon = Icons.Refresh)
+                    expired -> Pill("Rate lock ended", PillKind.Warn, icon = Icons.Clock)
+                    lock?.kind == LockKind.OFFER -> Pill("Offer rate locked for ${Text.countdown(q.lockedUntil - now)}", PillKind.Ok, icon = Icons.Lock)
+                    else -> Pill("Rate locked for ${Text.countdown(q.lockedUntil - now)}", PillKind.Neutral, icon = Icons.Lock)
+                }
             }
         }
         Panel(gap = 10.dp) {
             KV("You send", Money.format(q.sendMinor, Currency.GBP))
             KV("Arro fee", if (q.feeWaived || q.feeMinor == 0L) "Free" else Money.format(q.feeMinor, Currency.GBP))
+            if (q.discountMinor > 0) KV("Points credit", "− " + Money.format(q.discountMinor, Currency.GBP), valueColor = C.Ok)
             if (q.fundingFeeMinor > 0) KV("Credit card fee", Money.format(q.fundingFeeMinor, Currency.GBP))
             if (m.type != PayoutType.ARRO) KV("Exchange rate", Money.rateLine(Currency.GBP, q.to, q.rate))
             KV("Arrives", when (m.type) {
@@ -267,9 +277,14 @@ fun SendReviewScreen() {
             KV("Paying with", fundingLabel)
             HDivider()
             KV("Total to pay", Money.format(q.totalMinor, Currency.GBP), strong = true)
+            if (earn > 0) KV("Arro Rewards", "+${Money.points(earn)} points on delivery", valueColor = C.Ok)
         }
         SelectField("Reason for sending", d.reason, { reasonPicker = true }, height = 50.dp)
-        if (expired) Note("Your 30-minute rate lock has ended. Get a new quote to carry on.", NoteKind.Warn, Icons.Clock)
+        if (expired) Note(when {
+            lock != null && lock.releasedAt > 0 -> "The rate for this transfer was updated. Get a new quote to carry on."
+            lock?.kind == LockKind.OFFER -> "Your locked offer rate ended at ${Text.time(lock.expiresAt)}. Get a new quote at today's rate to carry on."
+            else -> "Your 30-minute rate lock has ended. Get a new quote to carry on."
+        }, NoteKind.Warn, Icons.Clock)
         Cap(if (m.type == PayoutType.ARRO) "Money sent to an Arro user arrives straight away and can't be recalled."
             else "Check the number carefully. Once the money reaches ${r.firstName}'s ${if (m.type == PayoutType.BANK) "account" else "wallet"}, the transfer can't be reversed.", size = 12f)
     }

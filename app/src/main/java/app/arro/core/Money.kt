@@ -66,6 +66,9 @@ object Money {
     fun rate(value: Double, decimals: Int = 2): String = DecimalFormat("#,##0." + "0".repeat(decimals), symbols).format(value)
 
     /** Rate decimals: small numbers (EUR, USD) need four places to be meaningful. */
+    /** Whole numbers with thousands separators, for points. */
+    fun points(n: Int): String = pattern(0).format(n)
+
     fun rateDecimals(value: Double): Int = if (value < 10) 4 else 2
 
     fun rateLine(from: Currency, to: Currency, value: Double): String = "1 ${from.code} = ${rate(value, rateDecimals(value))} ${to.code}"

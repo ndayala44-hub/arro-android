@@ -22,6 +22,7 @@ import app.arro.MainActivity
 import app.arro.core.BackendEvent
 import app.arro.platform.Share
 import app.arro.ui.screens.auth.UnlockScreen
+import app.arro.ui.screens.send.startSend
 import app.arro.ui.screens.system.OfflineBar
 import kotlinx.coroutines.delay
 
@@ -70,12 +71,21 @@ fun ArroRoot() {
         wasSignedIn = state.signedIn
     }
 
-    // Open a screen requested by a notification once the app is unlocked.
+    // Open a screen requested by a notification or a widget once the app is unlocked.
     LaunchedEffect(unlocked, c.session.pendingRoute, route) {
         val pending = c.session.pendingRoute
         if (pending != null && unlocked && state.signedIn && route !in publicRoutes) {
             c.session.pendingRoute = null
-            nav.go(pending)
+            when {
+                // Quick Send from the widget goes through the normal send checks, review and approval.
+                pending == Routes.QUICK_SEND -> startSend(c, nav, banner, hub = true)
+                pending.startsWith(Routes.QUICK_SEND_TO + ":") -> startSend(c, nav, banner, country = pending.substringAfter(':'))
+                pending.startsWith(Routes.QUICK_SEND + ":") -> {
+                    val r = state.account?.recipient(pending.substringAfter(':'))
+                    if (r != null) startSend(c, nav, banner, recipient = r) else startSend(c, nav, banner, hub = true)
+                }
+                else -> nav.go(pending)
+            }
         }
     }
 
@@ -109,6 +119,10 @@ fun ArroRoot() {
                     banner.show("Amina replied", e.text.take(90), BannerKind.Info, "Open") { nav.go(Routes.CHAT) }
                 }
                 is BackendEvent.Info -> banner.show(e.title, e.body, BannerKind.Success)
+                is BackendEvent.OfferAvailable -> if (nav.currentDestination?.route != Routes.LOCK_RATE) {
+                    banner.show(e.title, e.body, BannerKind.Info, "View") { nav.go(Routes.lockRate(e.to)) }
+                }
+                is BackendEvent.LockEnded -> banner.show(e.title, e.body, BannerKind.Info, "New offer") { nav.go(Routes.lockRate(e.to)) }
             }
         }
     }

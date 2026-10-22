@@ -107,6 +107,7 @@ import app.arro.ui.components.TopBar
 import app.arro.ui.components.TrailingValue
 import app.arro.ui.components.Txt
 import app.arro.ui.components.tap
+import app.arro.ui.screens.rates.RateOfferCard
 import app.arro.ui.screens.send.startSend
 import app.arro.ui.screens.system.HomeSkeleton
 import app.arro.ui.screens.system.OfflineState
@@ -174,6 +175,7 @@ fun HomeScreen() {
                     ),
                     Modifier.padding(start = 20.dp, end = 20.dp, top = if (firstRun) 22.dp else 24.dp),
                 )
+                RateOfferCard(a, Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp))
                 if (firstRun) FirstRunBody(a) else DashboardBody(a, hidden, now)
             }
         }
@@ -198,6 +200,7 @@ private fun HomeHeader(a: Account, firstRun: Boolean) {
             if (!firstRun) RoundIcon(Icons.Search, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = "Search and help")
             RoundIcon(Icons.Bell, { nav.go(Routes.NOTIFICATIONS) }, style = IconBtn.Soft, badge = a.unreadCount > 0,
                 description = if (a.unreadCount > 0) "Notifications, ${a.unreadCount} unread" else "Notifications")
+            RoundIcon(Icons.Award, { nav.go(Routes.LOYALTY) }, style = IconBtn.Soft, description = "Loyalty and rewards, ${Money.points(a.pointsBalance)} points")
         }
     }
 }
