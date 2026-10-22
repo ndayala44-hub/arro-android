@@ -8,9 +8,17 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.BitmapShader
+import android.graphics.Canvas
+import android.graphics.Matrix
+import android.graphics.Paint
+import android.graphics.Shader
 import android.os.Build
 import android.os.Bundle
 import android.util.SizeF
+import android.util.TypedValue
 import android.view.View
 import android.widget.RemoteViews
 import app.arro.AppContainer
@@ -28,8 +36,12 @@ import app.arro.core.Rates
 import app.arro.core.Text
 import app.arro.platform.Notifier
 import app.arro.ui.Routes
+import app.arro.ui.components.flagRes
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+
+/** A recipient on the Quick Send widget. [color] is the app's avatar colour index; [flag] the payout country's flag. */
+data class WidgetRecipient(val id: String, val firstName: String, val initials: String, val color: Int, val flag: String)
 
 /**
  * What the widgets show. Built from the app's own backend state in this process, the same data the screens use;
@@ -42,8 +54,8 @@ data class WidgetData(
     val balanceMinor: Long,
     val otherWallets: Int,
     val frozen: Boolean,
-    /** Recent recipients: id, first name, initials. */
-    val recents: List<Triple<String, String, String>>,
+    /** The people sent to most recently (favourites first), for Quick Send. */
+    val recents: List<WidgetRecipient>,
     val rateCur: Currency,
     /** Today's customer rate, or null when no live rate has ever been fetched (fallback rates are never shown). */
     val liveRate: Double?,
@@ -80,7 +92,9 @@ object Widgets {
             balanceMinor = a?.wallet(Currency.GBP)?.balanceMinor ?: 0,
             otherWallets = ((a?.wallets?.size ?: 1) - 1).coerceAtLeast(0),
             frozen = a?.frozen == true,
-            recents = if (a != null && show) Insights.recentRecipients(a).take(3).map { Triple(it.id, it.firstName, it.initials) } else emptyList(),
+            recents = if (a != null && show) Insights.recentRecipients(a).take(4).map {
+                WidgetRecipient(it.id, it.firstName, it.initials, it.color, Catalog.countryOrNull(it.country)?.currency?.flag ?: "gb")
+            } else emptyList(),
             rateCur = cur,
             liveRate = if (s.rates.fetchedAt > 0) Rates.customer(s.rates, Currency.GBP, cur) else null,
             ratesAt = s.rates.fetchedAt,
@@ -97,7 +111,7 @@ object Widgets {
         val a = if (s.signedIn) s.account else null
         return listOf(
             a?.id, a?.settings?.widgetBalance, a?.wallet(Currency.GBP)?.balanceMinor, a?.wallets?.size, a?.frozen,
-            a?.let { Insights.recentRecipients(it).take(3).map { r -> r.id + r.firstName } },
+            a?.let { Insights.recentRecipients(it).take(4).map { r -> listOf(r.id, r.name, r.color, r.country) } },
             s.rates.fetchedAt, s.rates.demoMoved, s.rates.mid, c.backend.relevantCurrency(a),
             a?.liveOffer(now)?.id, a?.anyOfferLock(now)?.id, online,
         )
@@ -107,10 +121,12 @@ object Widgets {
     fun update(context: Context, refreshing: Boolean = false) {
         val m = runCatching { AppWidgetManager.getInstance(context) }.getOrNull() ?: return
         val balanceIds = m.getAppWidgetIds(ComponentName(context, BalanceWidget::class.java))
+        val quickIds = m.getAppWidgetIds(ComponentName(context, QuickSendWidget::class.java))
         val rateIds = m.getAppWidgetIds(ComponentName(context, RateWidget::class.java))
-        if (balanceIds.isEmpty() && rateIds.isEmpty()) return
+        if (balanceIds.isEmpty() && quickIds.isEmpty() && rateIds.isEmpty()) return
         val d = data(context.container)
-        for (id in balanceIds) m.updateAppWidget(id, sized(context, m.getAppWidgetOptions(id)) { wide -> balanceViews(context, d, wide) })
+        for (id in balanceIds) m.updateAppWidget(id, balanceViews(context, d))
+        for (id in quickIds) m.updateAppWidget(id, quickSendSized(context, m.getAppWidgetOptions(id), d))
         for (id in rateIds) m.updateAppWidget(id, sized(context, m.getAppWidgetOptions(id)) { wide -> rateViews(context, d, wide, refreshing) })
         scheduleExpiry(context, if (rateIds.isEmpty()) null else d.nextChangeAt)
     }
@@ -145,8 +161,9 @@ object Widgets {
         return build(minWidth >= WIDE_DP)
     }
 
-    private fun balanceViews(context: Context, d: WidgetData, wide: Boolean): RemoteViews {
-        val v = RemoteViews(context.packageName, if (wide) R.layout.widget_balance_wide else R.layout.widget_balance)
+    /** Widget A: balance and a Send button, at any size. */
+    private fun balanceViews(context: Context, d: WidgetData): RemoteViews {
+        val v = RemoteViews(context.packageName, R.layout.widget_balance)
         v.setOnClickPendingIntent(android.R.id.background, open(context, null))
         if (!d.signedIn) {
             v.setTextViewText(R.id.balance_label, "Arro")
@@ -154,43 +171,116 @@ object Widgets {
             v.setTextViewText(R.id.balance_sub, "Log in to Arro to see your balance and send money.")
             v.setTextViewText(R.id.send_text, "Open Arro")
             v.setOnClickPendingIntent(R.id.send_button, open(context, null))
-            if (wide) showRecents(context, v, emptyList(), "Your recent recipients appear here once you're logged in.")
             return v
         }
         v.setTextViewText(R.id.balance_label, "GBP balance")
-        v.setTextViewText(R.id.balance_amount, if (d.showPrivate) Money.format(d.balanceMinor, Currency.GBP) else "£ ••••")
+        v.setTextViewText(R.id.balance_amount, balanceText(d))
         v.setTextViewText(R.id.balance_sub, when {
             !d.showPrivate -> "Hidden. Show it in Arro, Security."
             d.frozen -> "Account frozen"
             d.otherWallets > 0 -> "+${d.otherWallets} more ${if (d.otherWallets == 1) "currency" else "currencies"} · ${Text.time(System.currentTimeMillis())}"
             else -> "As of ${Text.time(System.currentTimeMillis())}"
         })
-        v.setContentDescription(R.id.balance_amount, if (d.showPrivate) "GBP balance ${Money.format(d.balanceMinor, Currency.GBP)}" else "Balance hidden")
+        v.setContentDescription(R.id.balance_amount, balanceDescription(d))
         v.setTextViewText(R.id.send_text, "Send money")
         // Quick Send opens the send flow after unlocking; the usual checks, review and approval still apply.
         v.setOnClickPendingIntent(R.id.send_button, open(context, Routes.QUICK_SEND))
-        if (wide) showRecents(context, v, d.recents, if (d.showPrivate) "Your recent recipients appear here after your first transfer." else context.getString(R.string.widget_recents_hidden))
         return v
     }
 
-    private fun showRecents(context: Context, v: RemoteViews, recents: List<Triple<String, String, String>>, empty: String) {
-        val slots = listOf(
-            Triple(R.id.recent_1, R.id.recent_1_initials, R.id.recent_1_name),
-            Triple(R.id.recent_2, R.id.recent_2_initials, R.id.recent_2_name),
-            Triple(R.id.recent_3, R.id.recent_3_initials, R.id.recent_3_name),
-        )
-        slots.forEachIndexed { i, (box, initials, name) ->
-            val r = recents.getOrNull(i)
-            v.setViewVisibility(box, if (r == null) View.GONE else View.VISIBLE)
-            if (r != null) {
-                v.setTextViewText(initials, r.third)
-                v.setTextViewText(name, r.second)
-                v.setContentDescription(box, "Send to ${r.second}")
-                v.setOnClickPendingIntent(box, open(context, Routes.quickSend(r.first)))
-            }
+    private fun balanceText(d: WidgetData) = if (d.showPrivate) Money.format(d.balanceMinor, Currency.GBP) else "£ ••••"
+    private fun balanceDescription(d: WidgetData) = if (d.showPrivate) "Available balance ${Money.format(d.balanceMinor, Currency.GBP)}" else "Balance hidden"
+
+    /**
+     * Quick Send at each size: narrower widgets show fewer people, and short ones drop the "Send again" caption.
+     * Android 12+ picks the layout by size itself; older versions use the size the launcher reports.
+     */
+    private fun quickSendSized(context: Context, options: Bundle?, d: WidgetData): RemoteViews {
+        if (Build.VERSION.SDK_INT >= 31) {
+            return RemoteViews(mapOf(
+                SizeF(110f, 110f) to quickSendViews(context, d, 1, false), SizeF(180f, 110f) to quickSendViews(context, d, 2, false),
+                SizeF(250f, 110f) to quickSendViews(context, d, 4, false), SizeF(110f, 170f) to quickSendViews(context, d, 1, true),
+                SizeF(180f, 170f) to quickSendViews(context, d, 2, true), SizeF(250f, 170f) to quickSendViews(context, d, 4, true),
+            ))
         }
-        v.setViewVisibility(R.id.recents_empty, if (recents.isEmpty()) View.VISIBLE else View.GONE)
-        v.setTextViewText(R.id.recents_empty, empty)
+        val w = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+        val h = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
+        return quickSendViews(context, d, when { w >= 250 -> 4; w >= 180 -> 2; else -> 1 }, h == 0 || h >= 170)
+    }
+
+    /** Widget C: available balance, a Send button and up to [slots] people to send to again. */
+    private fun quickSendViews(context: Context, d: WidgetData, slots: Int, tall: Boolean): RemoteViews {
+        val v = RemoteViews(context.packageName, R.layout.widget_quick_send)
+        v.setOnClickPendingIntent(android.R.id.background, open(context, null))
+        v.setViewVisibility(R.id.qs_title, if (tall) View.VISIBLE else View.GONE)
+        v.setTextViewTextSize(R.id.qs_amount, TypedValue.COMPLEX_UNIT_SP, if (tall) 30f else 24f)
+        // Send starts a transfer after unlocking; the usual checks, review and approval still apply.
+        v.setTextViewText(R.id.qs_send_text, if (d.signedIn) "Send" else "Open")
+        v.setContentDescription(R.id.qs_send, if (d.signedIn) "Send money" else "Open Arro")
+        v.setOnClickPendingIntent(R.id.qs_send, open(context, if (d.signedIn) Routes.QUICK_SEND else null))
+        val slotIds = listOf(
+            listOf(R.id.qs_r1, R.id.qs_r1_initials, R.id.qs_r1_flag, R.id.qs_r1_name),
+            listOf(R.id.qs_r2, R.id.qs_r2_initials, R.id.qs_r2_flag, R.id.qs_r2_name),
+            listOf(R.id.qs_r3, R.id.qs_r3_initials, R.id.qs_r3_flag, R.id.qs_r3_name),
+            listOf(R.id.qs_r4, R.id.qs_r4_initials, R.id.qs_r4_flag, R.id.qs_r4_name),
+        )
+        val people = if (d.signedIn) d.recents.take(slots) else emptyList()
+        slotIds.forEachIndexed { i, (box, initials, flag, name) ->
+            val r = people.getOrNull(i)
+            v.setViewVisibility(box, if (r == null) View.GONE else View.VISIBLE)
+            if (r == null) return@forEachIndexed
+            val color = r.color.coerceIn(0, AVATAR_BG.lastIndex)
+            v.setTextViewText(initials, r.initials)
+            v.setInt(initials, "setBackgroundResource", AVATAR_BG[color])
+            v.setTextColor(initials, AVATAR_FG[color])
+            v.setTextViewText(name, r.firstName)
+            val flagBitmap = flagRes(r.flag).takeIf { it != 0 }?.let { roundFlag(context, it) }
+            if (flagBitmap != null) v.setImageViewBitmap(flag, flagBitmap)
+            v.setViewVisibility(flag, if (flagBitmap != null) View.VISIBLE else View.GONE)
+            v.setContentDescription(box, "Send to ${r.firstName}")
+            v.setOnClickPendingIntent(box, open(context, Routes.quickSend(r.id)))
+        }
+        val hint = when {
+            !d.signedIn -> "Log in to Arro to see your balance and send money."
+            !d.showPrivate -> context.getString(R.string.widget_recents_hidden)
+            people.isEmpty() -> "People you send to will appear here."
+            else -> null
+        }
+        v.setViewVisibility(R.id.qs_hint, if (hint == null) View.GONE else View.VISIBLE)
+        v.setTextViewText(R.id.qs_hint, hint ?: "")
+        v.setTextViewText(R.id.qs_label, when {
+            !d.signedIn -> "Arro"
+            d.frozen -> "Available balance · account frozen"
+            else -> "Available balance"
+        })
+        v.setTextViewText(R.id.qs_amount, if (d.signedIn) balanceText(d) else "Log in")
+        v.setContentDescription(R.id.qs_amount, if (d.signedIn) balanceDescription(d) else "Logged out")
+        return v
+    }
+
+    /** Avatar fills and text colours, the same as the app's (index 0 is the dark brand avatar). */
+    private val AVATAR_BG = listOf(R.drawable.widget_avatar_0, R.drawable.widget_avatar_1, R.drawable.widget_avatar_2, R.drawable.widget_avatar_3,
+        R.drawable.widget_avatar_4, R.drawable.widget_avatar_5, R.drawable.widget_avatar_6)
+    private val AVATAR_FG = listOf(0xFFB0FE78, 0xFF1F5130, 0xFF7A3A0C, 0xFF134F86, 0xFF4E2C86, 0xFF8A1E33, 0xFF2F5748).map { it.toInt() }
+
+    private val flagCache = HashMap<Int, Bitmap>()
+
+    /** A country flag cut into a circle, as the app shows it on an avatar. Cached: the same few flags repeat. */
+    private fun roundFlag(context: Context, res: Int): Bitmap? = synchronized(flagCache) {
+        flagCache[res]?.let { return@synchronized it }
+        val src = BitmapFactory.decodeResource(context.resources, res) ?: return@synchronized null
+        val px = (16 * context.resources.displayMetrics.density).toInt().coerceAtLeast(24)
+        val out = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val shader = BitmapShader(src, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
+        val scale = px.toFloat() / minOf(src.width, src.height)
+        shader.setLocalMatrix(Matrix().apply {
+            setScale(scale, scale)
+            postTranslate((px - src.width * scale) / 2f, (px - src.height * scale) / 2f)
+        })
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { this.shader = shader }
+        Canvas(out).drawCircle(px / 2f, px / 2f, px / 2f, paint)
+        flagCache[res] = out
+        out
     }
 
     private fun rateViews(context: Context, d: WidgetData, wide: Boolean, refreshing: Boolean): RemoteViews {
@@ -301,8 +391,16 @@ object Widgets {
     }
 }
 
-/** Widget A: GBP balance (if allowed) and Quick Send. */
+/** Widget A: GBP balance (if allowed) and a Send button. */
 class BalanceWidget : AppWidgetProvider() {
+    override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) = Widgets.update(context)
+
+    override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) =
+        Widgets.update(context)
+}
+
+/** Widget C: Quick Send. Available balance (if allowed) and one tap to send again to the people you send to most. */
+class QuickSendWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) = Widgets.update(context)
 
     override fun onAppWidgetOptionsChanged(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int, newOptions: Bundle) =

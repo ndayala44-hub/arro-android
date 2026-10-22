@@ -111,7 +111,7 @@ The app locks after 5 minutes in the background or 5 minutes without a touch, an
 
 - **Lock Rate:** rate offers (a better rate for a few minutes) appear on Home, as a banner, on the amount screen and in **Rates → a currency → Lock a rate**. Locking holds the rate on the backend for 10 minutes for one transfer, whatever the market does. Every quote still gets the existing 30-minute rate lock on the amount screen, now held and checked by the backend too.
 - **Loyalty and rewards:** the award button next to the bell on Home, or **Account → Loyalty and rewards**. Points (1 per 1p of Arro fee, on delivery, plus 250 on your first transfer) and referral money (£10 per qualifying friend, paid into your GBP balance) are shown separately. Swap points for fee credit.
-- **Home screen widgets:** long-press your home screen → Widgets → Arro. **Arro balance** shows your GBP balance and Quick Send; **Arro rate** shows today's rate, an offer or your locked rate. The balance is hidden until you turn on **Security → Show balance on home screen widgets** (the sample account has it on).
+- **Home screen widgets:** long-press your home screen → Widgets → Arro. **Arro Quick Send** (4×2) shows your available balance, a Send button and the people you send to most, each one tap away; **Arro balance** (2×2) shows your GBP balance and a Send button; **Arro rate** shows today's rate, an offer or your locked rate. The balance and people are hidden until you turn on **Security → Show balance on home screen widgets** (the sample account has it on).
 
 Details, data changes and a test checklist: [docs/LOCK_RATE_LOYALTY_WIDGETS.md](docs/LOCK_RATE_LOYALTY_WIDGETS.md).
 

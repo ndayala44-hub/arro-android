@@ -23,7 +23,8 @@ This adds three features to the existing app without changing its design, naviga
 
 ### Home screen widgets
 
-- **Arro balance** (2×2, resizable to 4×2): GBP balance, a **Send money** Quick Send button, and at 4×2 up to three recent recipients. Quick Send opens the app; after the usual unlock it starts the send flow (all checks, review and passcode or biometric approval unchanged). A recipient opens the amount screen for them.
+- **Arro Quick Send** (4×2 by default): "Available balance", the brand mark, and a **Send again** row: a round **Send** button followed by up to four people (favourites first, then most recent), each with their avatar colour, initials, country flag and first name. Narrower sizes show two people or just Send; short sizes drop the "Send again" caption. **Send** opens the send flow; a person opens the amount screen for them. Either way the app asks for your passcode first and the usual checks, review and approval are unchanged.
+- **Arro balance** (2×2, resizable): GBP balance and a **Send money** button.
 - **Arro rate** (2×2, resizable to 4×2): today's rate for your currency labelled **Live** and "not guaranteed until locked", or a running **Offer** with its end time, or your **Locked** rate with its end time. Refresh button, and a **Lock a rate** / **Lock this rate** / **Send at this rate** button. Expired offers aren't shown; if no live rate has ever been fetched it says so instead of showing the built-in fallback rates.
 - **States handled:** signed out (log-in prompt), balance hidden, account frozen, offline, stale rates (over an hour old), rates unavailable, updating.
 
@@ -69,11 +70,11 @@ Error codes added: `offer_ended`, `no_offer`, `offline` (offers), `points` (rede
 ## Permissions and Android setup
 
 - **No new permissions.** Widget expiry redraws use an inexact, non-waking `AlarmManager.setWindow` alarm, so no exact-alarm permission is needed.
-- **Manifest:** two `AppWidgetProvider` receivers (`.widget.BalanceWidget`, `.widget.RateWidget`), `android:exported="false"`. Widget info in `res/xml/widget_*_info.xml`; layouts in `res/layout/widget_*.xml`; colours in `res/values/widget.xml` and `values-night/widget.xml`; Android 12+ corner radius in `values-v31`.
-- **Data access:** widgets read the same in-process backend state as the screens. Nothing is exported to other apps. The balance and recent recipients only appear when **Security → Show balance on home screen widgets** is on (off by default, on for the sample account), because widgets can be seen without unlocking.
+- **Manifest:** three `AppWidgetProvider` receivers (`.widget.QuickSendWidget`, `.widget.BalanceWidget`, `.widget.RateWidget`), `android:exported="false"`. Widget info in `res/xml/widget_*_info.xml`; layouts in `res/layout/widget_*.xml`; colours in `res/values/widget.xml` and `values-night/widget.xml`; Android 12+ corner radius in `values-v31`.
+- **Data access:** widgets read the same in-process backend state as the screens. Nothing is exported to other apps. The balance and the people on Quick Send only appear when **Security → Show balance on home screen widgets** is on (off by default, on for the sample account), because widgets can be seen without unlocking.
 - **Refresh:** widgets redraw as soon as what they show changes while Arro is running; `updatePeriodMillis` is 30 minutes (Android's minimum); the rate widget fetches rates when they're over 15 minutes old or when you tap refresh, inside the broadcast's async window with an 8-second timeout.
 - **Deep links:** widget and notification taps open `MainActivity` with a route that is applied after unlock. `MainActivity` now only accepts known routes (`Routes.isDeepLink`): `quicksend`, `quicksend:{recipientId}`, `quicksend_to:{country}`, `lock_rate/{cur}`, `rate/{cur}`, `track/{id}`, `chat`, `loyalty`.
-- **Adding a widget:** long-press the home screen → Widgets → Arro → drag **Arro balance** or **Arro rate**. Resize with a long-press.
+- **Adding a widget:** long-press the home screen → Widgets → Arro → drag **Arro Quick Send**, **Arro balance** or **Arro rate**. Resize with a long-press.
 
 ## Testing
 
@@ -96,7 +97,7 @@ On a device (Fast mode on, sample account):
 3. Demo controls → End my locked rate now: the "locked rate has ended" banner and notification appear; the review screen asks for a new quote.
 4. Send a transfer and let it deliver: Loyalty and rewards shows the new points (from Home's award button and from Account). Swap 1,000 points; the next quote shows "Points credit".
 5. Demo controls → A friend joins, then Their first £120 transfer is delivered: £10 appears under Referrals and in the GBP balance.
-6. Add both widgets, resize them to 4×2, toggle Security → Show balance on home screen widgets, tap Quick Send, a recipient, Lock a rate and refresh; turn on airplane mode and tap refresh.
+6. Add the three widgets. On Quick Send, tap Send and then a person; narrow it to 2 or 3 columns to see fewer people. Toggle Security → Show balance on home screen widgets. On the rate widget tap Lock a rate and refresh, then turn on airplane mode and tap refresh.
 7. Log out: the widgets ask you to log in.
 
 ## Limitations
