@@ -127,6 +127,7 @@ import app.arro.ui.theme.C
 import app.arro.ui.theme.T
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableLongStateOf
 
 /** What the biometric prompt is called in text ("Turn on fingerprint or face unlock"). */
 val BIO_NAME: String get() = str(R.string.auth_bio_name)
@@ -339,7 +340,7 @@ fun OtpScreen() {
     val call = rememberCall()
     val banner = LocalBanner.current
     var code by rememberSaveable { mutableStateOf("") }
-    var resendAt by remember { mutableStateOf(System.currentTimeMillis() + 60_000) }
+    var resendAt by remember { mutableLongStateOf(System.currentTimeMillis() + 60_000) }
     val now = app.arro.ui.nowTicker()
     fun verify(v: String = code) {
         if (v.length < 6) { call.error.value = str(R.string.auth_enter_all_6_digits); return }

@@ -40,6 +40,7 @@ import app.arro.ui.Routes
 import app.arro.ui.components.flagRes
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import androidx.core.graphics.createBitmap
 
 /** A recipient on the Quick Send widget. [color] is the app's avatar colour index; [flag] the payout country's flag. */
 data class WidgetRecipient(val id: String, val firstName: String, val initials: String, val color: Int, val flag: String)
@@ -309,7 +310,7 @@ object Widgets {
         flagCache[res]?.let { return@synchronized it }
         val src = BitmapFactory.decodeResource(context.resources, res) ?: return@synchronized null
         val px = (16 * context.resources.displayMetrics.density).toInt().coerceAtLeast(24)
-        val out = Bitmap.createBitmap(px, px, Bitmap.Config.ARGB_8888)
+        val out = createBitmap(px, px)
         val shader = BitmapShader(src, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP)
         val scale = px.toFloat() / minOf(src.width, src.height)
         shader.setLocalMatrix(Matrix().apply {

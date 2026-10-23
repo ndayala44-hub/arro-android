@@ -50,6 +50,7 @@ import app.arro.ui.theme.T
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.mutableLongStateOf
 
 val LocalNav = staticCompositionLocalOf<NavHostController> { error(str(R.string.common_no_navigation)) }
 val LocalBanner = staticCompositionLocalOf<BannerState> { error(str(R.string.common_no_banner_host)) }
@@ -70,7 +71,7 @@ fun account(): Account? = appState().value.account
 /** Ticks every second, for countdowns and live status. */
 @Composable
 fun nowTicker(periodMs: Long = 1000): Long {
-    var now by remember { mutableStateOf(System.currentTimeMillis()) }
+    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(periodMs) {
         while (true) {
             delay(periodMs)

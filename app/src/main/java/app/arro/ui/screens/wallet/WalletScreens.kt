@@ -124,6 +124,7 @@ import app.arro.ui.theme.T
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import androidx.compose.runtime.mutableIntStateOf
 
 // ------------------------------------------------------------------ shared pieces
 
@@ -633,7 +634,7 @@ fun StatementsScreen() {
     val a = state.account ?: return
     val today = Text.localDate(b.now)
     var cur by remember { mutableStateOf(c.session.walletCurrency.takeIf { a.wallet(it) != null } ?: Currency.GBP) }
-    var period by rememberSaveable { mutableStateOf(1) }
+    var period by rememberSaveable { mutableIntStateOf(1) }
     var customFrom by rememberSaveable { mutableStateOf(today.minusMonths(2).withDayOfMonth(1).toString()) }
     var customTo by rememberSaveable { mutableStateOf(today.toString()) }
     var pdf by rememberSaveable { mutableStateOf(true) }

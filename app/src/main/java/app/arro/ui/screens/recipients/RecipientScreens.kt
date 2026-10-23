@@ -112,6 +112,7 @@ import app.arro.ui.screens.system.EmptyState
 import app.arro.ui.theme.C
 import app.arro.ui.theme.T
 import kotlinx.coroutines.delay
+import androidx.compose.runtime.mutableIntStateOf
 
 private fun flagOf(country: String) = Catalog.countryOrNull(country)?.currency?.flag ?: "gb"
 
@@ -577,7 +578,7 @@ fun EditRecipientScreen(id: String) {
     val m = r.defaultMethod
     val country = Catalog.countryOrNull(r.country)
     var name by rememberSaveable { mutableStateOf(r.name) }
-    var color by rememberSaveable { mutableStateOf(r.color) }
+    var color by rememberSaveable { mutableIntStateOf(r.color) }
     var number by rememberSaveable {
         mutableStateOf(if (m != null && country != null && m.type != PayoutType.BANK && m.type != PayoutType.ARRO) Validation.nationalDigits(m.account, country) else m?.account ?: "")
     }

@@ -9,6 +9,9 @@ import app.arro.core.DocType
 import app.arro.core.NameCheck
 import app.arro.core.PayoutType
 import app.arro.core.Quote
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableIntStateOf
 
 /** The transfer being put together across the send screens. */
 class SendDraft {
@@ -66,7 +69,7 @@ class KycDraft {
     var docType by mutableStateOf(DocType.PASSPORT)
     var docCountry by mutableStateOf(str(R.string.session_united_kingdom))
     var photoPath by mutableStateOf<String?>(null)
-    var quality by mutableStateOf(0f)
+    var quality by mutableFloatStateOf(0f)
     var qualityNotes by mutableStateOf<List<Pair<String, Boolean>>>(emptyList())
     var selfieDone by mutableStateOf(false)
 }
@@ -80,7 +83,7 @@ class Session {
     var pendingCardId by mutableStateOf<String?>(null)
     var scannedCard by mutableStateOf<Pair<String, String>?>(null)
     var cardReturnToSend by mutableStateOf(false)
-    var resetUntil by mutableStateOf(0L)
+    var resetUntil by mutableLongStateOf(0L)
     /** Set when the app locked itself after inactivity, to show the "Session ended" screen. */
     var sessionExpired by mutableStateOf(false)
     /** A screen to open once the app is unlocked (from a notification). */
@@ -89,7 +92,7 @@ class Session {
     /** Transfer the support chat is about, shown as a pill at the top of the chat. */
     var chatAbout by mutableStateOf<String?>(null)
     /** Pre-selected topic (index) for the report-a-problem form. */
-    var disputeTopic by mutableStateOf(0)
+    var disputeTopic by mutableIntStateOf(0)
     /** Ask the tracking screen to open its cancel sheet straight away. */
     var openCancel by mutableStateOf(false)
 }

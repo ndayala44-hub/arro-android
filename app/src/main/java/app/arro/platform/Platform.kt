@@ -44,6 +44,7 @@ import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.time.LocalTime
+import androidx.core.net.toUri
 
 /** Keeps the backend's JSON document in internal storage, written atomically. */
 /**
@@ -298,15 +299,15 @@ object Share {
     }
 
     fun openUrl(context: Context, url: String) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
     fun email(context: Context, to: String, subject: String) {
-        val i = Intent(Intent.ACTION_SENDTO, android.net.Uri.parse("mailto:$to")).putExtra(Intent.EXTRA_SUBJECT, subject)
+        val i = Intent(Intent.ACTION_SENDTO, "mailto:$to".toUri()).putExtra(Intent.EXTRA_SUBJECT, subject)
         runCatching { context.startActivity(i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
     fun dial(context: Context, number: String) {
-        runCatching { context.startActivity(Intent(Intent.ACTION_DIAL, android.net.Uri.parse("tel:$number")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        runCatching { context.startActivity(Intent(Intent.ACTION_DIAL, "tel:$number".toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 }

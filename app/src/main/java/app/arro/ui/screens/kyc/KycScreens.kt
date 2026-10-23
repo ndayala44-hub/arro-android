@@ -139,6 +139,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
+import androidx.core.graphics.createBitmap
 
 private fun docFile(dir: File, n: Int = 0) = File(File(dir, "kyc").apply { mkdirs() }, "document_$n.jpg")
 
@@ -562,7 +563,7 @@ fun MockDocument(modifier: Modifier = Modifier) {
 /** Writes a plain sample image for devices without a camera, so the flow can be completed. */
 private fun sampleDocument(context: android.content.Context): File {
     val f = docFile(context.filesDir, 9)
-    val bmp = android.graphics.Bitmap.createBitmap(640, 440, android.graphics.Bitmap.Config.ARGB_8888)
+    val bmp = createBitmap(640, 440)
     val canvas = android.graphics.Canvas(bmp)
     canvas.drawColor(0xFFE9E3D5.toInt())
     val paint = android.graphics.Paint().apply { color = 0xFF6E6656.toInt(); textSize = 26f; isAntiAlias = true; typeface = android.graphics.Typeface.MONOSPACE }
