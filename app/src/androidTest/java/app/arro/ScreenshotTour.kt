@@ -43,12 +43,32 @@ class ScreenshotTour {
     private val out = File(app.filesDir, "screenshots").apply { deleteRecursively(); mkdirs() }
     private var n = 0
 
-    private fun shot(name: String, settleMs: Long = 1_400) {
+    /**
+     * Saves a screenshot after [settleMs]. If [ready] says the screen isn't drawn yet (say, Home still shows its
+     * loading skeleton on a slow emulator), it waits and tries again, a few times.
+     */
+    private fun shot(name: String, settleMs: Long = 1_400, ready: (Bitmap) -> Boolean = { true }) {
         SystemClock.sleep(settleMs)
-        instrumentation.waitForIdleSync()
-        val bmp = instrumentation.uiAutomation.takeScreenshot() ?: return
+        var bmp: Bitmap? = null
+        for (attempt in 0 until 6) {
+            instrumentation.waitForIdleSync()
+            bmp = instrumentation.uiAutomation.takeScreenshot() ?: return
+            if (ready(bmp)) break
+            SystemClock.sleep(1_500)
+        }
         n++
-        File(out, "%02d_%s.png".format(n, name)).outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        File(out, "%02d_%s.png".format(n, name)).outputStream().use { bmp!!.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
+
+    /** True once the top of the screen has text in the brand's ink colour (the loading skeleton is only grey). */
+    private fun hasInk(bmp: Bitmap): Boolean {
+        var ink = 0
+        val h = bmp.height / 3
+        for (y in 0 until h step 6) for (x in 0 until bmp.width step 6) {
+            val p = bmp.getPixel(x, y)
+            if (Color.red(p) < 40 && Color.green(p) < 70 && Color.blue(p) < 70) ink++
+        }
+        return ink > 40
     }
 
     private fun open(route: String, name: String, settleMs: Long = 1_400) {
@@ -86,7 +106,7 @@ class ScreenshotTour {
         }
         scenario = ActivityScenario.launch(MainActivity::class.java)
         waitFor { b.state.value.rates.fetchedAt > 0 }
-        shot("home", 3_500)
+        shot("home", 3_500, ::hasInk)
 
         // Lock Rate: an offer on Home (with its banner), the Lock a rate screen, then the locked rate.
         onMain { b.demoOfferNow() }
