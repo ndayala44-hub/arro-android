@@ -77,8 +77,25 @@ object Widgets {
     private const val STALE_MS = 3 * 60 * 60_000L
     /** The widget's own refresh only fetches when rates are older than this (the provider asks for at most hourly). */
     private const val REFRESH_AFTER_MS = 60 * 60_000L
-    /** Width from which the wider layouts are used. */
-    private const val WIDE_DP = 250
+    /** Width (dp) from which the wider layouts are used. */
+    private const val WIDE_DP = 250f
+
+    /**
+     * The sizes (dp) each widget has a layout for. Each step adds what fits: a short widget drops the button or
+     * caption rather than cutting it off. Android 12+ picks from these itself; older versions use [fit].
+     */
+    private val BALANCE_SIZES = grid(listOf(110f), listOf(110f, 142f, 156f))
+    private val RATE_SIZES = grid(listOf(110f, WIDE_DP), listOf(110f, 124f, 164f, 178f))
+    private val QUICK_SIZES = grid(listOf(110f, 180f, WIDE_DP), listOf(110f, 126f, 152f, 180f))
+
+    private fun grid(widths: List<Float>, heights: List<Float>) = widths.flatMap { w -> heights.map { h -> SizeF(w, h) } }
+
+    /** The largest size in [sizes] that fits [wDp] x [hDp], as Android 12+ chooses; the smallest when none fits. */
+    private fun fit(sizes: List<SizeF>, wDp: Float, hDp: Float): SizeF {
+        val w = sizes.map { it.width }.filter { it <= wDp }.maxOrNull() ?: sizes.minOf { it.width }
+        val h = sizes.map { it.height }.filter { it <= hDp }.maxOrNull() ?: sizes.minOf { it.height }
+        return SizeF(w, h)
+    }
 
     fun data(c: AppContainer, now: Long = System.currentTimeMillis()): WidgetData {
         val s = c.backend.state.value
@@ -126,9 +143,9 @@ object Widgets {
         val rateIds = m.getAppWidgetIds(ComponentName(context, RateWidget::class.java))
         if (balanceIds.isEmpty() && quickIds.isEmpty() && rateIds.isEmpty()) return
         val d = data(context.container)
-        for (id in balanceIds) m.updateAppWidget(id, balanceViews(context, d))
-        for (id in quickIds) m.updateAppWidget(id, quickSendSized(context, m.getAppWidgetOptions(id), d))
-        for (id in rateIds) m.updateAppWidget(id, sized(context, m.getAppWidgetOptions(id)) { wide -> rateViews(context, d, wide, refreshing) })
+        for (id in balanceIds) m.updateAppWidget(id, responsive(m.getAppWidgetOptions(id), BALANCE_SIZES, SizeF(110f, 156f)) { balanceViews(context, d, it) })
+        for (id in quickIds) m.updateAppWidget(id, responsive(m.getAppWidgetOptions(id), QUICK_SIZES, SizeF(WIDE_DP, 180f)) { quickSendViews(context, d, it) })
+        for (id in rateIds) m.updateAppWidget(id, responsive(m.getAppWidgetOptions(id), RATE_SIZES, SizeF(110f, 164f)) { rateViews(context, d, it, refreshing) })
         scheduleExpiry(context, if (rateIds.isEmpty()) null else d.nextChangeAt)
     }
 
@@ -151,35 +168,44 @@ object Widgets {
         }
     }
 
-    /** One widget's views at a single size, from the current data. Used by the screenshot tour and previews. */
-    internal fun previewViews(context: Context, which: String, wide: Boolean): RemoteViews {
+    /**
+     * One widget's views for a [wDp] x [hDp] widget, from the current data, chosen the way the launcher would.
+     * Used by the screenshot tour.
+     */
+    internal fun previewViews(context: Context, which: String, wDp: Float, hDp: Float): RemoteViews {
         val d = data(context.container)
         return when (which) {
-            "balance" -> balanceViews(context, d)
-            "quick" -> quickSendViews(context, d, if (wide) 4 else 2, true)
-            else -> rateViews(context, d, wide, false)
+            "balance" -> balanceViews(context, d, fit(BALANCE_SIZES, wDp, hDp))
+            "quick" -> quickSendViews(context, d, fit(QUICK_SIZES, wDp, hDp))
+            else -> rateViews(context, d, fit(RATE_SIZES, wDp, hDp), false)
         }
     }
 
     // ------------------------------------------------------------------ layouts
 
-    /** Responsive layouts: Android 12+ picks by size itself; older versions use the reported width. */
-    private fun sized(context: Context, options: Bundle?, build: (Boolean) -> RemoteViews): RemoteViews {
-        if (Build.VERSION.SDK_INT >= 31) {
-            return RemoteViews(mapOf(SizeF(110f, 110f) to build(false), SizeF(WIDE_DP.toFloat(), 110f) to build(true)))
-        }
-        val minWidth = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
-        return build(minWidth >= WIDE_DP)
+    /**
+     * Responsive layouts: Android 12+ picks one of [sizes] itself as the widget is resized. Older versions get the
+     * one for the size the launcher reports in portrait, or [fallback] when it doesn't report one.
+     */
+    private fun responsive(options: Bundle?, sizes: List<SizeF>, fallback: SizeF, build: (SizeF) -> RemoteViews): RemoteViews {
+        if (Build.VERSION.SDK_INT >= 31) return RemoteViews(sizes.associateWith(build))
+        val w = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+        val h = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
+        return build(if (w <= 0 || h <= 0) fallback else fit(sizes, w.toFloat(), h.toFloat()))
     }
 
-    /** Widget A: balance and a Send button, at any size. */
-    private fun balanceViews(context: Context, d: WidgetData): RemoteViews {
+    /** Widget A: balance and a Send button. Short widgets drop the button (the whole widget opens Arro). */
+    private fun balanceViews(context: Context, d: WidgetData, size: SizeF): RemoteViews {
         val v = RemoteViews(context.packageName, R.layout.widget_balance)
+        val twoLines = size.height >= 156f
         v.setOnClickPendingIntent(android.R.id.background, open(context, null))
+        v.setViewVisibility(R.id.send_button, if (size.height >= 142f) View.VISIBLE else View.GONE)
+        v.setInt(R.id.balance_sub, "setMaxLines", if (twoLines) 2 else 1)
         if (!d.signedIn) {
             v.setTextViewText(R.id.balance_label, str(R.string.widget_arro))
             v.setTextViewText(R.id.balance_amount, str(R.string.widget_log_in))
-            v.setTextViewText(R.id.balance_sub, str(R.string.widget_log_in_to_arro_to_see))
+            v.setTextViewText(R.id.balance_sub, if (twoLines) str(R.string.widget_log_in_to_arro_to_see) else "")
+            v.setViewVisibility(R.id.balance_sub, if (twoLines) View.VISIBLE else View.GONE)
             v.setTextViewText(R.id.send_text, str(R.string.widget_open_arro))
             v.setOnClickPendingIntent(R.id.send_button, open(context, null))
             return v
@@ -187,7 +213,7 @@ object Widgets {
         v.setTextViewText(R.id.balance_label, str(R.string.widget_gbp_balance))
         v.setTextViewText(R.id.balance_amount, balanceText(d))
         v.setTextViewText(R.id.balance_sub, when {
-            !d.showPrivate -> str(R.string.widget_hidden_show_it_in_arro_security)
+            !d.showPrivate -> if (twoLines) str(R.string.widget_hidden_show_it_in_arro_security) else str(R.string.widget_balance_hidden)
             d.frozen -> str(R.string.widget_account_frozen)
             d.otherWallets > 0 -> str(R.string.widget_x_more_x_x, d.otherWallets, if (d.otherWallets == 1) str(R.string.widget_currency) else str(R.string.widget_currencies), Text.time(System.currentTimeMillis()))
             else -> str(R.string.widget_as_of_x, Text.time(System.currentTimeMillis()))
@@ -203,28 +229,18 @@ object Widgets {
     private fun balanceDescription(d: WidgetData) = if (d.showPrivate) str(R.string.widget_available_balance_x, Money.format(d.balanceMinor, Currency.GBP)) else str(R.string.widget_balance_hidden)
 
     /**
-     * Quick Send at each size: narrower widgets show fewer people, and short ones drop the "Send again" caption.
-     * Android 12+ picks the layout by size itself; older versions use the size the launcher reports.
+     * Widget C: available balance, a Send button and people to send to again. Narrower widgets show fewer people;
+     * shorter ones drop, in turn, the "Send again" caption, the label row and the names under the avatars.
      */
-    private fun quickSendSized(context: Context, options: Bundle?, d: WidgetData): RemoteViews {
-        if (Build.VERSION.SDK_INT >= 31) {
-            return RemoteViews(mapOf(
-                SizeF(110f, 110f) to quickSendViews(context, d, 1, false), SizeF(180f, 110f) to quickSendViews(context, d, 2, false),
-                SizeF(250f, 110f) to quickSendViews(context, d, 4, false), SizeF(110f, 170f) to quickSendViews(context, d, 1, true),
-                SizeF(180f, 170f) to quickSendViews(context, d, 2, true), SizeF(250f, 170f) to quickSendViews(context, d, 4, true),
-            ))
-        }
-        val w = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
-        val h = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
-        return quickSendViews(context, d, when { w >= 250 -> 4; w >= 180 -> 2; else -> 1 }, h == 0 || h >= 170)
-    }
-
-    /** Widget C: available balance, a Send button and up to [slots] people to send to again. */
-    private fun quickSendViews(context: Context, d: WidgetData, slots: Int, tall: Boolean): RemoteViews {
+    private fun quickSendViews(context: Context, d: WidgetData, size: SizeF): RemoteViews {
         val v = RemoteViews(context.packageName, R.layout.widget_quick_send)
+        val slots = when { size.width >= WIDE_DP -> 4; size.width >= 180f -> 2; else -> 1 }
+        val step = when { size.height >= 180f -> 3; size.height >= 152f -> 2; size.height >= 126f -> 1; else -> 0 }
         v.setOnClickPendingIntent(android.R.id.background, open(context, null))
-        v.setViewVisibility(R.id.qs_title, if (tall) View.VISIBLE else View.GONE)
-        v.setTextViewTextSize(R.id.qs_amount, TypedValue.COMPLEX_UNIT_SP, if (tall) 30f else 24f)
+        v.setViewVisibility(R.id.qs_title, if (step >= 3) View.VISIBLE else View.GONE)
+        v.setViewVisibility(R.id.qs_header, if (step >= 2) View.VISIBLE else View.GONE)
+        v.setTextViewTextSize(R.id.qs_amount, TypedValue.COMPLEX_UNIT_SP, when (step) { 3 -> 28f; 2 -> 24f; else -> 22f })
+        v.setViewVisibility(R.id.qs_send_text, if (step >= 1) View.VISIBLE else View.GONE)
         // Send starts a transfer after unlocking; the usual checks, review and approval still apply.
         v.setTextViewText(R.id.qs_send_text, if (d.signedIn) str(R.string.widget_send_2) else str(R.string.widget_open))
         v.setContentDescription(R.id.qs_send, if (d.signedIn) str(R.string.widget_send_money_2) else str(R.string.widget_open_arro))
@@ -245,6 +261,7 @@ object Widgets {
             v.setInt(initials, "setBackgroundResource", AVATAR_BG[color])
             v.setTextColor(initials, AVATAR_FG[color])
             v.setTextViewText(name, r.firstName)
+            v.setViewVisibility(name, if (step >= 1) View.VISIBLE else View.GONE)
             val flagBitmap = flagRes(r.flag).takeIf { it != 0 }?.let { roundFlag(context, it) }
             if (flagBitmap != null) v.setImageViewBitmap(flag, flagBitmap)
             v.setViewVisibility(flag, if (flagBitmap != null) View.VISIBLE else View.GONE)
@@ -294,8 +311,19 @@ object Widgets {
         out
     }
 
-    private fun rateViews(context: Context, d: WidgetData, wide: Boolean, refreshing: Boolean): RemoteViews {
+    /**
+     * Widget B at [size]. Short widgets drop the button (the whole widget opens the rate), then the unit line; the
+     * status gets a second line only on tall widgets, and 2 x 2 widgets use the shorter wording that fits one line.
+     */
+    private fun rateViews(context: Context, d: WidgetData, size: SizeF, refreshing: Boolean): RemoteViews {
+        val wide = size.width >= WIDE_DP
+        val lines = if (size.height >= 178f) 2 else 1
+        val short = !wide && lines == 1
         val v = RemoteViews(context.packageName, if (wide) R.layout.widget_rate_wide else R.layout.widget_rate)
+        v.setViewVisibility(if (wide) R.id.rate_bottom else R.id.rate_button, if (size.height >= 164f) View.VISIBLE else View.GONE)
+        v.setViewVisibility(R.id.rate_unit, if (size.height >= 124f) View.VISIBLE else View.GONE)
+        v.setInt(R.id.rate_status, "setMaxLines", lines)
+        v.setInt(R.id.rate_status_warn, "setMaxLines", lines)
         val cur = d.rateCur
         val now = System.currentTimeMillis()
         val sample = 25_000L
@@ -311,7 +339,8 @@ object Widgets {
                 badge(v, str(R.string.widget_locked), R.drawable.widget_pill_locked)
                 v.setTextViewText(R.id.rate_value, Money.rate(l.rate, Money.rateDecimals(l.rate)))
                 v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_locked_rate, cur.code))
-                status = str(R.string.widget_held_for_your_next_transfer_until, Text.time(l.expiresAt))
+                status = if (short) str(R.string.widget_held_until_x, Text.time(l.expiresAt))
+                    else str(R.string.widget_held_for_your_next_transfer_until, Text.time(l.expiresAt))
                 extra = str(R.string.widget_n_250_sends_x, Money.format(Money.convert(sample, Currency.GBP, cur, l.rate), cur))
                 button(context, v, str(R.string.widget_send_at_this_rate), R.drawable.ic_arrow_up_right,
                     Catalog.countryForCurrency(cur)?.let { Routes.quickSendTo(it.code) } ?: Routes.lockRate(cur.code))
@@ -320,8 +349,9 @@ object Widgets {
                 val o = d.offer
                 badge(v, str(R.string.widget_offer), R.drawable.widget_pill_offer)
                 v.setTextViewText(R.id.rate_value, Money.rate(o.rate, Money.rateDecimals(o.rate)))
-                v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_offer_not_locked, cur.code))
-                status = str(R.string.widget_offer_ends_x_usually_x, Text.time(o.expiresAt), Money.rate(o.standardRate, Money.rateDecimals(o.standardRate)))
+                v.setTextViewText(R.id.rate_unit, if (wide) str(R.string.widget_x_for_1_offer_not_locked, cur.code) else str(R.string.widget_x_for_1_offer, cur.code))
+                status = if (short) str(R.string.widget_offer_ends_x, Text.time(o.expiresAt))
+                    else str(R.string.widget_offer_ends_x_usually_x, Text.time(o.expiresAt), Money.rate(o.standardRate, Money.rateDecimals(o.standardRate)))
                 extra = str(R.string.widget_lock_it_for_x_minutes, o.lockMinutes)
                 button(context, v, str(R.string.widget_lock_this_rate), R.drawable.ic_lock, Routes.lockRate(cur.code))
             }
@@ -330,7 +360,11 @@ object Widgets {
                 v.setTextViewText(R.id.rate_value, "—")
                 v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1, cur.code))
                 status = ""
-                warn = if (refreshing) str(R.string.widget_updating) else if (!d.online) str(R.string.widget_you_re_offline_rates_appear_once) else str(R.string.widget_rate_unavailable_tap_refresh_to_try)
+                warn = when {
+                    refreshing -> str(R.string.widget_updating)
+                    !d.online -> if (short) str(R.string.widget_you_re_offline) else str(R.string.widget_you_re_offline_rates_appear_once)
+                    else -> if (short) str(R.string.widget_rate_unavailable) else str(R.string.widget_rate_unavailable_tap_refresh_to_try)
+                }
                 button(context, v, str(R.string.widget_open_arro), R.drawable.ic_arrow_up_right, null)
             }
             else -> {
@@ -339,11 +373,13 @@ object Widgets {
                 v.setTextViewText(R.id.rate_value, Money.rate(rate, Money.rateDecimals(rate)))
                 v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_today_s_rate, cur.code))
                 val stale = now - d.ratesAt > STALE_MS
-                status = str(R.string.widget_updated_x_not_guaranteed_until_locked, Text.time(d.ratesAt)) + if (d.demoMoved) str(R.string.widget_demo_market_move) else ""
+                status = if (short) str(R.string.widget_updated_x, Text.time(d.ratesAt))
+                    else str(R.string.widget_updated_x_not_guaranteed_until_locked, Text.time(d.ratesAt)) + if (d.demoMoved) str(R.string.widget_demo_market_move) else ""
+                val day = Text.relativeDay(d.ratesAt, now).lowercase()
                 when {
                     refreshing -> { warn = str(R.string.widget_updating); status = "" }
-                    stale && !d.online -> { warn = str(R.string.widget_offline_rate_from_x, Text.relativeDay(d.ratesAt, now).lowercase()); status = "" }
-                    stale -> { warn = str(R.string.widget_updated_x_may_be_out_of, Text.relativeDay(d.ratesAt, now).lowercase()); status = "" }
+                    stale && !d.online -> { warn = if (short) str(R.string.widget_offline_from_x, day) else str(R.string.widget_offline_rate_from_x, day); status = "" }
+                    stale -> { warn = if (short) str(R.string.widget_updated_x, day) else str(R.string.widget_updated_x_may_be_out_of, day); status = "" }
                 }
                 extra = str(R.string.widget_n_250_sends_about_x, Money.format(Money.convert(sample, Currency.GBP, cur, rate), cur))
                 if (d.signedIn) button(context, v, str(R.string.widget_lock_a_rate), R.drawable.ic_lock, Routes.lockRate(cur.code))

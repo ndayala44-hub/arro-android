@@ -92,23 +92,25 @@ class ScreenshotTour {
         onMain { b.demoOfferNow() }
         shot("home_rate_offer", 1_800)
         SystemClock.sleep(3_500) // let the banner go
-        open(Routes.lockRate("RWF"), "lock_rate_offer")
-        val offerId = b.state.value.account?.rateOffer?.id
-        if (offerId != null) onMain { b.lockOffer(offerId) }
+        // The offer is for where this account sends most recently: Kenya, to Wanjiru.
+        val offer = b.state.value.account?.rateOffer
+        val offerCur = Currency.of(offer?.to ?: "KES")
+        open(Routes.lockRate(offerCur.code), "lock_rate_offer")
+        if (offer != null) onMain { b.lockOffer(offer.id) }
         shot("lock_rate_locked")
 
-        // Send: amount (locked rate and points), then review.
+        // Send to Wanjiru at the locked rate: amount (with the lock and points), payment, then review.
         instrumentation.runOnMainSync {
             val d = c.session.send
-            d.reset("RW")
-            d.recipientId = "R_CLAUDINE"; d.methodId = "PM_CU_MTN"; d.payoutType = PayoutType.MOBILE_MONEY; d.amountText = "250"
+            d.reset("KE")
+            d.recipientId = "R_WANJIRU"; d.methodId = "PM_WK"; d.payoutType = PayoutType.MOBILE_MONEY; d.amountText = "250"
         }
         open(Routes.SEND_AMOUNT, "send_amount")
         instrumentation.runOnMainSync {
             val d = c.session.send
             d.fundingId = "PAY_VISA"
-            b.holdRate(Currency.RWF)
-            d.quote = b.quote(Currency.RWF, 25_000, PayoutType.MOBILE_MONEY, "RW", "PAY_VISA")
+            b.holdRate(Currency.KES)
+            d.quote = b.quote(Currency.KES, 25_000, PayoutType.MOBILE_MONEY, "KE", "PAY_VISA")
         }
         open(Routes.SEND_FUNDING, "send_funding")
         open(Routes.SEND_REVIEW, "send_review")
@@ -143,7 +145,7 @@ class ScreenshotTour {
         var transferId = ""
         onMain {
             val q = c.session.send.quote ?: return@onMain
-            transferId = b.createTransfer(TransferDraft("R_CLAUDINE", "PM_CU_MTN", q, "PAY_VISA", "Family support")).id
+            transferId = b.createTransfer(TransferDraft("R_WANJIRU", "PM_WK", q, "PAY_VISA", "Family support")).id
         }
         if (transferId.isNotEmpty()) open(Routes.track(transferId), "track_in_progress", 3_000)
 
@@ -161,15 +163,23 @@ class ScreenshotTour {
         onMain { b.demoOfferNow() }
         for (night in listOf(false, true)) {
             val suffix = if (night) "_dark" else ""
-            widget("quick", wide = true, wDp = 340, hDp = 184, night = night, name = "widget_quick_send$suffix")
-            widget("balance", wide = false, wDp = 168, hDp = 168, night = night, name = "widget_balance$suffix")
-            widget("rate", wide = false, wDp = 168, hDp = 168, night = night, name = "widget_rate$suffix")
-            widget("rate", wide = true, wDp = 340, hDp = 168, night = night, name = "widget_rate_wide$suffix")
+            widget("quick", wDp = 340, hDp = 184, night = night, name = "widget_quick_send$suffix")
+            widget("balance", wDp = 168, hDp = 168, night = night, name = "widget_balance$suffix")
+            widget("rate", wDp = 168, hDp = 168, night = night, name = "widget_rate$suffix")
+            widget("rate", wDp = 340, hDp = 168, night = night, name = "widget_rate_wide$suffix")
         }
+        // Layout checks at the smallest size of each step and at common launcher sizes, to catch clipped text.
+        val checks = File(out, "checks").apply { mkdirs() }
+        val sizes = mapOf(
+            "quick" to listOf(110 to 110, 180 to 126, 250 to 152, 250 to 180, 300 to 140, 360 to 200, 400 to 110),
+            "balance" to listOf(110 to 110, 110 to 142, 120 to 156, 150 to 150, 180 to 200),
+            "rate" to listOf(110 to 110, 110 to 124, 110 to 164, 140 to 178, 250 to 110, 250 to 124, 250 to 164, 300 to 178, 400 to 220),
+        )
+        for ((which, list) in sizes) for ((w, h) in list) widget(which, w, h, night = false, name = "${which}_${w}x$h", dir = checks)
     }
 
     /** Renders one widget's RemoteViews into a PNG at the given size, in the light or dark theme. */
-    private fun widget(which: String, wide: Boolean, wDp: Int, hDp: Int, night: Boolean, name: String) {
+    private fun widget(which: String, wDp: Int, hDp: Int, night: Boolean, name: String, dir: File = out) {
         instrumentation.runOnMainSync {
             val config = Configuration(app.resources.configuration).apply {
                 uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or if (night) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
@@ -178,14 +188,14 @@ class ScreenshotTour {
             val density = ctx.resources.displayMetrics.density
             val w = (wDp * density).toInt(); val h = (hDp * density).toInt()
             val parent = FrameLayout(ctx)
-            val view = Widgets.previewViews(app, which, wide).apply(ctx, parent)
+            val view = Widgets.previewViews(app, which, wDp.toFloat(), hDp.toFloat()).apply(ctx, parent)
             view.measure(View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY), View.MeasureSpec.makeMeasureSpec(h, View.MeasureSpec.EXACTLY))
             view.layout(0, 0, w, h)
             val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             bmp.eraseColor(Color.TRANSPARENT)
             view.draw(Canvas(bmp))
-            n++
-            File(out, "%02d_%s.png".format(n, name)).outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            val file = if (dir == out) File(out, "%02d_%s.png".format(++n, name)) else File(dir, "$name.png")
+            file.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
         }
     }
 }

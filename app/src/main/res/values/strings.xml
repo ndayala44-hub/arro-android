@@ -2058,6 +2058,14 @@
     <string name="widget_updated_x_may_be_out_of">Updated %1$s · may be out of date</string>
     <string name="widget_n_250_sends_about_x">£250 sends about %1$s</string>
     <string name="widget_lock_a_rate">Lock a rate</string>
+    <!-- Shorter versions for 2 x 2 widgets, which have room for one line -->
+    <string name="widget_held_until_x">Held until %1$s</string>
+    <string name="widget_offer_ends_x">Offer ends %1$s</string>
+    <string name="widget_x_for_1_offer">%1$s for £1 · offer</string>
+    <string name="widget_updated_x">Updated %1$s</string>
+    <string name="widget_offline_from_x">Offline · from %1$s</string>
+    <string name="widget_you_re_offline">You\'re offline</string>
+    <string name="widget_rate_unavailable">Rate unavailable</string>
     <!-- Text with counts and joined phrases, written out whole so they can be translated -->
     <string name="auth_bio_name">fingerprint or face</string>
     <string name="brand_wordmark" translatable="false">arro</string>

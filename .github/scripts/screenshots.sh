@@ -3,8 +3,11 @@
 # Used by .github/workflows/release-assets.yml; also works against any device connected with adb.
 set -x
 adb wait-for-device
+adb shell 'while [ "$(getprop sys.boot_completed)" != "1" ]; do sleep 1; done'
+sleep 10
 # A tidy status bar: 9:41, full battery and signal, no notification icons.
 adb shell settings put global sysui_demo_allowed 1
+sleep 2
 adb shell am broadcast -a com.android.systemui.demo -e command enter
 adb shell am broadcast -a com.android.systemui.demo -e command clock -e hhmm 0941
 adb shell am broadcast -a com.android.systemui.demo -e command battery -e level 100 -e plugged false

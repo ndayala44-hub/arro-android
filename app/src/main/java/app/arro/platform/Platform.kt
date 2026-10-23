@@ -187,7 +187,7 @@ class Notifier(private val app: Application) {
         val pi = PendingIntent.getActivity(app, (title + transferId).hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val n = NotificationCompat.Builder(app, channel)
             .setSmallIcon(R.drawable.brand_symbol)
-            .setColor(0xFF042D29.toInt())
+            .setColor(ContextCompat.getColor(app, R.color.arro_ink))
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))

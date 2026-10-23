@@ -23,9 +23,9 @@ This adds three features to the existing app without changing its design, naviga
 
 ### Home screen widgets
 
-- **Arro Quick Send** (4×2 by default): "Available balance", the brand mark, and a **Send again** row: a round **Send** button followed by up to four people (favourites first, then most recent), each with their avatar colour, initials, country flag and first name. Narrower sizes show two people or just Send; short sizes drop the "Send again" caption. **Send** opens the send flow; a person opens the amount screen for them. Either way the app asks for your passcode first and the usual checks, review and approval are unchanged.
-- **Arro balance** (2×2, resizable): GBP balance and a **Send money** button.
-- **Arro rate** (2×2, resizable to 4×2): today's rate for your currency labelled **Live** and "not guaranteed until locked", or a running **Offer** with its end time, or your **Locked** rate with its end time. Refresh button, and a **Lock a rate** / **Lock this rate** / **Send at this rate** button. Expired offers aren't shown; if no live rate has ever been fetched it says so instead of showing the built-in fallback rates.
+- **Arro Quick Send** (4×2 by default): "Available balance", the brand mark, and a **Send again** row: a round **Send** button followed by up to four people (favourites first, then most recent), each with their avatar colour, initials, country flag and first name. Narrower sizes show two people or just Send; shorter sizes drop, in turn, the "Send again" caption, the label row and the names. **Send** opens the send flow; a person opens the amount screen for them. Either way the app asks for your passcode first and the usual checks, review and approval are unchanged.
+- **Arro balance** (2×2, resizable): GBP balance and a **Send money** button (dropped when the widget is too short for it; the whole widget opens Arro).
+- **Arro rate** (2×2, resizable to 4×2): today's rate for your currency labelled **Live** and "not guaranteed until locked", or a running **Offer** with its end time, or your **Locked** rate with its end time. Refresh button, and a **Lock a rate** / **Lock this rate** / **Send at this rate** button. Expired offers aren't shown; if no live rate has ever been fetched it says so instead of showing the built-in fallback rates. At 2×2 the status uses shorter wording that fits one line; short sizes drop the button, then the unit line, rather than cutting them off.
 - **States handled:** signed out (log-in prompt), balance hidden, account frozen, offline, stale rates (over an hour old), rates unavailable, updating.
 
 ## Data changes and migration
@@ -65,14 +65,14 @@ Error codes added: `offer_ended`, `no_offer`, `offline` (offers), `points` (rede
 
 ## Configuration
 
-`ArroBackend` companion: `QUOTE_HOLD_MS` (30 min), `OFFER_WINDOW_MS` (3 min), `OFFER_LOCK_MINUTES` (10), `RATES_FRESH_MS` (30 min), `LOYALTY_VERSION`. `Rates.OFFER_MARGIN` (0.09%). `Loyalty`: bonus, points per pound, redemption tiers, referral amount, threshold and yearly cap. Random offers can be turned off in Demo controls.
+`ArroBackend` companion: `QUOTE_HOLD_MS` (30 min), `OFFER_WINDOW_MS` (3 min), `OFFER_LOCK_MINUTES` (10), `RATES_FRESH_MS` (90 min), `RATES_REFRESH_MS` (60 min), `LOYALTY_VERSION`. `Rates.OFFER_MARGIN` (0.09%). `Loyalty`: bonus, points per pound, redemption tiers, referral amount, threshold and yearly cap. Random offers can be turned off in Demo controls.
 
 ## Permissions and Android setup
 
 - **No new permissions.** Widget expiry redraws use an inexact, non-waking `AlarmManager.setWindow` alarm, so no exact-alarm permission is needed.
 - **Manifest:** three `AppWidgetProvider` receivers (`.widget.QuickSendWidget`, `.widget.BalanceWidget`, `.widget.RateWidget`), `android:exported="false"`. Widget info in `res/xml/widget_*_info.xml`; layouts in `res/layout/widget_*.xml`; colours in `res/values/widget.xml` and `values-night/widget.xml`; Android 12+ corner radius in `values-v31`.
 - **Data access:** widgets read the same in-process backend state as the screens. Nothing is exported to other apps. The balance and the people on Quick Send only appear when **Security → Show balance on home screen widgets** is on (off by default, on for the sample account), because widgets can be seen without unlocking.
-- **Refresh:** widgets redraw as soon as what they show changes while Arro is running; `updatePeriodMillis` is 30 minutes (Android's minimum); the rate widget fetches rates when they're over 15 minutes old or when you tap refresh, inside the broadcast's async window with an 8-second timeout.
+- **Refresh:** widgets redraw as soon as what they show changes while Arro is running; `updatePeriodMillis` is 30 minutes (Android's minimum); the rate widget fetches rates when they're over an hour old (the free rate provider asks for at most one request an hour) or when you tap refresh, inside the broadcast's async window with an 8-second timeout.
 - **Deep links:** widget and notification taps open `MainActivity` with a route that is applied after unlock. `MainActivity` now only accepts known routes (`Routes.isDeepLink`): `quicksend`, `quicksend:{recipientId}`, `quicksend_to:{country}`, `lock_rate/{cur}`, `rate/{cur}`, `track/{id}`, `chat`, `loyalty`.
 - **Adding a widget:** long-press the home screen → Widgets → Arro → drag **Arro Quick Send**, **Arro balance** or **Arro rate**. Resize with a long-press.
 
