@@ -1,5 +1,7 @@
 package app.arro.ui.screens.send
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.navigation.NavHostController
 import app.arro.AppContainer
 import app.arro.core.Catalog
@@ -20,11 +22,11 @@ fun startSend(c: AppContainer, nav: NavHostController, banner: BannerState, reci
     if (blocker != null) {
         if (blocker.code == "kyc") {
             val inReview = c.backend.state.value.account?.kyc?.status == KycStatus.IN_REVIEW
-            banner.show(if (inReview) "We're still checking your ID" else "Verify your identity first", blocker.message ?: "", BannerKind.Info)
+            banner.show(if (inReview) str(R.string.send_flow_we_re_still_checking_your_id) else str(R.string.send_flow_verify_your_identity_first), blocker.message ?: "", BannerKind.Info)
             nav.go(if (inReview) Routes.KYC_STATUS else Routes.KYC)
         } else {
-            banner.show("You can't send right now", blocker.message ?: "", BannerKind.Error,
-                if (blocker.code == "frozen") "Security" else null) { nav.go(Routes.SECURITY) }
+            banner.show(str(R.string.send_flow_you_can_t_send_right_now), blocker.message ?: "", BannerKind.Error,
+                if (blocker.code == "frozen") str(R.string.send_flow_security) else null) { nav.go(Routes.SECURITY) }
         }
         return
     }

@@ -1,5 +1,7 @@
 package app.arro.ui.screens.recipients
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -140,37 +142,37 @@ fun RecipientsScreen() {
             Modifier.fillMaxWidth().statusBarsPadding().padding(start = 20.dp, end = 20.dp, top = 10.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            ScreenTitle("Recipients", modifier = Modifier.weight(1f))
-            RoundIcon(Icons.Plus, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, description = "Add recipient")
+            ScreenTitle(str(R.string.recipients_recipients), modifier = Modifier.weight(1f))
+            RoundIcon(Icons.Plus, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, description = str(R.string.recipients_add_recipient))
         }
     }) {
         if (a.recipients.isEmpty()) {
-            EmptyState(Art.Globe, "Add the people you send to", "Save them once with a checked name, then send again in three taps.", Modifier.padding(top = 40.dp)) {
-                ArroButton("Add a recipient", { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, icon = Icons.Plus)
-                ArroButton("Import from contacts", { contacts() }, style = Btn.Text)
+            EmptyState(Art.Globe, str(R.string.recipients_add_the_people_you_send_to), str(R.string.recipients_save_them_once_with_a_checked), Modifier.padding(top = 40.dp)) {
+                ArroButton(str(R.string.recipients_add_a_recipient), { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, icon = Icons.Plus)
+                ArroButton(str(R.string.recipients_import_from_contacts), { contacts() }, style = Btn.Text)
             }
             return@TabScreen
         }
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 8.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            SearchField(query, { query = it }, "Search by name, number or bank")
+            SearchField(query, { query = it }, str(R.string.recipients_search_by_name_number_or_bank))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("All ${a.recipients.size}", country == null, { country = null })
+                Chip(str(R.string.recipients_all_x, a.recipients.size), country == null, { country = null })
                 a.recipients.map { it.country }.distinct().forEach { code ->
-                    Chip(Catalog.countryOrNull(code)?.name ?: "Arro users", country == code, { country = if (country == code) null else code }, flag = flagOf(code))
+                    Chip(Catalog.countryOrNull(code)?.name ?: str(R.string.recipients_arro_users), country == code, { country = if (country == code) null else code }, flag = flagOf(code))
                 }
             }
-            if (list.isEmpty()) Cap("No recipients match \"$query\".")
+            if (list.isEmpty()) Cap(str(R.string.recipients_no_recipients_match_x, query))
             list.groupBy { it.country }.forEach { (code, people) ->
-                Over(Catalog.countryOrNull(code)?.name ?: "Arro users")
+                Over(Catalog.countryOrNull(code)?.name ?: str(R.string.recipients_arro_users))
                 Group {
                     people.sortedWith(compareByDescending<Recipient> { it.favourite }.thenBy { it.name }).forEachIndexed { i, r ->
                         if (i > 0) GroupDivider()
                         val m = r.defaultMethod
-                        ListRow(r.name, flat = true, subtitle = m?.let { "${it.providerName} · ${it.masked}" } ?: "No payout method yet",
+                        ListRow(r.name, flat = true, subtitle = m?.let { "${it.providerName} · ${it.masked}" } ?: str(R.string.recipients_no_payout_method_yet),
                             leading = { Avatar(r.initials, r.color, flag = flagOf(r.country)) },
                             trailing = {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    if (r.favourite) Ic(Icons.StarFilled, size = 14.dp, tint = C.WarnFill, contentDescription = "Favourite")
+                                    if (r.favourite) Ic(Icons.StarFilled, size = 14.dp, tint = C.WarnFill, contentDescription = str(R.string.recipients_favourite))
                                     Chevron()
                                 }
                             },
@@ -199,20 +201,20 @@ fun RecipientScreen(id: String) {
     val country = Catalog.countryOrNull(r.country)
     val transfers = a.transfers.filter { it.recipientId == r.id }.sortedByDescending { it.createdAt }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Edit, { nav.go(Routes.rcpEdit(r.id)) }, style = IconBtn.Soft, description = "Edit recipient") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Edit, { nav.go(Routes.rcpEdit(r.id)) }, style = IconBtn.Soft, description = str(R.string.recipients_edit_recipient)) }) },
         overlay = {
             val m = methodSheet
             Sheet(m != null, { methodSheet = null }) {
                 if (m != null) {
                     SheetHeader(m.providerName, { methodSheet = null }, m.full)
                     Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (r.defaultMethodId != m.id) ArroButton("Make this the default", { b.updateRecipient(r.id) { it.copy(defaultMethodId = m.id) }; methodSheet = null })
-                        ArroButton("Send with ${m.providerName}", {
+                        if (r.defaultMethodId != m.id) ArroButton(str(R.string.recipients_make_this_the_default), { b.updateRecipient(r.id) { it.copy(defaultMethodId = m.id) }; methodSheet = null })
+                        ArroButton(str(R.string.recipients_send_with_x, m.providerName), {
                             methodSheet = null
                             startSend(c, nav, banner, recipient = r)
                             c.session.send.payoutType = m.type; c.session.send.methodId = m.id
                         }, style = Btn.Line)
-                        if (r.methods.size > 1) ArroButton("Remove", { b.removePayoutMethod(r.id, m.id); methodSheet = null }, style = Btn.DangerText)
+                        if (r.methods.size > 1) ArroButton(str(R.string.recipients_remove), { b.removePayoutMethod(r.id, m.id); methodSheet = null }, style = Btn.DangerText)
                     }
                 }
             }
@@ -225,12 +227,12 @@ fun RecipientScreen(id: String) {
                 align = TextAlign.Center)
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            ArroButton("Send money", { startSend(c, nav, banner, recipient = r) }, Modifier.weight(1f), icon = Icons.ArrowUpRight, enabled = r.methods.isNotEmpty())
+            ArroButton(str(R.string.recipients_send_money), { startSend(c, nav, banner, recipient = r) }, Modifier.weight(1f), icon = Icons.ArrowUpRight, enabled = r.methods.isNotEmpty())
             RoundIcon(if (r.favourite) Icons.StarFilled else Icons.Star, { b.toggleFavourite(r.id) }, style = IconBtn.Line, size = 56.dp,
-                description = if (r.favourite) "Remove from favourites" else "Add to favourites")
+                description = if (r.favourite) str(R.string.recipients_remove_from_favourites) else str(R.string.recipients_add_to_favourites))
         }
         Column {
-            SectionHeader("Payout methods", if (r.country != "GB") "Add" else null, { nav.go(Routes.rcpBank(r.id)) })
+            SectionHeader(str(R.string.recipients_payout_methods), if (r.country != "GB") str(R.string.recipients_add) else null, { nav.go(Routes.rcpBank(r.id)) })
             Group {
                 r.methods.forEachIndexed { i, m ->
                     if (i > 0) GroupDivider()
@@ -243,15 +245,15 @@ fun RecipientScreen(id: String) {
                         leading = { Tile(deliveryIcon(m.type), if (isDefault) TileStyle.Lime else TileStyle.Tint) },
                         trailing = { if (isDefault && m.nameChecked) Ic(Icons.ShieldCheck, tint = C.Ok) else Chevron() },
                         onClick = { methodSheet = m },
-                        content = { if (isDefault) Pill("Default", PillKind.Neutral, modifier = Modifier.padding(top = 4.dp)) })
+                        content = { if (isDefault) Pill(str(R.string.recipients_default), PillKind.Neutral, modifier = Modifier.padding(top = 4.dp)) })
                 }
-                if (r.methods.isEmpty()) ListRow("Add a way to receive money", flat = true, onClick = { nav.go(Routes.rcpBank(r.id)) }, trailing = { Chevron() })
+                if (r.methods.isEmpty()) ListRow(str(R.string.recipients_add_a_way_to_receive_money), flat = true, onClick = { nav.go(Routes.rcpBank(r.id)) }, trailing = { Chevron() })
             }
         }
         Column {
-            SectionHeader("Transfers", null, null)
-            Cap("${Money.format(Insights.sentThisYear(a, r.id, now), app.arro.core.Currency.GBP)} sent this year", Modifier.padding(bottom = 10.dp))
-            if (transfers.isEmpty()) Cap("No transfers yet.")
+            SectionHeader(str(R.string.recipients_transfers), null, null)
+            Cap(str(R.string.recipients_x_sent_this_year, Money.format(Insights.sentThisYear(a, r.id, now), app.arro.core.Currency.GBP)), Modifier.padding(bottom = 10.dp))
+            if (transfers.isEmpty()) Cap(str(R.string.recipients_no_transfers_yet))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 transfers.take(8).forEach { t ->
                     val (label, _) = statusLabel(t)
@@ -298,9 +300,9 @@ fun AddRecipientScreen() {
             PayoutType.UPI -> Validation.upi(d.number)?.let { e["number"] = it }
             PayoutType.ARRO -> {}
         }
-        if (d.type == PayoutType.BANK && bank == null) e["provider"] = "Choose their bank."
-        Validation.fullName(d.name, provider?.name?.removeSuffix(" Money")?.let { if (it.contains("MoMo")) "MoMo" else it } ?: "")?.let { e["name"] = it }
-        if (d.relationship.isBlank()) e["relationship"] = "Choose how you know them."
+        if (d.type == PayoutType.BANK && bank == null) e["provider"] = str(R.string.recipients_choose_their_bank)
+        Validation.fullName(d.name, provider?.name?.removeSuffix(" Money")?.let { if (it.contains("MoMo")) str(R.string.recipients_momo) else it } ?: "")?.let { e["name"] = it }
+        if (d.relationship.isBlank()) e["relationship"] = str(R.string.recipients_choose_how_you_know_them)
         return e
     }
     fun submit() {
@@ -313,7 +315,7 @@ fun AddRecipientScreen() {
         }
         scope.launchCall(call, onError = { e -> if (e.code == "not_found") { errors = errors + ("number" to (e.message ?: "")); true } else false }) {
             val check = when (d.type) {
-                PayoutType.CASH, PayoutType.UPI -> app.arro.core.NameCheck(d.name.trim().uppercase(), true, if (d.type == PayoutType.CASH) "Arro cash agents" else "UPI")
+                PayoutType.CASH, PayoutType.UPI -> app.arro.core.NameCheck(d.name.trim().uppercase(), true, if (d.type == PayoutType.CASH) str(R.string.recipients_arro_cash_agents) else "UPI")
                 else -> b.checkName(d.country, d.type, d.providerId, account, d.name)
             }
             d.check = check
@@ -322,47 +324,47 @@ fun AddRecipientScreen() {
         }
     }
     val numberLabel = when (d.type) {
-        PayoutType.MOBILE_MONEY -> "Mobile money number"
-        PayoutType.EWALLET -> "${provider?.name ?: "Wallet"} number"
-        PayoutType.CASH -> "Their mobile number, for the pickup code"
-        PayoutType.BANK -> if (bank?.note?.isNotBlank() == true) "Account number (${bank.note})" else "Account number"
-        PayoutType.UPI -> "UPI ID"
-        PayoutType.ARRO -> "Username"
+        PayoutType.MOBILE_MONEY -> str(R.string.recipients_mobile_money_number)
+        PayoutType.EWALLET -> str(R.string.recipients_x_number, provider?.name ?: str(R.string.recipients_wallet))
+        PayoutType.CASH -> str(R.string.recipients_their_mobile_number_for_the_pickup)
+        PayoutType.BANK -> if (bank?.note?.isNotBlank() == true) str(R.string.recipients_account_number_x, bank.note) else str(R.string.recipients_account_number)
+        PayoutType.UPI -> str(R.string.recipients_upi_id)
+        PayoutType.ARRO -> str(R.string.recipients_username)
     }
     val nameLabel = when (d.type) {
-        PayoutType.CASH -> "Full name, as on their ID"
-        PayoutType.BANK -> "Full name, as on their account"
-        else -> "Full name, as registered with ${provider?.name?.split(" ")?.first() ?: "the provider"}"
+        PayoutType.CASH -> str(R.string.recipients_full_name_as_on_their_id)
+        PayoutType.BANK -> str(R.string.recipients_full_name_as_on_their_account)
+        else -> str(R.string.recipients_full_name_as_registered_with_x, provider?.name?.split(" ")?.first() ?: str(R.string.recipients_the_provider))
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Add recipient") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.recipients_add_recipient)) },
         gap = 14.dp,
-        footer = { ArroButton("Check details", { submit() }, loading = call.busy.value) },
+        footer = { ArroButton(str(R.string.recipients_check_details), { submit() }, loading = call.busy.value) },
         overlay = {
-            PickerSheet(picker == "country", "Country", Catalog.countries.map { it.name }, country.name, { name ->
+            PickerSheet(picker == "country", str(R.string.recipients_country), Catalog.countries.map { it.name }, country.name, { name ->
                 val ct = Catalog.countries.first { it.name == name }
                 d.country = ct.code; d.type = ct.options.first().type
                 d.providerId = Catalog.providersFor(ct.code, d.type).firstOrNull()?.id ?: ""; d.number = ""; errors = emptyMap()
             }, { picker = "" }, leading = { name -> app.arro.ui.components.Flag(Catalog.countries.first { it.name == name }.currency.flag) })
-            PickerSheet(picker == "bank", "Bank", providers.map { it.name }, provider?.name, { name -> d.providerId = providers.first { it.name == name }.id; errors = errors - "provider" },
+            PickerSheet(picker == "bank", str(R.string.recipients_bank), providers.map { it.name }, provider?.name, { name -> d.providerId = providers.first { it.name == name }.id; errors = errors - "provider" },
                 { picker = "" }, leading = { Tile(Icons.Bank, size = 28.dp, iconSize = 16.dp) })
-            PickerSheet(picker == "rel", "Relationship", Catalog.relationships, d.relationship, { d.relationship = it; errors = errors - "relationship" }, { picker = "" })
+            PickerSheet(picker == "rel", str(R.string.recipients_relationship), Catalog.relationships, d.relationship, { d.relationship = it; errors = errors - "relationship" }, { picker = "" })
         },
     ) {
         if (errors.isNotEmpty()) {
-            Note("${errors.size} ${if (errors.size == 1) "thing" else "things"} to fix before we can check this recipient.", NoteKind.Err, Icons.Alert)
+            Note(str(R.string.recipients_x_x_to_fix_before_we, errors.size, if (errors.size == 1) str(R.string.recipients_thing) else str(R.string.recipients_things)), NoteKind.Err, Icons.Alert)
         }
-        SelectField("Country", country.name, { picker = "country" }, leading = { app.arro.ui.components.Flag(country.currency.flag) })
+        SelectField(str(R.string.recipients_country), country.name, { picker = "country" }, leading = { app.arro.ui.components.Flag(country.currency.flag) })
         if (types.size > 1) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel("How will they receive money?")
-            Segmented(types.map { when (it) { PayoutType.MOBILE_MONEY -> "Mobile money"; PayoutType.BANK -> "Bank"; PayoutType.CASH -> "Cash"; PayoutType.EWALLET -> "E-wallet"; PayoutType.UPI -> "UPI"; PayoutType.ARRO -> "Arro" } },
+            FieldLabel(str(R.string.recipients_how_will_they_receive_money))
+            Segmented(types.map { when (it) { PayoutType.MOBILE_MONEY -> str(R.string.recipients_mobile_money); PayoutType.BANK -> str(R.string.recipients_bank); PayoutType.CASH -> str(R.string.recipients_cash); PayoutType.EWALLET -> "E-wallet"; PayoutType.UPI -> "UPI"; PayoutType.ARRO -> str(R.string.recipients_arro) } },
                 types.indexOf(d.type), { i ->
                     d.type = types[i]; d.providerId = Catalog.providersFor(d.country, d.type).firstOrNull()?.id ?: ""; d.number = ""; errors = emptyMap()
                 })
         }
         when (d.type) {
             PayoutType.MOBILE_MONEY, PayoutType.EWALLET -> Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                FieldLabel("Provider", color = if (errors.containsKey("provider")) C.Err else C.Slate)
+                FieldLabel(str(R.string.recipients_provider), color = if (errors.containsKey("provider")) C.Err else C.Slate)
                 providers.chunked(2).forEach { pair ->
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         pair.forEach { p ->
@@ -375,7 +377,7 @@ fun AddRecipientScreen() {
                     }
                 }
             }
-            PayoutType.BANK -> SelectField("Bank", provider?.name, { picker = "bank" }, placeholder = "Choose their bank", error = errors["provider"],
+            PayoutType.BANK -> SelectField(str(R.string.recipients_bank), provider?.name, { picker = "bank" }, placeholder = str(R.string.recipients_choose_their_bank_2), error = errors["provider"],
                 leading = { Tile(Icons.Bank, size = 28.dp, iconSize = 16.dp) })
             else -> {}
         }
@@ -397,11 +399,11 @@ fun AddRecipientScreen() {
             }
             FieldHint(errors["number"], hint = hint)
         }
-        ArroField(d.name, { d.name = it; errors = errors - "name" }, label = nameLabel, placeholder = "First and last name",
+        ArroField(d.name, { d.name = it; errors = errors - "name" }, label = nameLabel, placeholder = str(R.string.recipients_first_and_last_name),
             capitalization = KeyboardCapitalization.Words, error = errors["name"])
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SelectField("Relationship", d.relationship.ifBlank { null }, { picker = "rel" }, Modifier.weight(1f), error = errors["relationship"])
-            ArroField(d.city, { d.city = it }, Modifier.weight(1f), label = "City (optional)", placeholder = country.city, capitalization = KeyboardCapitalization.Words)
+            SelectField(str(R.string.recipients_relationship), d.relationship.ifBlank { null }, { picker = "rel" }, Modifier.weight(1f), error = errors["relationship"])
+            ArroField(d.city, { d.city = it }, Modifier.weight(1f), label = str(R.string.recipients_city_optional), placeholder = country.city, capitalization = KeyboardCapitalization.Words)
         }
         FieldHint(call.error.value)
     }
@@ -423,7 +425,7 @@ fun NameCheckScreen() {
         val method = b.newPayoutMethod(d.type, d.providerId.ifBlank { "cash_${d.country.lowercase()}" }, d.number, check.registeredName,
             if (d.type == PayoutType.BANK) d.accountType else "", checked = d.type != PayoutType.CASH)
         val r = b.addRecipient(if (check.matches) d.name else check.registeredName, d.country, d.relationship, d.city, method)
-        banner.show("${r.firstName} saved", "You can send to ${r.firstName} any time.", BannerKind.Success)
+        banner.show(str(R.string.recipients_x_saved, r.firstName), str(R.string.recipients_you_can_send_to_x_any, r.firstName), BannerKind.Success)
         if (d.forSend) {
             val s = c.session.send
             s.recipientId = r.id; s.methodId = method.id; s.payoutType = method.type
@@ -439,33 +441,33 @@ fun NameCheckScreen() {
         topBar = { TopBar(onBack = { nav.back() }) },
         gap = 20.dp,
         footer = {
-            ArroButton("Yes, save $first", { save() })
-            ArroButton("No, change details", { nav.back() }, style = Btn.Line)
+            ArroButton(str(R.string.recipients_yes_save_x, first), { save() })
+            ArroButton(str(R.string.recipients_no_change_details), { nav.back() }, style = Btn.Line)
         },
     ) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.Shield, 128.dp, description = "A glass shield with a tick") }
-        ScreenTitle("Is this the right\nperson?", when (d.type) {
-            PayoutType.CASH -> "The agent will check this name against ${first}'s ID at pickup."
-            PayoutType.BANK -> "We checked the account with ${check.providerName} before you send anything."
-            else -> "We checked the number with ${check.providerName} before you send anything."
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.Shield, 128.dp, description = str(R.string.recipients_a_glass_shield_with_a_tick)) }
+        ScreenTitle(str(R.string.recipients_is_this_the_right_person), when (d.type) {
+            PayoutType.CASH -> str(R.string.recipients_the_agent_will_check_this_name, first)
+            PayoutType.BANK -> str(R.string.recipients_we_checked_the_account_with_x, check.providerName)
+            else -> str(R.string.recipients_we_checked_the_number_with_x, check.providerName)
         }, align = TextAlign.Center)
         ArroCard(
             Modifier.selectionRing(20.dp, 4.dp, C.Lime.copy(alpha = 0.35f)),
             border = if (check.matches) androidx.compose.ui.graphics.Color(0xFF9FD97A) else C.WarnFill,
         ) {
-            Over(when (d.type) { PayoutType.BANK -> "Registered name on this account"; PayoutType.CASH -> "Name for pickup"; else -> "Registered name on this wallet" })
+            Over(when (d.type) { PayoutType.BANK -> str(R.string.recipients_registered_name_on_this_account); PayoutType.CASH -> str(R.string.recipients_name_for_pickup); else -> str(R.string.recipients_registered_name_on_this_wallet) })
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Txt(check.registeredName, T.Big22.copy(letterSpacing = 0.4.sp), Modifier.weight(1f))
                 Tile(if (check.matches) Icons.Check else Icons.Alert, if (check.matches) TileStyle.Lime else TileStyle.Warn, size = 32.dp, round = true, iconSize = 16.dp)
             }
             Box(Modifier.padding(vertical = 12.dp).fillMaxWidth().size(1.dp).background(C.Line))
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                KV(if (d.type == PayoutType.BANK) "Account" else "Number", if (d.type == PayoutType.BANK || d.type == PayoutType.UPI) d.number else Text.formatPhone(d.number))
-                KV("Provider", "${check.providerName}, ${country.name}")
+                KV(if (d.type == PayoutType.BANK) str(R.string.recipients_account) else str(R.string.recipients_number), if (d.type == PayoutType.BANK || d.type == PayoutType.UPI) d.number else Text.formatPhone(d.number))
+                KV(str(R.string.recipients_provider), "${check.providerName}, ${country.name}")
             }
         }
-        if (check.matches) Note("Matches the name you entered.", NoteKind.Ok, Icons.Check)
-        else Note("This doesn't match the name you entered (${d.name.trim()}). Check with them before you send. If you save, we'll use the registered name.", NoteKind.Warn, Icons.Alert)
+        if (check.matches) Note(str(R.string.recipients_matches_the_name_you_entered), NoteKind.Ok, Icons.Check)
+        else Note(str(R.string.recipients_this_doesn_t_match_the_name, d.name.trim()), NoteKind.Warn, Icons.Alert)
     }
 }
 
@@ -486,8 +488,8 @@ fun BankPayoutScreen(id: String) {
     val providers = Catalog.providersFor(r.country, type)
     var providerId by remember(type) { mutableStateOf(providers.firstOrNull { p -> r.methods.none { it.providerId == p.id } }?.id ?: providers.firstOrNull()?.id ?: "") }
     var number by remember(type) { mutableStateOf("") }
-    var accountType by remember { mutableStateOf("Savings") }
-    var reason by remember { mutableStateOf("Family support") }
+    var accountType by remember { mutableStateOf(str(R.string.recipients_savings)) }
+    var reason by remember { mutableStateOf(str(R.string.recipients_family_support)) }
     var makeDefault by remember { mutableStateOf(true) }
     var picker by remember { mutableStateOf("") }
     var lookup by remember { mutableStateOf<app.arro.core.NameCheck?>(null) }
@@ -507,38 +509,38 @@ fun BankPayoutScreen(id: String) {
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = if (type == PayoutType.BANK) "Bank details" else "Mobile money") },
+        topBar = { TopBar(onBack = { nav.back() }, title = if (type == PayoutType.BANK) str(R.string.recipients_bank_details) else str(R.string.recipients_mobile_money)) },
         gap = 14.dp,
         footer = {
-            ArroButton(if (type == PayoutType.BANK) "Save bank account" else "Save number", {
+            ArroButton(if (type == PayoutType.BANK) str(R.string.recipients_save_bank_account) else str(R.string.recipients_save_number), {
                 val l = lookup ?: return@ArroButton
                 val m = b.newPayoutMethod(type, providerId, account, l.registeredName, if (type == PayoutType.BANK) accountType else "", reason)
                 b.addPayoutMethod(r.id, m, makeDefault)
-                banner.show("${provider?.name ?: "Account"} added", "You can now send to ${r.firstName} this way.", BannerKind.Success)
+                banner.show(str(R.string.recipients_x_added, provider?.name ?: str(R.string.recipients_account)), str(R.string.recipients_you_can_now_send_to_x, r.firstName), BannerKind.Success)
                 nav.back()
             }, enabled = lookup != null, loading = lookup == null && digits.isNotEmpty() && formatError == null && lookupError == null)
         },
         overlay = {
-            PickerSheet(picker == "bank", "Bank", providers.map { it.name }, provider?.name, { name -> providerId = providers.first { it.name == name }.id }, { picker = "" },
+            PickerSheet(picker == "bank", str(R.string.recipients_bank), providers.map { it.name }, provider?.name, { name -> providerId = providers.first { it.name == name }.id }, { picker = "" },
                 leading = { Tile(Icons.Bank, size = 28.dp, iconSize = 16.dp) })
-            PickerSheet(picker == "reason", "Usual reason for sending", Catalog.reasons, reason, { reason = it }, { picker = "" })
+            PickerSheet(picker == "reason", str(R.string.recipients_usual_reason_for_sending), Catalog.reasons, reason, { reason = it }, { picker = "" })
         },
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Avatar(r.initials, r.color, flag = country.currency.flag)
             Column { Txt(r.name, T.H3); Cap("${country.name} · ${country.currency.code}") }
         }
-        if (types.size > 1) Segmented(types.map { if (it == PayoutType.BANK) "Bank" else it.label }, types.indexOf(type), { type = types[it] })
+        if (types.size > 1) Segmented(types.map { if (it == PayoutType.BANK) str(R.string.recipients_bank) else it.label }, types.indexOf(type), { type = types[it] })
         if (type == PayoutType.BANK) {
-            SelectField("Bank", provider?.name, { picker = "bank" }, leading = { Tile(Icons.Bank, size = 28.dp, iconSize = 16.dp) })
+            SelectField(str(R.string.recipients_bank), provider?.name, { picker = "bank" }, leading = { Tile(Icons.Bank, size = 28.dp, iconSize = 16.dp) })
         } else {
-            SelectField("Provider", provider?.name, { picker = "bank" }, leading = { Tile(Icons.Smartphone, size = 28.dp, iconSize = 16.dp) })
+            SelectField(str(R.string.recipients_provider), provider?.name, { picker = "bank" }, leading = { Tile(Icons.Smartphone, size = 28.dp, iconSize = 16.dp) })
         }
-        ArroField(number, { number = it }, label = if (type == PayoutType.BANK) (if (bank?.note?.isNotBlank() == true) "Account number (${bank.note})" else "Account number") else "Mobile money number",
+        ArroField(number, { number = it }, label = if (type == PayoutType.BANK) (if (bank?.note?.isNotBlank() == true) str(R.string.recipients_account_number_x, bank.note) else str(R.string.recipients_account_number)) else str(R.string.recipients_mobile_money_number),
             keyboard = KeyboardType.Number, textStyle = T.Input.copy(fontFeatureSettings = "tnum", letterSpacing = 1.sp),
             prefix = if (type != PayoutType.BANK) ({ app.arro.ui.components.DialPrefix(country.dialCode) }) else null,
             error = if (digits.length >= (bank?.accountDigits?.first ?: country.mobileDigits) && formatError != null) formatError else lookupError,
-            ok = if (lookup != null) "Account found" else null)
+            ok = if (lookup != null) str(R.string.recipients_account_found) else null)
         lookup?.let { l ->
             Row(
                 Modifier.fillMaxWidth().background(C.Tint, RoundedCornerShape(20.dp)).border(1.5.dp, C.Mist, RoundedCornerShape(20.dp)).padding(14.dp),
@@ -546,18 +548,18 @@ fun BankPayoutScreen(id: String) {
             ) {
                 Tile(if (l.matches) Icons.Check else Icons.Alert, if (l.matches) TileStyle.Lime else TileStyle.Warn, size = 32.dp, round = true, iconSize = 16.dp)
                 Column(Modifier.weight(1f)) {
-                    Cap("Account name from ${l.providerName}", size = 12f)
+                    Cap(str(R.string.recipients_account_name_from_x, l.providerName), size = 12f)
                     Txt(l.registeredName, T.H3, Modifier.padding(top = 2.dp))
-                    if (!l.matches) Cap("This doesn't match ${r.name}. Check before saving.", color = C.Warn, size = 12f)
+                    if (!l.matches) Cap(str(R.string.recipients_this_doesn_t_match_x_check, r.name), color = C.Warn, size = 12f)
                 }
             }
         }
         if (type == PayoutType.BANK) Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel("Account type")
-            Segmented(listOf("Savings", "Current"), if (accountType == "Savings") 0 else 1, { accountType = if (it == 0) "Savings" else "Current" })
+            FieldLabel(str(R.string.recipients_account_type))
+            Segmented(listOf(str(R.string.recipients_savings), str(R.string.recipients_current)), if (accountType == str(R.string.recipients_savings)) 0 else 1, { accountType = if (it == 0) str(R.string.recipients_savings) else str(R.string.recipients_current) })
         }
-        SelectField("Usual reason for sending", reason, { picker = "reason" })
-        CheckRow(makeDefault, { makeDefault = it }, "Make this ${r.firstName}'s default payout method")
+        SelectField(str(R.string.recipients_usual_reason_for_sending), reason, { picker = "reason" })
+        CheckRow(makeDefault, { makeDefault = it }, str(R.string.recipients_make_this_x_s_default_payout, r.firstName))
     }
 }
 
@@ -591,19 +593,19 @@ fun EditRecipientScreen(id: String) {
     fun save() {
         val e = mutableMapOf<String, String>()
         Validation.fullName(name)?.let { e["name"] = it }
-        if (editable && m != null && country != null) {
+        if (editable) {
             (if (m.type == PayoutType.BANK) Validation.bankAccount(number, Catalog.bank(m.providerId)) else Validation.mobile(number, country))?.let { e["number"] = it }
         }
         errors = e
         if (e.isNotEmpty()) return
         scope.launchCall(call, onError = { ex -> if (ex.code == "not_found") { errors = mapOf("number" to (ex.message ?: "")); true } else false }) {
             var newMethod = m
-            if (editable && m != null && country != null) {
+            if (editable) {
                 val account = if (m.type == PayoutType.BANK) number.filter { it.isDigit() } else country.dialCode + Validation.nationalDigits(number, country)
                 if (account != m.account) {
                     val check = b.checkName(r.country, m.type, m.providerId, account, name)
                     newMethod = m.copy(account = account, accountName = check.registeredName, nameChecked = true, checkedAt = System.currentTimeMillis())
-                    if (!check.matches) banner.show("Name doesn't match", "${check.providerName} has this number registered to ${check.registeredName}.", BannerKind.Error)
+                    if (!check.matches) banner.show(str(R.string.recipients_name_doesn_t_match), str(R.string.recipients_x_has_this_number_registered_to, check.providerName, check.registeredName), BannerKind.Error)
                 }
             }
             val updated = newMethod
@@ -611,45 +613,45 @@ fun EditRecipientScreen(id: String) {
                 old.copy(name = Text.titleCase(name), color = color, relationship = relationship, nickname = nickname.trim(), smsOnArrival = sms,
                     methods = old.methods.map { if (updated != null && it.id == updated.id) updated else it })
             }
-            banner.show("Changes saved", kind = BannerKind.Success)
+            banner.show(str(R.string.recipients_changes_saved), kind = BannerKind.Success)
             nav.back()
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Edit recipient") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.recipients_edit_recipient)) },
         gap = 14.dp,
-        footer = { ArroButton("Save changes", { save() }, loading = call.busy.value) },
+        footer = { ArroButton(str(R.string.recipients_save_changes), { save() }, loading = call.busy.value) },
         overlay = {
-            PickerSheet(picker, "Relationship", Catalog.relationships, relationship, { relationship = it }, { picker = false })
-            ConfirmDialog(confirmDelete, "Delete ${r.firstName}?", "You won't be able to send to ${r.firstName} until you add them again. Past transfers stay in your activity.",
-                "Delete recipient", {
+            PickerSheet(picker, str(R.string.recipients_relationship), Catalog.relationships, relationship, { relationship = it }, { picker = false })
+            ConfirmDialog(confirmDelete, str(R.string.recipients_delete_x, r.firstName), str(R.string.recipients_you_won_t_be_able_to, r.firstName),
+                str(R.string.recipients_delete_recipient), {
                     confirmDelete = false
                     b.deleteRecipient(r.id)
-                    banner.show("${r.firstName} deleted", kind = BannerKind.Info)
+                    banner.show(str(R.string.recipients_x_deleted, r.firstName), kind = BannerKind.Info)
                     if (!nav.popBackStack(Routes.RECIPIENTS, inclusive = false)) nav.tab(Routes.RECIPIENTS)
                 }, { confirmDelete = false }, danger = true)
         },
     ) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Avatar(Text.initials(name.ifBlank { r.name }), color, 64.dp, flag = flagOf(r.country))
-            LinkText("Change colour", { color = color % 6 + 1 }, color = C.Ink, strong = true)
+            LinkText(str(R.string.recipients_change_colour), { color = color % 6 + 1 }, color = C.Ink, strong = true)
         }
-        ArroField(name, { name = it; errors = errors - "name" }, label = "Full name", capitalization = KeyboardCapitalization.Words, error = errors["name"])
-        if (editable && m != null && country != null) {
+        ArroField(name, { name = it; errors = errors - "name" }, label = str(R.string.recipients_full_name), capitalization = KeyboardCapitalization.Words, error = errors["name"])
+        if (editable) {
             ArroField(number, { number = it; errors = errors - "number" },
-                label = if (m.type == PayoutType.BANK) "${m.providerName} account number" else "${m.providerName} number",
+                label = if (m.type == PayoutType.BANK) str(R.string.recipients_x_account_number, m.providerName) else str(R.string.recipients_x_number, m.providerName),
                 keyboard = KeyboardType.Number, textStyle = T.Input.copy(fontFeatureSettings = "tnum"),
                 prefix = if (m.type != PayoutType.BANK) ({ app.arro.ui.components.DialPrefix(country.dialCode) }) else null,
-                error = errors["number"], hint = "We'll check the registered name again before your next transfer.")
+                error = errors["number"], hint = str(R.string.recipients_we_ll_check_the_registered_name))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SelectField("Relationship", relationship.ifBlank { null }, { picker = true }, Modifier.weight(1f))
-            ArroField(nickname, { nickname = it }, Modifier.weight(1f), label = "Nickname", placeholder = "Optional")
+            SelectField(str(R.string.recipients_relationship), relationship.ifBlank { null }, { picker = true }, Modifier.weight(1f))
+            ArroField(nickname, { nickname = it }, Modifier.weight(1f), label = str(R.string.recipients_nickname), placeholder = str(R.string.recipients_optional))
         }
-        ListRow("Text ${r.firstName} when money arrives", subtitle = "Free SMS in ${if (r.country == "RW") "Kinyarwanda" else "their language"} or English",
+        ListRow(str(R.string.recipients_text_x_when_money_arrives, r.firstName), subtitle = str(R.string.recipients_free_sms_in_x_or_english, if (r.country == "RW") str(R.string.recipients_kinyarwanda) else str(R.string.recipients_their_language)),
             trailing = { Toggle(sms, { sms = it }) }, onClick = { sms = !sms })
         Row(Modifier.padding(top = 4.dp)) {
-            ArroButton("Delete recipient", { confirmDelete = true }, style = Btn.DangerText, size = BtnSize.M, fill = false, icon = Icons.Trash, padding = 0.dp)
+            ArroButton(str(R.string.recipients_delete_recipient), { confirmDelete = true }, style = Btn.DangerText, size = BtnSize.M, fill = false, icon = Icons.Trash, padding = 0.dp)
         }
         FieldHint(call.error.value)
     }

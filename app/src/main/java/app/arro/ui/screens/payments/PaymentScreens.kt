@@ -1,5 +1,7 @@
 package app.arro.ui.screens.payments
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.camera.core.ImageAnalysis
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -147,59 +149,59 @@ fun PaymentMethodsScreen() {
             val m = options
             Sheet(m != null, { options = null }) {
                 if (m != null) {
-                    SheetHeader(m.label, { options = null }, if (m.kind == MethodKind.CARD) "${m.issuer} · expires ${m.expiry}" else "${m.issuer} · Pay by bank")
+                    SheetHeader(m.label, { options = null }, if (m.kind == MethodKind.CARD) str(R.string.payments_x_expires_x, m.issuer, m.expiry) else str(R.string.payments_x_pay_by_bank, m.issuer))
                     Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (m.status == MethodStatus.PENDING) ArroButton("Finish adding this card", { options = null; c.session.pendingCardId = m.id; nav.go(Routes.PAY_3DS) })
-                        else if (!m.isDefault) ArroButton("Make default", { b.setDefaultMethod(m.id); options = null; banner.show("${m.shortLabel} is now your default", kind = BannerKind.Success) })
-                        ArroButton(if (m.kind == MethodKind.CARD) "Remove card" else "Disconnect bank", { confirmRemove = m; options = null }, style = Btn.DangerText)
+                        if (m.status == MethodStatus.PENDING) ArroButton(str(R.string.payments_finish_adding_this_card), { options = null; c.session.pendingCardId = m.id; nav.go(Routes.PAY_3DS) })
+                        else if (!m.isDefault) ArroButton(str(R.string.payments_make_default), { b.setDefaultMethod(m.id); options = null; banner.show(str(R.string.payments_x_is_now_your_default, m.shortLabel), kind = BannerKind.Success) })
+                        ArroButton(if (m.kind == MethodKind.CARD) str(R.string.payments_remove_card) else str(R.string.payments_disconnect_bank), { confirmRemove = m; options = null }, style = Btn.DangerText)
                     }
                 }
             }
             val r = confirmRemove
-            ConfirmDialog(r != null, if (r?.kind == MethodKind.BANK) "Disconnect ${r.issuer}?" else "Remove ${r?.label ?: ""}?",
-                "You can add it again at any time. Transfers already paid aren't affected.", if (r?.kind == MethodKind.BANK) "Disconnect" else "Remove",
-                { r?.let { b.removeMethod(it.id); banner.show("Removed", it.label, BannerKind.Info) }; confirmRemove = null }, { confirmRemove = null }, danger = true)
+            ConfirmDialog(r != null, if (r?.kind == MethodKind.BANK) str(R.string.payments_disconnect_x, r.issuer) else str(R.string.payments_remove_x, r?.label ?: ""),
+                str(R.string.payments_you_can_add_it_again_at), if (r?.kind == MethodKind.BANK) str(R.string.payments_disconnect) else str(R.string.payments_remove),
+                { r?.let { b.removeMethod(it.id); banner.show(str(R.string.payments_removed), it.label, BannerKind.Info) }; confirmRemove = null }, { confirmRemove = null }, danger = true)
         },
     ) {
-        ScreenTitle("Payment methods", "How you pay for transfers and top-ups.")
+        ScreenTitle(str(R.string.payments_payment_methods), str(R.string.payments_how_you_pay_for_transfers_and))
         Column {
-            SectionHeader("Cards")
+            SectionHeader(str(R.string.payments_cards))
             if (cards.isNotEmpty()) Group {
                 cards.forEachIndexed { i, m ->
                     if (i > 0) GroupDivider()
                     ListRow(
-                        "${m.brand.label} ${if (m.credit) "credit" else "debit"}", flat = true,
+                        if (m.credit) str(R.string.payments_brand_credit, m.brand.label) else str(R.string.payments_brand_debit, m.brand.label), flat = true,
                         subtitle = when {
-                            m.status == MethodStatus.PENDING -> "${m.issuer} · waiting for your bank's approval"
-                            m.credit -> "${m.issuer} · 1.75% card fee"
-                            else -> "${m.issuer} · expires ${m.expiry}"
+                            m.status == MethodStatus.PENDING -> str(R.string.payments_x_waiting_for_your_bank_s, m.issuer)
+                            m.credit -> str(R.string.payments_x_1_75_card_fee, m.issuer)
+                            else -> str(R.string.payments_x_expires_x, m.issuer, m.expiry)
                         },
                         leading = { CardThumb(m) },
-                        trailing = { RoundIcon(Icons.More, { options = m }, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = "Card options") },
+                        trailing = { RoundIcon(Icons.More, { options = m }, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = str(R.string.payments_card_options)) },
                         onClick = { options = m },
                         content = {
-                            if (m.isDefault && m.status == MethodStatus.ACTIVE) Pill("Default", PillKind.Lime, modifier = Modifier.padding(top = 4.dp))
-                            if (m.status == MethodStatus.PENDING) Pill("Not finished", PillKind.Warn, modifier = Modifier.padding(top = 4.dp))
+                            if (m.isDefault && m.status == MethodStatus.ACTIVE) Pill(str(R.string.payments_default), PillKind.Lime, modifier = Modifier.padding(top = 4.dp))
+                            if (m.status == MethodStatus.PENDING) Pill(str(R.string.payments_not_finished), PillKind.Warn, modifier = Modifier.padding(top = 4.dp))
                         },
                     )
                 }
             }
-            ListRow("Add a debit or credit card", Modifier.padding(top = 10.dp), dashed = true, minHeight = 54.dp,
+            ListRow(str(R.string.payments_add_a_debit_or_credit_card), Modifier.padding(top = 10.dp), dashed = true, minHeight = 54.dp,
                 leading = { Tile(Icons.Plus, size = 36.dp, iconSize = 16.dp) }, trailing = { Chevron() }, onClick = { nav.go(Routes.PAY_ADD_CARD) })
         }
         Column {
-            SectionHeader("Bank accounts")
+            SectionHeader(str(R.string.payments_bank_accounts))
             if (banks.isNotEmpty()) Group {
                 banks.forEachIndexed { i, m ->
                     if (i > 0) GroupDivider()
-                    ListRow("${m.issuer} current •• ${m.last4}", flat = true, subtitle = "Pay by bank · connected ${Text.dayMonth(m.addedAt)}",
-                        leading = { Tile(Icons.Bank) }, trailing = { Pill("Active", PillKind.Ok, dot = true) }, onClick = { options = m })
+                    ListRow(str(R.string.payments_x_current_x, m.issuer, m.last4), flat = true, subtitle = str(R.string.payments_pay_by_bank_connected_x, Text.dayMonth(m.addedAt)),
+                        leading = { Tile(Icons.Bank) }, trailing = { Pill(str(R.string.payments_active), PillKind.Ok, dot = true) }, onClick = { options = m })
                 }
             }
-            ListRow("Link a bank account", Modifier.padding(top = 10.dp), dashed = true, minHeight = 54.dp,
+            ListRow(str(R.string.payments_link_a_bank_account), Modifier.padding(top = 10.dp), dashed = true, minHeight = 54.dp,
                 leading = { Tile(Icons.Plus, size = 36.dp, iconSize = 16.dp) }, trailing = { Chevron() }, onClick = { nav.go(Routes.PAY_BANKS) })
         }
-        Note("Your full card number is stored by our certified payment partner, never on this phone.", NoteKind.Lime, Icons.ShieldCheck)
+        Note(str(R.string.payments_your_full_card_number_is_stored), NoteKind.Lime, Icons.ShieldCheck)
     }
 }
 
@@ -224,44 +226,44 @@ fun AddCardScreen() {
         c.session.scannedCard?.let { (n, e) -> number = n; if (e.isNotEmpty()) expiry = e; c.session.scannedCard = null }
     }
     val brand = Validation.brand(number)
-    val brandLabel = if (brand == CardBrand.UNKNOWN) "" else "${brand.label} ${if (app.arro.core.Seed.isCreditBin(number.filter { it.isDigit() })) "credit" else "debit"}"
+    val brandLabel = if (brand == CardBrand.UNKNOWN) "" else (if (app.arro.core.Seed.isCreditBin(number.filter { it.isDigit() })) str(R.string.payments_brand_credit, brand.label) else str(R.string.payments_brand_debit, brand.label))
     fun submit() = scope.launchCall(call, onError = { e ->
         if (e.code in setOf("number", "expiry", "cvv")) { errors = mapOf(e.code to (e.message ?: "")); true } else false
     }) {
-        if (!billingHome && !Validation.isUkPostcode(billingPostcode)) throw ArroException("Enter the postcode your card statements go to.")
+        if (!billingHome && !Validation.isUkPostcode(billingPostcode)) throw ArroException(str(R.string.payments_enter_the_postcode_your_card_statements))
         val m = b.addCard(number, expiry, cvv, a.displayName, false)
         c.session.pendingCardId = m.id
         nav.go(Routes.PAY_3DS)
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { ArroButton("Scan card", { nav.go(Routes.PAY_SCAN) }, style = Btn.Lime, size = BtnSize.S, icon = Icons.Scan, fill = false) }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { ArroButton(str(R.string.payments_scan_card), { nav.go(Routes.PAY_SCAN) }, style = Btn.Lime, size = BtnSize.S, icon = Icons.Scan, fill = false) }) },
         footer = {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap(" Encrypted and processed by a PCI DSS certified partner", size = 12f)
+                Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap(str(R.string.payments_encrypted_and_processed_by_a_pci), size = 12f)
             }
-            ArroButton("Add card", { submit() }, loading = call.busy.value, enabled = number.isNotBlank() && expiry.length == 4 && cvv.length >= 3)
+            ArroButton(str(R.string.payments_add_card), { submit() }, loading = call.busy.value, enabled = number.isNotBlank() && expiry.length == 4 && cvv.length >= 3)
         },
     ) {
-        ScreenTitle("Card in your name")
+        ScreenTitle(str(R.string.payments_card_in_your_name))
         val digits = number.filter { it.isDigit() }
         CardPreview((digits + "•".repeat((16 - digits.length).coerceAtLeast(0))).chunked(4).joinToString(" "), expiry, a.displayName.uppercase(), brandLabel)
-        ArroField(number, { v -> number = v.filter { it.isDigit() }.take(19); errors = errors - "number" }, label = "Card number",
+        ArroField(number, { v -> number = v.filter { it.isDigit() }.take(19); errors = errors - "number" }, label = str(R.string.payments_card_number),
             placeholder = "1234 5678 9012 3456", keyboard = KeyboardType.Number, error = errors["number"],
             textStyle = T.Input.copy(fontFeatureSettings = "tnum", letterSpacing = 0.6.sp),
             visualTransformation = GroupingTransformation(if (brand == CardBrand.AMEX) listOf(4, 6, 5) else listOf(4, 4, 4, 4, 3)),
             trailing = { if (brandLabel.isNotEmpty()) Pill(brandLabel, if (brand == CardBrand.AMEX) PillKind.Warn else PillKind.Ok) })
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ArroField(expiry, { v -> expiry = v.filter { it.isDigit() }.take(4); errors = errors - "expiry" }, Modifier.weight(1f), label = "Expiry date",
-                placeholder = "MM / YY", keyboard = KeyboardType.Number, error = errors["expiry"],
+            ArroField(expiry, { v -> expiry = v.filter { it.isDigit() }.take(4); errors = errors - "expiry" }, Modifier.weight(1f), label = str(R.string.payments_expiry_date),
+                placeholder = str(R.string.payments_mm_yy), keyboard = KeyboardType.Number, error = errors["expiry"],
                 visualTransformation = GroupingTransformation(listOf(2, 2), '/'), textStyle = T.Input.copy(fontFeatureSettings = "tnum"))
-            ArroField(cvv, { v -> cvv = v.filter { it.isDigit() }.take(4); errors = errors - "cvv" }, Modifier.weight(1f), label = "Security code",
+            ArroField(cvv, { v -> cvv = v.filter { it.isDigit() }.take(4); errors = errors - "cvv" }, Modifier.weight(1f), label = str(R.string.payments_security_code),
                 placeholder = "123", keyboard = KeyboardType.NumberPassword, password = true, error = errors["cvv"])
         }
-        CheckRow(billingHome, { billingHome = it }, "Billing address is my home address",
+        CheckRow(billingHome, { billingHome = it }, str(R.string.payments_billing_address_is_my_home_address),
             sub = if (billingHome) a.profile.address?.oneLine else null)
-        if (!billingHome) ArroField(billingPostcode, { billingPostcode = it.uppercase() }, label = "Billing postcode", placeholder = "E8 2PL")
+        if (!billingHome) ArroField(billingPostcode, { billingPostcode = it.uppercase() }, label = str(R.string.payments_billing_postcode), placeholder = str(R.string.payments_e8_2pl))
         FieldHint(call.error.value)
-        Note("Test cards: any valid Visa or Mastercard number works. A number ending 0002 is declined by the bank.", NoteKind.Info, Icons.Info)
+        Note(str(R.string.payments_test_cards_any_valid_visa_or), NoteKind.Info, Icons.Info)
     }
 }
 
@@ -277,7 +279,7 @@ private fun CardPreview(shown: String, expiry: String, holder: String, brandLabe
         Column(Modifier.fillMaxSize().padding(horizontal = 20.dp, vertical = 18.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(40.dp, 30.dp).background(Brush.linearGradient(listOf(Color(0xFFE9D9A8), Color(0xFFBFA761))), RoundedCornerShape(6.dp)))
-                Txt(brandLabel.ifEmpty { "Debit or credit card" }, T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Lime)
+                Txt(brandLabel.ifEmpty { str(R.string.payments_debit_or_credit_card) }, T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Lime)
             }
             Spacer(Modifier.weight(1f))
             Txt(shown, T.Big22.copy(fontSize = 21.sp, fontWeight = FontWeight.Medium, letterSpacing = 2.5.sp), color = C.OnNight, maxLines = 1)
@@ -325,12 +327,12 @@ fun ScanCardScreen() {
                 .addOnCompleteListener { proxy.close() }
         }
     }
-    CameraScreen("Scan your card", { nav.back() }, right = {
-        RoundIcon(Icons.Bolt, { torch = !torch }, style = if (torch) IconBtn.Lime else IconBtn.OnDark, description = "Torch")
+    CameraScreen(str(R.string.payments_scan_your_card), { nav.back() }, right = {
+        RoundIcon(Icons.Bolt, { torch = !torch }, style = if (torch) IconBtn.Lime else IconBtn.OnDark, description = str(R.string.payments_torch))
     }) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(150.dp))
-            Txt("Hold the front of your card inside the frame", T.Cap.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.Center)
+            Txt(str(R.string.payments_hold_the_front_of_your_card), T.Cap.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.Center)
             Box(Modifier.padding(top = 30.dp).size(338.dp, 220.dp)) {
                 if (permission.granted && cameraOk) {
                     CameraPreview(Modifier.padding(6.dp).fillMaxSize().clip(RoundedCornerShape(16.dp)), analyzer = analyzer, torch = torch)
@@ -347,16 +349,16 @@ fun ScanCardScreen() {
                 val f = found
                 if (f != null) {
                     Pill(Validation.formatCard(f), PillKind.Lime)
-                    Cap(if (foundExpiry != null) "Card number and expiry found" else "Card number found. Checking expiry date", color = C.DarkCap)
+                    Cap(if (foundExpiry != null) str(R.string.payments_card_number_and_expiry_found) else str(R.string.payments_card_number_found_checking_expiry_date), color = C.DarkCap)
                 } else {
-                    Cap(if (permission.granted) "Looking for the card number" else "Allow the camera to scan your card", color = C.DarkCap)
-                    if (!permission.granted && cameraOk) ArroButton("Allow camera", { permission.request() }, style = Btn.Lime, size = BtnSize.M, fill = false)
+                    Cap(if (permission.granted) str(R.string.payments_looking_for_the_card_number) else str(R.string.payments_allow_the_camera_to_scan_your), color = C.DarkCap)
+                    if (!permission.granted && cameraOk) ArroButton(str(R.string.payments_allow_camera), { permission.request() }, style = Btn.Lime, size = BtnSize.M, fill = false)
                 }
             }
             Spacer(Modifier.weight(1f))
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Cap("The image stays on your phone. Only the card details are sent, encrypted.", Modifier.fillMaxWidth(), color = C.DarkCap, align = TextAlign.Center, size = 12f)
-                ArroButton("Enter details manually", { nav.back() }, style = Btn.LineOnDark)
+                Cap(str(R.string.payments_the_image_stays_on_your_phone), Modifier.fillMaxWidth(), color = C.DarkCap, align = TextAlign.Center, size = 12f)
+                ArroButton(str(R.string.payments_enter_details_manually), { nav.back() }, style = Btn.LineOnDark)
             }
         }
     }
@@ -394,15 +396,15 @@ fun BankListScreen() {
     val q = query.trim().lowercase()
     val list = Catalog.ukBanks.filter { q.isEmpty() || it.name.lowercase().contains(q) }
     ArroScreen(topBar = { TopBar(onBack = { nav.back() }) }, gap = 14.dp) {
-        ScreenTitle("Choose your bank", "Connect with Open Banking. You approve in your bank's app, and we never see your login.")
-        SearchField(query, { query = it }, "Search for your bank")
-        Over(if (q.isEmpty()) "Most popular" else "Banks")
-        if (list.isEmpty()) Cap("We don't support that bank for Open Banking yet. You can add a debit card instead.")
+        ScreenTitle(str(R.string.payments_choose_your_bank), str(R.string.payments_connect_with_open_banking_you_approve))
+        SearchField(query, { query = it }, str(R.string.payments_search_for_your_bank))
+        Over(if (q.isEmpty()) str(R.string.payments_most_popular) else str(R.string.payments_banks))
+        if (list.isEmpty()) Cap(str(R.string.payments_we_don_t_support_that_bank))
         Group {
             list.forEachIndexed { i, bank ->
                 if (i > 0) GroupDivider()
                 val mine = bank.id in used
-                ListRow(bank.name, flat = true, minHeight = 56.dp, subtitle = if (mine) "Already connected" else if (bank.id == "monzo" && a.demo) "You use Monzo for top-ups" else null,
+                ListRow(bank.name, flat = true, minHeight = 56.dp, subtitle = if (mine) str(R.string.payments_already_connected) else if (bank.id == "monzo" && a.demo) str(R.string.payments_you_use_monzo_for_top_ups) else null,
                     leading = {
                         Box(Modifier.size(36.dp).background(if (mine || (bank.id == "monzo" && a.demo)) C.Lime else C.Tint, RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) {
                             Txt(bank.name.take(1).uppercase(), T.H3.copy(fontSize = 14.sp, fontWeight = FontWeight.Bold),
@@ -440,29 +442,29 @@ fun BankConnectScreen(bankId: String) {
         background = C.Tint,
         topBar = { TopBar(onBack = { nav.back() }) },
         footer = {
-            ArroButton("Continue", {
+            ArroButton(str(R.string.payments_continue), {
                 methodId?.let { id -> nav.navigate(Routes.payAdded(id)) { popUpTo(Routes.PAY_BANKS) { inclusive = true } } }
             }, enabled = step == 3, loading = step in 1..2 && error == null)
-            if (error != null) ArroButton("Try again", { nav.back() }, style = Btn.Line)
+            if (error != null) ArroButton(str(R.string.payments_try_again), { nav.back() }, style = Btn.Line)
         },
     ) {
-        Box(Modifier.fillMaxWidth().height(230.dp), contentAlignment = Alignment.Center) { Halo(200.dp) { Illustration(Art.Bank, 200.dp, description = "A glass bank building") } }
+        Box(Modifier.fillMaxWidth().height(230.dp), contentAlignment = Alignment.Center) { Halo(200.dp) { Illustration(Art.Bank, 200.dp, description = str(R.string.payments_a_glass_bank_building)) } }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScreenTitle(if (step == 3) "Connected to ${bank.name}" else "Connecting to ${bank.name}")
+            ScreenTitle(if (step == 3) str(R.string.payments_connected_to_x, bank.name) else str(R.string.payments_connecting_to_x, bank.name))
             Txt(when (step) {
-                0 -> "Opening a secure connection to ${bank.name}."
-                1, 2 -> "You approved access in the ${bank.name} app. We're finishing up."
-                else -> "Your ${bank.name} account is ready to pay for transfers."
+                0 -> str(R.string.payments_opening_a_secure_connection_to_x, bank.name)
+                1, 2 -> str(R.string.payments_you_approved_access_in_the_x, bank.name)
+                else -> str(R.string.payments_your_x_account_is_ready_to, bank.name)
             }, T.Lede, color = C.Slate)
         }
         ArroCard(Modifier.padding(top = 8.dp)) {
             Timeline(listOf(
-                TimelineItem("Secure connection opened", "Regulated Open Banking provider", state = if (step >= 1) StepState.Done else StepState.Now, icon = if (step >= 1) null else Icons.Refresh),
-                TimelineItem("Approved in ${bank.name}", "With your ${bank.name} PIN", state = when { step >= 2 -> StepState.Done; step == 1 -> StepState.Now; else -> StepState.Todo }, icon = if (step == 1) Icons.Refresh else null),
-                TimelineItem("Confirming the account is yours", "Matching the name to ${a.displayName}", state = when { step >= 3 -> StepState.Done; step == 2 -> StepState.Now; else -> StepState.Todo }, icon = if (step == 2) Icons.Refresh else null),
+                TimelineItem(str(R.string.payments_secure_connection_opened), str(R.string.payments_regulated_open_banking_provider), state = if (step >= 1) StepState.Done else StepState.Now, icon = if (step >= 1) null else Icons.Refresh),
+                TimelineItem(str(R.string.payments_approved_in_x, bank.name), str(R.string.payments_with_your_x_pin, bank.name), state = when { step >= 2 -> StepState.Done; step == 1 -> StepState.Now; else -> StepState.Todo }, icon = if (step == 1) Icons.Refresh else null),
+                TimelineItem(str(R.string.payments_confirming_the_account_is_yours), str(R.string.payments_matching_the_name_to_x, a.displayName), state = when { step >= 3 -> StepState.Done; step == 2 -> StepState.Now; else -> StepState.Todo }, icon = if (step == 2) Icons.Refresh else null),
             ))
         }
-        Note("Arro sees your account name and number only. Disconnect anytime in Payment methods.", NoteKind.Lime, Icons.Eye)
+        Note(str(R.string.payments_arro_sees_your_account_name_and), NoteKind.Lime, Icons.Eye)
         FieldHint(error)
     }
 }
@@ -489,7 +491,7 @@ fun CardApprovalScreen() {
     var code by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
     val call = rememberCall()
-    fun approve() = scope.launchCall(call, onError = { e -> if (e.code == "declined") { banner.show("Card declined", e.message ?: "", BannerKind.Error); true } else false }) {
+    fun approve() = scope.launchCall(call, onError = { e -> if (e.code == "declined") { banner.show(str(R.string.payments_card_declined), e.message ?: "", BannerKind.Error); true } else false }) {
         val done = b.approveCard(m.id)
         nav.popBackStack(Routes.PAY_ADD_CARD, inclusive = true)
         nav.go(Routes.payAdded(done.id))
@@ -497,19 +499,19 @@ fun CardApprovalScreen() {
     // The "bank app" asks for approval a few seconds in, like a push notification from the issuer.
     LaunchedEffect(Unit) {
         delay(3500)
-        banner.show("${m.issuer}: is this you?", "Approve adding ${m.label} to Arro.", BannerKind.Info, "Approve") { approve() }
+        banner.show(str(R.string.payments_x_is_this_you, m.issuer), str(R.string.payments_approve_adding_x_to_arro, m.label), BannerKind.Info, str(R.string.payments_approve)) { approve() }
     }
     val remaining = (5 * 60_000L - (now - started)).coerceAtLeast(0)
-    LaunchedEffect(remaining == 0L) { if (remaining == 0L) { banner.show("Approval timed out", "Add the card again when you're ready.", BannerKind.Error); b.cancelPendingMethod(m.id) } }
+    LaunchedEffect(remaining == 0L) { if (remaining == 0L) { banner.show(str(R.string.payments_approval_timed_out), str(R.string.payments_add_the_card_again_when_you), BannerKind.Error); b.cancelPendingMethod(m.id) } }
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back(); b.cancelPendingMethod(m.id) }) },
         overlay = {
             Sheet(true, { nav.back(); b.cancelPendingMethod(m.id) }) {
                 Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                     Illustration(Art.Phone, 112.dp)
-                    Txt(if (smsMode) "Enter the code from ${m.issuer}" else "Approve in your ${m.issuer} app", T.H2.copy(fontSize = 21.sp), Modifier.padding(top = 10.dp), align = TextAlign.Center)
-                    Txt(if (smsMode) "We've asked ${m.issuer} to text a code to your mobile ending ${a.phone.takeLast(3)}."
-                        else "${m.issuer} sent you a notification to confirm it's really you adding ${m.label}. No money will be taken.",
+                    Txt(if (smsMode) str(R.string.payments_enter_the_code_from_x, m.issuer) else str(R.string.payments_approve_in_your_x_app, m.issuer), T.H2.copy(fontSize = 21.sp), Modifier.padding(top = 10.dp), align = TextAlign.Center)
+                    Txt(if (smsMode) str(R.string.payments_we_ve_asked_x_to_text, m.issuer, a.phone.takeLast(3))
+                        else str(R.string.payments_x_sent_you_a_notification_to, m.issuer, m.label),
                         T.Cap.copy(fontSize = 14.sp), Modifier.padding(top = 6.dp), color = C.Slate, align = TextAlign.Center)
                     if (smsMode) {
                         CodeInput(code, { code = it }, Modifier.padding(top = 18.dp), onComplete = { approve() })
@@ -519,20 +521,20 @@ fun CardApprovalScreen() {
                             horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically,
                         ) {
                             SpinnerRing(20.dp, stroke = 3.dp, track = C.Mist, color = C.Ink)
-                            Txt("Waiting for approval · ${Text.countdown(remaining)}", T.Body14.copy(fontWeight = FontWeight.Medium))
+                            Txt(str(R.string.payments_waiting_for_approval_x, Text.countdown(remaining)), T.Body14.copy(fontWeight = FontWeight.Medium))
                         }
                     }
                     FieldHint(call.error.value)
                     Column(Modifier.fillMaxWidth().padding(top = 22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ArroButton(if (smsMode) "Confirm code" else "I've approved it", { approve() }, loading = call.busy.value, enabled = !smsMode || code.length == 6)
-                        ArroButton(if (smsMode) "Approve in the app instead" else "Get a code by SMS instead", { smsMode = !smsMode }, style = Btn.Line)
-                        ArroButton("Cancel", { nav.back(); b.cancelPendingMethod(m.id) }, style = Btn.Text)
+                        ArroButton(if (smsMode) str(R.string.payments_confirm_code) else str(R.string.payments_i_ve_approved_it), { approve() }, loading = call.busy.value, enabled = !smsMode || code.length == 6)
+                        ArroButton(if (smsMode) str(R.string.payments_approve_in_the_app_instead) else str(R.string.payments_get_a_code_by_sms_instead), { smsMode = !smsMode }, style = Btn.Line)
+                        ArroButton(str(R.string.payments_cancel), { nav.back(); b.cancelPendingMethod(m.id) }, style = Btn.Text)
                     }
                 }
             }
         },
     ) {
-        ScreenTitle("Card in your name")
+        ScreenTitle(str(R.string.payments_card_in_your_name))
         CardPreview("•••• •••• •••• ${m.last4}", m.expiry.replace("/", ""), m.holder, m.label.substringBefore(" ••"))
     }
 }
@@ -560,32 +562,32 @@ fun MethodAddedScreen(id: String) {
     ArroScreen(
         background = C.Tint,
         footer = {
-            if (c.session.cardReturnToSend) ArroButton("Back to my transfer", { done() })
-            ArroButton("Done", {
+            if (c.session.cardReturnToSend) ArroButton(str(R.string.payments_back_to_my_transfer), { done() })
+            ArroButton(str(R.string.payments_done), {
                 c.session.cardReturnToSend = false
                 if (!nav.popBackStack(Routes.PAY_METHODS, inclusive = false)) nav.popBackStack(Routes.HOME, inclusive = false)
             }, style = if (c.session.cardReturnToSend) Btn.Text else Btn.Dark)
         },
     ) {
         Box(Modifier.fillMaxWidth().padding(top = 60.dp).height(260.dp), contentAlignment = Alignment.Center) {
-            Halo(220.dp) { Illustration(Art.Wallet, 200.dp, description = "A glass wallet with coins") }
+            Halo(220.dp) { Illustration(Art.Wallet, 200.dp, description = str(R.string.payments_a_glass_wallet_with_coins)) }
         }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScreenTitle(if (isCard) "Card added" else "Bank connected", size = TitleSize.XL, align = TextAlign.Center)
-            Txt("${m.label} is ready to pay for transfers and top-ups.", T.Lede, color = C.Slate, align = TextAlign.Center)
+            ScreenTitle(if (isCard) str(R.string.payments_card_added) else str(R.string.payments_bank_connected), size = TitleSize.XL, align = TextAlign.Center)
+            Txt(str(R.string.payments_x_is_ready_to_pay_for, m.label), T.Lede, color = C.Slate, align = TextAlign.Center)
         }
         ArroCard(Modifier.padding(top = 12.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (isCard) CardThumb(m) else Tile(Icons.Bank)
                 Column(Modifier.weight(1f)) {
                     Txt(m.label, T.H3)
-                    Cap(if (isCard) "${m.issuer} · expires ${m.expiry}" else "Pay by bank")
+                    Cap(if (isCard) str(R.string.payments_x_expires_x, m.issuer, m.expiry) else str(R.string.payments_pay_by_bank))
                 }
-                Pill("Verified", PillKind.Ok, dot = true)
+                Pill(str(R.string.payments_verified), PillKind.Ok, dot = true)
             }
             HDivider(Modifier.padding(vertical = 12.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Txt("Use as my default", T.Body14)
+                Txt(str(R.string.payments_use_as_my_default), T.Body14)
                 Toggle(m.isDefault, { on -> if (on) b.setDefaultMethod(m.id) else b.setDefaultMethod(a.paymentMethods.firstOrNull { it.id != m.id && it.status == MethodStatus.ACTIVE }?.id ?: m.id) })
             }
         }

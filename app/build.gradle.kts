@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -16,7 +18,31 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         vectorDrawables { useSupportLibrary = true }
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Sample account for the simulated backend (see gradle.properties). Not real credentials.
+        fun setting(name: String, default: String = ""): String = (project.findProperty(name) as String?) ?: default
+        fun quoted(value: String) = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+        buildConfigField("boolean", "SAMPLE_ACCOUNT", setting("arro.sample.enabled", "false"))
+        buildConfigField("String", "SAMPLE_EMAIL", quoted(setting("arro.sample.email")))
+        buildConfigField("String", "SAMPLE_PHONE", quoted(setting("arro.sample.phone")))
+        buildConfigField("String", "SAMPLE_PASSWORD", quoted(setting("arro.sample.password")))
+        buildConfigField("String", "SAMPLE_PASSCODE", quoted(setting("arro.sample.passcode")))
     }
+
+    // Release signing: put your keystore details in keystore.properties at the project root (see
+    // keystore.properties.example; the real file is git-ignored). Without it, release builds fall back to the
+    // debug key so they still install for testing, but they can't be published.
+    val keystoreFile = rootProject.file("keystore.properties")
+    val releaseSigning = if (keystoreFile.exists()) {
+        val p = Properties().apply { keystoreFile.inputStream().use { load(it) } }
+        signingConfigs.create("release") {
+            storeFile = rootProject.file(p.getProperty("storeFile"))
+            storePassword = p.getProperty("storePassword")
+            keyAlias = p.getProperty("keyAlias")
+            keyPassword = p.getProperty("keyPassword")
+        }
+    } else null
 
     buildTypes {
         debug {
@@ -27,9 +53,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Signed with the debug key so the release APK installs for testing.
-            // Replace with your own signing config before publishing.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = releaseSigning ?: signingConfigs.getByName("debug")
         }
     }
 

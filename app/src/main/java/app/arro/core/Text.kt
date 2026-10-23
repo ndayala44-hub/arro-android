@@ -5,7 +5,6 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 /** Text helpers shared by the backend and the UI: names, phone numbers, dates and times. */
@@ -140,8 +139,6 @@ object Text {
         val s = (ms / 1000).coerceAtLeast(0)
         return "%d:%02d".format(s / 60, s % 60)
     }
-
-    fun daysBetween(a: Long, b: Long): Long = ChronoUnit.DAYS.between(localDate(a), localDate(b))
 
     fun greeting(now: Long): String = when (dt(now).hour) {
         in 5..11 -> "Good morning"

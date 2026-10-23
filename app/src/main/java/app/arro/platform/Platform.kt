@@ -1,5 +1,6 @@
 package app.arro.platform
 
+import app.arro.ui.str
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Application
@@ -41,7 +42,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.io.File
 import java.net.HttpURLConnection
-import java.net.URL
+import java.net.URI
 import java.time.LocalTime
 
 /** Keeps the backend's JSON document in internal storage, written atomically. */
@@ -59,7 +60,7 @@ class FileStore(private val file: File) : StateStore {
 class HttpRateSource(private val url: String = "https://open.er-api.com/v6/latest/GBP") : RateSource {
     override suspend fun fetch(): Map<String, Double>? = withContext(Dispatchers.IO) {
         runCatching {
-            val conn = URL(url).openConnection() as HttpURLConnection
+            val conn = URI(url).toURL().openConnection() as HttpURLConnection
             conn.connectTimeout = 8_000
             conn.readTimeout = 8_000
             conn.setRequestProperty("Accept", "application/json")
@@ -150,7 +151,7 @@ class Notifier(private val app: Application) {
         if (!permitted()) return
         val settings = state.account?.settings
         val (channel, title, body, transferId) = when (e) {
-            is BackendEvent.Code -> Quad(SECURITY, "Arro", e.purpose, "")
+            is BackendEvent.Code -> Quad(SECURITY, str(R.string.platform_arro), e.purpose, "")
             is BackendEvent.TransferUpdate -> {
                 if (settings?.transferUpdates == false || quiet(state)) return
                 Quad(TRANSFERS, e.title, e.body, e.transferId)
@@ -159,9 +160,9 @@ class Notifier(private val app: Application) {
                 if (settings?.rateAlerts == false || quiet(state)) return
                 Quad(RATES, e.title, e.body, "")
             }
-            is BackendEvent.KycDecided -> Quad(SECURITY, if (e.approved) "You're verified" else "We need a clearer photo",
-                if (e.approved) "Your account is ready to send." else "Retake your ID photo to finish verifying.", "")
-            is BackendEvent.ChatReply -> Quad(TRANSFERS, "Amina from Arro", e.text, "")
+            is BackendEvent.KycDecided -> Quad(SECURITY, if (e.approved) str(R.string.platform_you_re_verified) else str(R.string.platform_we_need_a_clearer_photo),
+                if (e.approved) str(R.string.platform_your_account_is_ready_to_send) else str(R.string.platform_retake_your_id_photo_to_finish), "")
+            is BackendEvent.ChatReply -> Quad(TRANSFERS, str(R.string.platform_amina_from_arro), e.text, "")
             is BackendEvent.Info -> Quad(TRANSFERS, e.title, e.body, "")
             is BackendEvent.OfferAvailable -> {
                 if (settings?.rateAlerts == false || quiet(state)) return
@@ -206,13 +207,11 @@ object Biometrics {
 
     fun available(context: Context): Boolean = BiometricManager.from(context).canAuthenticate(AUTH) == BiometricManager.BIOMETRIC_SUCCESS
 
-    fun enrolled(context: Context): Boolean = BiometricManager.from(context).canAuthenticate(AUTH) != BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE
-
     fun prompt(
         activity: FragmentActivity,
         title: String,
         subtitle: String,
-        negative: String = "Use passcode",
+        negative: String = str(R.string.platform_use_passcode),
         onSuccess: () -> Unit,
         onFallback: () -> Unit = {},
         onError: (String) -> Unit = {},
@@ -240,7 +239,7 @@ object Share {
     fun copy(context: Context, label: String, text: String) {
         val cm = context.getSystemService(ClipboardManager::class.java) ?: return
         cm.setPrimaryClip(ClipData.newPlainText(label, text))
-        if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, "Copied", Toast.LENGTH_SHORT).show()
+        if (Build.VERSION.SDK_INT < 33) Toast.makeText(context, str(R.string.platform_copied), Toast.LENGTH_SHORT).show()
     }
 
     fun text(context: Context, text: String, subject: String = "") {
@@ -278,11 +277,11 @@ object Share {
             val uri = resolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
             if (uri != null) {
                 resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
-                return "Saved to Downloads as ${file.name}"
+                return str(R.string.platform_saved_to_downloads_as_x, file.name)
             }
         }
         file(context, file, mime, file.name)
-        return "Choose where to save ${file.name}"
+        return str(R.string.platform_choose_where_to_save_x, file.name)
     }
 
     fun openUrl(context: Context, url: String) {

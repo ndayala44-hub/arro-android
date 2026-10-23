@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -128,7 +130,7 @@ fun RoundIcon(
 
 /** Back arrow in the top bar. */
 @Composable
-fun BackButton(onClick: () -> Unit, style: IconBtn = IconBtn.Lime) = RoundIcon(Icons.ArrowLeft, onClick, style = style, description = "Back")
+fun BackButton(onClick: () -> Unit, style: IconBtn = IconBtn.Lime) = RoundIcon(Icons.ArrowLeft, onClick, style = style, description = str(R.string.ui_buttons_back))
 
 /** Underlined text link (.link). */
 @Composable

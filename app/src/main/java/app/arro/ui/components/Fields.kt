@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -163,7 +165,7 @@ fun SelectField(
     value: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "Choose one",
+    placeholder: String = str(R.string.ui_fields_choose_one),
     error: String? = null,
     hint: String? = null,
     focused: Boolean = false,
@@ -229,7 +231,7 @@ fun SearchField(
                     if (value.isEmpty()) Txt(placeholder, T.Body, color = C.Slate, maxLines = 1)
                     inner()
                 }
-                if (value.isNotEmpty()) RoundIcon(Icons.Close, { onValueChange("") }, style = IconBtn.Plain, size = 28.dp, iconSize = 16.dp, description = "Clear")
+                if (value.isNotEmpty()) RoundIcon(Icons.Close, { onValueChange("") }, style = IconBtn.Plain, size = 28.dp, iconSize = 16.dp, description = str(R.string.ui_fields_clear))
             }
         },
     )

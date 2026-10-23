@@ -86,11 +86,6 @@ object Money {
         }
     }
 
-    fun toMajor(minor: Long, cur: Currency): Double = minor.toDouble() / cur.factor
-
-    fun fromMajor(major: Double, cur: Currency, mode: RoundingMode = RoundingMode.HALF_UP): Long =
-        BigDecimal.valueOf(major).movePointRight(cur.decimals).setScale(0, mode).toLong()
-
     /** Converts [minor] of [from] into [to] at [rate] (units of [to] per one unit of [from]), rounding down. */
     fun convert(minor: Long, from: Currency, to: Currency, rate: Double): Long {
         val major = BigDecimal.valueOf(minor).movePointLeft(from.decimals)

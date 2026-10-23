@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
@@ -77,7 +79,7 @@ fun Keypad(
             Key("0", keyHeight, fg) { haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove); onKey("0") }
             Box(
                 Modifier.weight(1f).height(keyHeight).clip(RoundedCornerShape(16.dp)).clickable(role = Role.Button) { onDelete() }
-                    .semantics { contentDescription = "Delete" },
+                    .semantics { contentDescription = str(R.string.ui_controls_delete) },
                 contentAlignment = Alignment.Center,
             ) { Ic(Icons.Backspace, size = 24.dp, tint = fg) }
         }

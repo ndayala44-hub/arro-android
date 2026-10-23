@@ -3,21 +3,37 @@ package app.arro.core
 import java.security.MessageDigest
 
 /**
+ * Settings for the sample account of the simulated backend. Nothing is hard-coded here: the app fills these in at
+ * start from `arro.sample.*` in gradle.properties (through BuildConfig), and tests set their own. With
+ * `arro.sample.enabled=false` there is no sample login, no sample data and no Demo controls.
+ */
+object DemoConfig {
+    @Volatile var enabled: Boolean = false
+    @Volatile var email: String = ""
+    @Volatile var phone: String = ""
+    @Volatile var password: String = ""
+    @Volatile var passcode: String = ""
+}
+
+/**
  * The sample account shown in the designs (Eric Nshuti), with history placed relative to today so it always looks
- * current. Log in with [DEMO_EMAIL] and [DEMO_PASSWORD]; the passcode is [DEMO_PASSCODE].
+ * current. Its login details come from [DemoConfig].
  */
 object Seed {
-    const val DEMO_EMAIL = "eric.nshuti@mail.com"
-    const val DEMO_PHONE = "+447700900412"
-    const val DEMO_PASSWORD = "Arro2026!"
-    const val DEMO_PASSCODE = "246810"
+    val DEMO_EMAIL: String get() = DemoConfig.email
+    val DEMO_PHONE: String get() = DemoConfig.phone
+    val DEMO_PASSWORD: String get() = DemoConfig.password
+    val DEMO_PASSCODE: String get() = DemoConfig.passcode
     private const val DAY = 86_400_000L
     private const val MIN = 60_000L
 
+    /** True for the sample account's email or mobile number with its password, when the sample account is on. */
     fun isDemoLogin(identifier: String, password: String): Boolean {
+        if (!DemoConfig.enabled || DemoConfig.password.isEmpty()) return false
         val id = identifier.trim().lowercase()
         val digits = id.filter { it.isDigit() }.removePrefix("44").removePrefix("0")
-        return password == DEMO_PASSWORD && (id == DEMO_EMAIL || digits == "7700900412")
+        val sampleDigits = DemoConfig.phone.filter { it.isDigit() }.removePrefix("44").removePrefix("0")
+        return password == DemoConfig.password && (id == DemoConfig.email.lowercase() || (digits.isNotEmpty() && digits == sampleDigits))
     }
 
     /** Names the simulated payout networks return for known numbers (last 9 digits). */

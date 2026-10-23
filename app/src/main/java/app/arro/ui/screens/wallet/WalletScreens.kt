@@ -1,5 +1,7 @@
 package app.arro.ui.screens.wallet
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -208,9 +210,9 @@ fun AmountInput(
 
 /** The bank details someone needs to pay into a balance. */
 fun accountDetails(a: Account, w: Wallet): List<Pair<String, String>> = when (w.currency) {
-    "EUR" -> listOf("Name" to a.displayName, "IBAN" to w.iban, "BIC" to "ARROGB2L")
-    "USD" -> listOf("Name" to a.displayName, "Routing number (ACH)" to w.sortCode, "Account number" to w.accountNumber, "Account type" to "Checking")
-    else -> listOf("Name" to a.displayName, "Sort code" to w.sortCode, "Account number" to w.accountNumber.chunked(4).joinToString(" "))
+    "EUR" -> listOf(str(R.string.wallet_name) to a.displayName, "IBAN" to w.iban, "BIC" to "ARROGB2L")
+    "USD" -> listOf(str(R.string.wallet_name) to a.displayName, str(R.string.wallet_routing_number_ach) to w.sortCode, str(R.string.wallet_account_number) to w.accountNumber, str(R.string.wallet_account_type) to str(R.string.wallet_checking))
+    else -> listOf(str(R.string.wallet_name) to a.displayName, str(R.string.wallet_sort_code) to w.sortCode, str(R.string.wallet_account_number) to w.accountNumber.chunked(4).joinToString(" "))
 }
 
 @Composable
@@ -240,43 +242,43 @@ fun WalletScreen() {
     val others = a.wallets.filter { it !== main }
     val available = Currency.wallets.filter { cur -> a.wallets.none { it.currency == cur.code } }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Statement, { nav.go(Routes.STATEMENTS) }, style = IconBtn.Soft, description = "Statements") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Statement, { nav.go(Routes.STATEMENTS) }, style = IconBtn.Soft, description = str(R.string.wallet_statements)) }) },
         gap = 20.dp,
         overlay = {
             Sheet(openSheet, { openSheet = false }) {
-                SheetHeader("Open a balance", { openSheet = false }, "Hold money in another currency, then convert or send it when the rate suits you.")
+                SheetHeader(str(R.string.wallet_open_a_balance), { openSheet = false }, str(R.string.wallet_hold_money_in_another_currency_then))
                 Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (available.isEmpty()) Cap("You hold every currency Arro offers for balances. More are coming soon.")
+                    if (available.isEmpty()) Cap(str(R.string.wallet_you_hold_every_currency_arro_offers))
                     available.forEach { cur ->
                         ListRow(cur.displayName, subtitle = when (cur) {
-                            Currency.EUR -> "Your own IBAN for euro payments"
-                            Currency.USD -> "US account details for USD payments"
+                            Currency.EUR -> str(R.string.wallet_your_own_iban_for_euro_payments)
+                            Currency.USD -> str(R.string.wallet_us_account_details_for_usd_payments)
                             else -> cur.code
                         }, leading = { Flag(cur.flag, 36.dp) }, trailing = { Chevron() }, onClick = {
                             scope.launchCall(call) {
                                 b.openCurrency(cur)
                                 openSheet = false
-                                banner.show("${cur.displayName} balance opened", "Add money or convert into it whenever you're ready.", BannerKind.Success)
+                                banner.show(str(R.string.wallet_x_balance_opened, cur.displayName), str(R.string.wallet_add_money_or_convert_into_it), BannerKind.Success)
                                 nav.go(Routes.walletAccount(cur.code))
                             }
                         })
                     }
                     FieldHint(call.error.value)
-                    Note("Balances in RWF, KES and other payout currencies are coming later this year.", NoteKind.Info, Icons.Info)
+                    Note(str(R.string.wallet_balances_in_rwf_kes_and_other), NoteKind.Info, Icons.Info)
                 }
             }
         },
     ) {
         Column {
-            ScreenTitle("Wallet")
+            ScreenTitle(str(R.string.wallet_wallet))
             BigAmount(b.totalInGbp(a), Currency.GBP, Modifier.padding(top = 14.dp))
-            Cap("Total in GBP across ${a.wallets.size} ${if (a.wallets.size == 1) "currency" else "currencies"}, at today's rates", Modifier.padding(top = 6.dp))
+            Cap(str(R.string.wallet_total_in_gbp_across_x_x, a.wallets.size, if (a.wallets.size == 1) str(R.string.wallet_currency) else str(R.string.wallet_currencies)), Modifier.padding(top = 6.dp))
         }
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            QuickAction("Add", Icons.Plus, { nav.go(Routes.addMoney(main?.currency ?: "GBP")) }, Modifier.weight(1f))
-            QuickAction("Convert", Icons.Swap, { nav.go(Routes.convert(main?.currency ?: "GBP")) }, Modifier.weight(1f))
-            QuickAction("Send", Icons.ArrowUpRight, { startSend(c, nav, banner) }, Modifier.weight(1f))
-            QuickAction("Statements", Icons.Download, { nav.go(Routes.STATEMENTS) }, Modifier.weight(1f), lime = true)
+            QuickAction(str(R.string.wallet_add), Icons.Plus, { nav.go(Routes.addMoney(main?.currency ?: "GBP")) }, Modifier.weight(1f))
+            QuickAction(str(R.string.wallet_convert), Icons.Swap, { nav.go(Routes.convert(main?.currency ?: "GBP")) }, Modifier.weight(1f))
+            QuickAction(str(R.string.wallet_send), Icons.ArrowUpRight, { startSend(c, nav, banner) }, Modifier.weight(1f))
+            QuickAction(str(R.string.wallet_statements), Icons.Download, { nav.go(Routes.STATEMENTS) }, Modifier.weight(1f), lime = true)
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (main != null) {
@@ -288,13 +290,13 @@ fun WalletScreen() {
                     Flag(main.cur.flag, 36.dp)
                     Column(Modifier.weight(1f)) {
                         Txt(main.cur.displayName, T.H3)
-                        Cap("Account •• ${main.last4}${if (main.main) " · main" else ""}", color = cardInk(main.currency))
+                        Cap(str(R.string.wallet_account_x_x, main.last4, if (main.main) str(R.string.wallet_main) else ""), color = cardInk(main.currency))
                     }
                     Txt(Money.format(main.balanceMinor, main.cur), T.Num.copy(fontSize = 20.sp, fontWeight = FontWeight.Bold))
                 }
             }
             others.forEach { w -> CurrencyBalanceRow(w) { nav.go(Routes.walletAccount(w.currency)) } }
-            ListRow("Open another currency", dashed = true, minHeight = 60.dp, subtitle = "Hold money before you send it",
+            ListRow(str(R.string.wallet_open_another_currency), dashed = true, minHeight = 60.dp, subtitle = str(R.string.wallet_hold_money_before_you_send_it),
                 leading = { Tile(Icons.Plus, round = true) }, onClick = { call.error.value = null; openSheet = true })
         }
     }
@@ -318,10 +320,10 @@ fun WalletAccountScreen(code: String) {
     val scope = rememberCoroutineScope()
     val call = rememberCall()
     if (w == null) {
-        ArroScreen(topBar = { TopBar(onBack = { nav.back() }, title = "${cur.code} account") }) {
-            Note("You don't have a ${cur.displayName} balance yet.", NoteKind.Info, Icons.Info)
-            if (cur in Currency.wallets) ArroButton("Open a ${cur.code} balance", {
-                scope.launchCall(call) { b.openCurrency(cur); banner.show("${cur.displayName} balance opened", kind = BannerKind.Success) }
+        ArroScreen(topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.wallet_x_account, cur.code)) }) {
+            Note(str(R.string.wallet_you_don_t_have_a_x, cur.displayName), NoteKind.Info, Icons.Info)
+            if (cur in Currency.wallets) ArroButton(str(R.string.wallet_open_a_x_balance, cur.code), {
+                scope.launchCall(call) { b.openCurrency(cur); banner.show(str(R.string.wallet_x_balance_opened, cur.displayName), kind = BannerKind.Success) }
             }, loading = call.busy.value)
             FieldHint(call.error.value)
         }
@@ -332,24 +334,24 @@ fun WalletAccountScreen(code: String) {
     val items = b.feedFor(a, cur).take(5)
     ArroScreen(
         topBar = {
-            TopBar(onBack = { nav.back() }, title = "${cur.code} account", right = {
-                if (!w.main) RoundIcon(Icons.More, { more = true }, style = IconBtn.Soft, description = "More options") else androidx.compose.foundation.layout.Spacer(Modifier.width(44.dp))
+            TopBar(onBack = { nav.back() }, title = str(R.string.wallet_x_account, cur.code), right = {
+                if (!w.main) RoundIcon(Icons.More, { more = true }, style = IconBtn.Soft, description = str(R.string.wallet_more_options)) else androidx.compose.foundation.layout.Spacer(Modifier.width(44.dp))
             })
         },
         overlay = {
             Sheet(more, { more = false }) {
-                SheetHeader("${cur.displayName} balance", { more = false }, "Opened ${Text.date(w.openedAt.takeIf { it > 0 } ?: a.createdAt)}")
+                SheetHeader(str(R.string.wallet_x_balance, cur.displayName), { more = false }, str(R.string.wallet_opened_x, Text.date(w.openedAt.takeIf { it > 0 } ?: a.createdAt)))
                 Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ArroButton("Download statement", { more = false; c.session.walletCurrency = cur; nav.go(Routes.STATEMENTS) }, style = Btn.Line)
-                    ArroButton("Close this balance", { more = false; confirmClose = true }, style = Btn.DangerText)
+                    ArroButton(str(R.string.wallet_download_statement), { more = false; c.session.walletCurrency = cur; nav.go(Routes.STATEMENTS) }, style = Btn.Line)
+                    ArroButton(str(R.string.wallet_close_this_balance), { more = false; confirmClose = true }, style = Btn.DangerText)
                 }
             }
-            ConfirmDialog(confirmClose, "Close your ${cur.code} balance?", "Your ${cur.code} account details stop working straight away. You can open a new balance later.",
-                "Close balance", {
-                    scope.launchCall(call, onError = { e -> banner.show("Can't close yet", e.message ?: "", BannerKind.Error); confirmClose = false; true }) {
+            ConfirmDialog(confirmClose, str(R.string.wallet_close_your_x_balance, cur.code), str(R.string.wallet_your_x_account_details_stop_working, cur.code),
+                str(R.string.wallet_close_balance), {
+                    scope.launchCall(call, onError = { e -> banner.show(str(R.string.wallet_can_t_close_yet), e.message ?: "", BannerKind.Error); confirmClose = false; true }) {
                         b.closeCurrency(cur)
                         confirmClose = false
-                        banner.show("${cur.code} balance closed", kind = BannerKind.Info)
+                        banner.show(str(R.string.wallet_x_balance_closed, cur.code), kind = BannerKind.Info)
                         nav.back()
                     }
                 }, { confirmClose = false }, danger = true, loading = call.busy.value)
@@ -362,35 +364,35 @@ fun WalletAccountScreen(code: String) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Flag(cur.flag, 24.dp)
                 Txt(cur.displayName, T.H3, Modifier.padding(start = 8.dp).weight(1f))
-                if (w.main) Box(Modifier.background(C.Ink.copy(alpha = 0.08f), RoundedCornerShape(999.dp)).padding(horizontal = 10.dp, vertical = 4.dp)) { Txt("Main", T.Pill) }
+                if (w.main) Box(Modifier.background(C.Ink.copy(alpha = 0.08f), RoundedCornerShape(999.dp)).padding(horizontal = 10.dp, vertical = 4.dp)) { Txt(str(R.string.wallet_main_2), T.Pill) }
             }
             Column {
-                Cap("Balance", color = cardInk(cur.code))
+                Cap(str(R.string.wallet_balance), color = cardInk(cur.code))
                 Txt(Money.format(w.balanceMinor, cur), T.AmountMd)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ArroButton("Add", { nav.go(Routes.addMoney(cur.code)) }, Modifier.weight(1f), size = BtnSize.M, fill = true)
-            ArroButton("Convert", { nav.go(Routes.convert(cur.code)) }, Modifier.weight(1f), style = Btn.Line, size = BtnSize.M, fill = true)
-            ArroButton("Statement", { c.session.walletCurrency = cur; nav.go(Routes.STATEMENTS) }, Modifier.weight(1f), style = Btn.Line, size = BtnSize.M, fill = true)
+            ArroButton(str(R.string.wallet_add), { nav.go(Routes.addMoney(cur.code)) }, Modifier.weight(1f), size = BtnSize.M, fill = true)
+            ArroButton(str(R.string.wallet_convert), { nav.go(Routes.convert(cur.code)) }, Modifier.weight(1f), style = Btn.Line, size = BtnSize.M, fill = true)
+            ArroButton(str(R.string.wallet_statement), { c.session.walletCurrency = cur; nav.go(Routes.STATEMENTS) }, Modifier.weight(1f), style = Btn.Line, size = BtnSize.M, fill = true)
         }
         ArroCard(padding = 16.dp) {
             Txt(when (cur) {
-                Currency.EUR -> "Receive euros by SEPA transfer"
-                Currency.USD -> "Receive dollars from US accounts"
-                else -> "Receive pounds from any UK bank"
+                Currency.EUR -> str(R.string.wallet_receive_euros_by_sepa_transfer)
+                Currency.USD -> str(R.string.wallet_receive_dollars_from_us_accounts)
+                else -> str(R.string.wallet_receive_pounds_from_any_uk_bank)
             }, T.H3)
             Column(Modifier.padding(top = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 details.forEach { (k, v) -> KV(k, v) }
             }
-            ArroButton("Copy details", {
-                Share.copy(context, "${cur.code} account details", details.joinToString("\n") { "${it.first}: ${it.second}" })
-                banner.show("Account details copied", kind = BannerKind.Success)
+            ArroButton(str(R.string.wallet_copy_details), {
+                Share.copy(context, str(R.string.wallet_x_account_details, cur.code), details.joinToString("\n") { "${it.first}: ${it.second}" })
+                banner.show(str(R.string.wallet_account_details_copied), kind = BannerKind.Success)
             }, Modifier.padding(top = 12.dp).height(40.dp), style = Btn.Lime, size = BtnSize.S, icon = Icons.Copy, fill = true)
         }
         Column {
-            SectionHeader("${cur.code} activity", if (items.isNotEmpty()) "See all" else null, { c.session.walletCurrency = cur; nav.go(Routes.ACTIVITY) })
-            if (items.isEmpty()) Cap("Nothing in ${cur.code} yet. Money you add, convert or send from this balance shows up here.")
+            SectionHeader(str(R.string.wallet_x_activity, cur.code), if (items.isNotEmpty()) str(R.string.wallet_see_all) else null, { c.session.walletCurrency = cur; nav.go(Routes.ACTIVITY) })
+            if (items.isEmpty()) Cap(str(R.string.wallet_nothing_in_x_yet_money_you, cur.code))
             items.forEachIndexed { i, item ->
                 if (i > 0) HDivider()
                 CompactFeedRow(item, cur, now)
@@ -406,7 +408,7 @@ fun CompactFeedRow(item: FeedItem, cur: Currency, now: Long) {
     when (item) {
         is FeedItem.Sent -> {
             val t = item.transfer
-            ListRow("To ${t.recipientName}", flat = true, subtitle = "${Text.when_(t.createdAt, now)} · ${t.providerName}",
+            ListRow(str(R.string.wallet_to_x, t.recipientName), flat = true, subtitle = "${Text.when_(t.createdAt, now)} · ${t.providerName}",
                 leading = { Avatar(t.recipientName.let { Text.initials(it) }, t.recipientColor, 36.dp) },
                 trailing = { Txt("−" + Money.format(t.totalMinor, t.fromCur), T.RowTitle.copy(fontFeatureSettings = "tnum")) },
                 onClick = { nav.go(if (t.isOpen || t.refundPending) Routes.track(t.id) else Routes.detail(t.id)) })
@@ -445,39 +447,39 @@ fun AddMoneyScreen(code: String) {
     val minor = Money.parse(text, cur) ?: 0L
     val presets = listOf(100L, 250L, 500L, 1000L).map { it * cur.factor }
     val problem = when {
-        minor in 1..99 -> "Add at least ${Money.format(100, cur)}."
-        minor > 1_000_000 -> "You can add up to ${Money.format(1_000_000, cur, false)} at a time."
+        minor in 1..99 -> str(R.string.wallet_add_at_least_x, Money.format(100, cur))
+        minor > 1_000_000 -> str(R.string.wallet_you_can_add_up_to_x, Money.format(1_000_000, cur, false))
         else -> null
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Add money") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.wallet_add_money)) },
         gap = 20.dp,
         footer = {
             FieldHint(call.error.value)
-            if (source == MANUAL) ArroButton("Show my account details", { manualSheet = true })
-            else ArroButton("Add ${Money.format(minor, cur)}", {
+            if (source == MANUAL) ArroButton(str(R.string.wallet_show_my_account_details), { manualSheet = true })
+            else ArroButton(str(R.string.wallet_add_x, Money.format(minor, cur)), {
                 scope.launchCall(call) {
                     b.topUp(cur, minor, source)
-                    banner.show("${Money.format(minor, cur)} added", "It's in your ${cur.code} balance now.", BannerKind.Success)
+                    banner.show(str(R.string.wallet_x_added, Money.format(minor, cur)), str(R.string.wallet_it_s_in_your_x_balance, cur.code), BannerKind.Success)
                     nav.back()
                 }
             }, enabled = minor >= 100 && problem == null, loading = call.busy.value)
         },
         overlay = {
-            PickerSheet(curPicker, "Add money to", a.wallets.map { "${it.currency} account" }, "${cur.code} account", { pick ->
+            PickerSheet(curPicker, str(R.string.wallet_add_money_to), a.wallets.map { str(R.string.wallet_x_account, it.currency) }, str(R.string.wallet_x_account, cur.code), { pick ->
                 cur = Currency.of(pick.take(3)); text = cleanAmount(text, cur.decimals)
-            }, { curPicker = false }, subtitles = a.wallets.associate { "${it.currency} account" to "Balance ${Money.format(it.balanceMinor, it.cur)}" },
+            }, { curPicker = false }, subtitles = a.wallets.associate { str(R.string.wallet_x_account, it.currency) to str(R.string.wallet_balance_x, Money.format(it.balanceMinor, it.cur)) },
                 leading = { pick -> Flag(Currency.of(pick.take(3)).flag) })
             Sheet(manualSheet, { manualSheet = false }) {
-                SheetHeader("Pay in by bank transfer", { manualSheet = false }, "Send ${cur.code} from any account in your name. It usually arrives within 2 hours.")
+                SheetHeader(str(R.string.wallet_pay_in_by_bank_transfer), { manualSheet = false }, str(R.string.wallet_send_x_from_any_account_in, cur.code))
                 val det = if (w != null) accountDetails(a, w) else emptyList()
                 Panel(Modifier.padding(top = 16.dp), gap = 10.dp) { det.forEach { (k, v) -> KV(k, v) } }
                 Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ArroButton("Copy details", {
-                        Share.copy(context, "${cur.code} account details", det.joinToString("\n") { "${it.first}: ${it.second}" })
-                        banner.show("Account details copied", kind = BannerKind.Success); manualSheet = false
+                    ArroButton(str(R.string.wallet_copy_details), {
+                        Share.copy(context, str(R.string.wallet_x_account_details, cur.code), det.joinToString("\n") { "${it.first}: ${it.second}" })
+                        banner.show(str(R.string.wallet_account_details_copied), kind = BannerKind.Success); manualSheet = false
                     }, icon = Icons.Copy)
-                    ArroButton("Share details", { Share.text(context, det.joinToString("\n") { "${it.first}: ${it.second}" }, "My Arro ${cur.code} account") }, style = Btn.Line)
+                    ArroButton(str(R.string.wallet_share_details), { Share.text(context, det.joinToString("\n") { "${it.first}: ${it.second}" }, str(R.string.wallet_my_arro_x_account, cur.code)) }, style = Btn.Line)
                 }
             }
         },
@@ -488,24 +490,24 @@ fun AddMoneyScreen(code: String) {
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Flag(cur.flag, 18.dp); Txt("To ${cur.code} account", T.Chip); Ic(Icons.ChevronDown, size = 16.dp, tint = C.Slate)
+                Flag(cur.flag, 18.dp); Txt(str(R.string.wallet_to_x_account, cur.code), T.Chip); Ic(Icons.ChevronDown, size = 16.dp, tint = C.Slate)
             }
             AmountInput(text, { text = it }, cur)
-            Cap(problem ?: "Balance after: ${Money.format((w?.balanceMinor ?: 0) + minor, cur)}", color = if (problem != null) C.Err else C.Slate)
+            Cap(problem ?: str(R.string.wallet_balance_after_x, Money.format((w?.balanceMinor ?: 0) + minor, cur)), color = if (problem != null) C.Err else C.Slate)
         }
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)) {
             presets.forEach { p -> Chip(Money.format(p, cur, false), minor == p, { text = Money.number(p, cur, false).replace(",", "") }) }
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            FieldLabel("Pay from")
+            FieldLabel(str(R.string.wallet_pay_from))
             methods.forEach { m ->
-                ListRow(m.label, selected = source == m.id, subtitle = if (m.kind == MethodKind.BANK) "Pay by bank · instant · free" else if (m.credit) "Instant · 1.75% card fee waived for top-ups" else "Instant · free",
+                ListRow(m.label, selected = source == m.id, subtitle = if (m.kind == MethodKind.BANK) str(R.string.wallet_pay_by_bank_instant_free) else if (m.credit) str(R.string.wallet_instant_1_75_card_fee_waived) else str(R.string.wallet_instant_free),
                     leading = { Tile(if (m.kind == MethodKind.BANK) Icons.Bank else Icons.CreditCard, if (m.kind == MethodKind.BANK) TileStyle.Tint else TileStyle.Info) },
                     trailing = { Radio(source == m.id) }, onClick = { source = m.id })
             }
-            if (methods.isEmpty()) ListRow("Add a card or bank", dashed = true, subtitle = "Pay in instantly from your own account",
+            if (methods.isEmpty()) ListRow(str(R.string.wallet_add_a_card_or_bank), dashed = true, subtitle = str(R.string.wallet_pay_in_instantly_from_your_own),
                 leading = { Tile(Icons.Plus, round = true) }, trailing = { Chevron() }, onClick = { nav.go(Routes.PAY_METHODS) })
-            ListRow("Manual bank transfer", selected = source == MANUAL, subtitle = "Use your ${if (cur == Currency.EUR) "IBAN" else "sort code and account number"}",
+            ListRow(str(R.string.wallet_manual_bank_transfer), selected = source == MANUAL, subtitle = str(R.string.wallet_use_your_x, if (cur == Currency.EUR) "IBAN" else str(R.string.wallet_sort_code_and_account_number)),
                 leading = { Tile(Icons.Statement) }, trailing = { Radio(source == MANUAL) }, onClick = { source = MANUAL })
         }
     }
@@ -531,10 +533,10 @@ fun ConvertScreen(fromCode: String) {
     val scope = rememberCoroutineScope()
     val call = rememberCall()
     if (held.size < 2) {
-        ArroScreen(topBar = { TopBar(onBack = { nav.back() }, title = "Convert") }) {
+        ArroScreen(topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.wallet_convert)) }) {
             Box(Modifier.fillMaxWidth().padding(top = 20.dp), contentAlignment = Alignment.Center) { Illustration(Art.Globe, 180.dp) }
-            ScreenTitle("Open a second balance", "To convert, you need a balance in another currency. Euro and US dollar balances are free to open.", align = TextAlign.Center)
-            ArroButton("Open a balance", { nav.go(Routes.WALLET) })
+            ScreenTitle(str(R.string.wallet_open_a_second_balance), str(R.string.wallet_to_convert_you_need_a_balance), align = TextAlign.Center)
+            ArroButton(str(R.string.wallet_open_a_balance), { nav.go(Routes.WALLET) })
         }
         return
     }
@@ -546,20 +548,20 @@ fun ConvertScreen(fromCode: String) {
     val out = Money.convert(minor, from, to, rate)
     val short = wf != null && minor > wf.balanceMinor
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Convert") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.wallet_convert)) },
         footer = {
             FieldHint(call.error.value)
-            ArroButton("Convert ${Money.format(minor, from)}", {
+            ArroButton(str(R.string.wallet_convert_x, Money.format(minor, from)), {
                 scope.launchCall(call) {
                     b.convert(from, to, minor)
-                    banner.show("Converted", "${Money.format(minor, from)} is now ${Money.format(out, to)} in your ${to.code} balance.", BannerKind.Success)
+                    banner.show(str(R.string.wallet_converted), str(R.string.wallet_x_is_now_x_in_your, Money.format(minor, from), Money.format(out, to), to.code), BannerKind.Success)
                     nav.back()
                 }
             }, enabled = minor > 0 && !short && from != to, loading = call.busy.value)
         },
         overlay = {
             val p = picker
-            PickerSheet(p != null, if (p == "from") "Convert from" else "Convert to", held.filter { if (p == "from") true else it != from }.map { it.code },
+            PickerSheet(p != null, if (p == "from") str(R.string.wallet_convert_from) else str(R.string.wallet_convert_to), held.filter { if (p == "from") true else it != from }.map { it.code },
                 if (p == "from") from.code else to.code, { code ->
                     val cur = Currency.of(code)
                     if (p == "from") { if (cur == to) to = from; from = cur; text = cleanAmount(text, cur.decimals) } else to = cur
@@ -571,7 +573,7 @@ fun ConvertScreen(fromCode: String) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 ArroCard(padding = 16.dp) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        FieldLabel("From"); Cap("Balance ${Money.format(wf?.balanceMinor ?: 0, from)}", color = if (short) C.Err else C.Slate)
+                        FieldLabel(str(R.string.wallet_from)); Cap(str(R.string.wallet_balance_x, Money.format(wf?.balanceMinor ?: 0, from)), color = if (short) C.Err else C.Slate)
                     }
                     Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Box(Modifier.weight(1f)) { AmountInput(text, { text = it }, from, size = 34f, align = TextAlign.Start, autoFocus = true) }
@@ -580,7 +582,7 @@ fun ConvertScreen(fromCode: String) {
                 }
                 ArroCard(padding = 16.dp, border = C.Mist, background = C.Tint) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        FieldLabel("To"); Cap("Balance ${Money.format(wt?.balanceMinor ?: 0, to)}")
+                        FieldLabel(str(R.string.wallet_to)); Cap(str(R.string.wallet_balance_x, Money.format(wt?.balanceMinor ?: 0, to)))
                     }
                     Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Txt(Money.number(out, to), T.AmountMd, Modifier.weight(1f), maxLines = 1)
@@ -592,17 +594,17 @@ fun ConvertScreen(fromCode: String) {
                 Modifier.align(Alignment.Center).size(44.dp).clip(CircleShape).background(C.Primary, CircleShape).border(4.dp, C.White, CircleShape)
                     .clickable(role = Role.Button) { val f = from; from = to; to = f; text = cleanAmount(text, from.decimals) },
                 contentAlignment = Alignment.Center,
-            ) { Ic(Icons.SwapVertical, size = 16.dp, tint = C.PrimaryAccent, contentDescription = "Swap currencies") }
+            ) { Ic(Icons.SwapVertical, size = 16.dp, tint = C.PrimaryAccent, contentDescription = str(R.string.wallet_swap_currencies)) }
         }
-        if (short) FieldHint("You have ${Money.format(wf?.balanceMinor ?: 0, from)} in ${from.code}. Add money or enter a smaller amount.")
+        if (short) FieldHint(str(R.string.wallet_you_have_x_in_x_add, Money.format(wf?.balanceMinor ?: 0, from), from.code))
         Panel(gap = 10.dp) {
-            KV("Our rate", Money.rateLine(from, to, rate))
-            KV("Mid-market rate", Money.rateLine(from, to, mid))
-            KV("Fee", "None · 0.27% in rate", valueColor = C.Ok)
-            KV("New ${to.code} balance", Money.format((wt?.balanceMinor ?: 0) + out, to), strong = true)
+            KV(str(R.string.wallet_our_rate), Money.rateLine(from, to, rate))
+            KV(str(R.string.wallet_mid_market_rate), Money.rateLine(from, to, mid))
+            KV(str(R.string.wallet_fee), str(R.string.wallet_none_0_27_in_rate), valueColor = C.Ok)
+            KV(str(R.string.wallet_new_x_balance, to.code), Money.format((wt?.balanceMinor ?: 0) + out, to), strong = true)
         }
-        if (from == Currency.GBP) ListRow("Convert automatically at a better rate", minHeight = 56.dp, titleStyle = T.RowTitle.copy(fontSize = 14.sp),
-            subtitle = "Set a target and we'll tell you when it's reached",
+        if (from == Currency.GBP) ListRow(str(R.string.wallet_convert_automatically_at_a_better_rate), minHeight = 56.dp, titleStyle = T.RowTitle.copy(fontSize = 14.sp),
+            subtitle = str(R.string.wallet_set_a_target_and_we_ll),
             leading = { Tile(Icons.Bell, TileStyle.Lime, 36.dp, iconSize = 16.dp) }, trailing = { Chevron() }, onClick = { nav.go(Routes.rateAlert(to.code)) })
     }
 }
@@ -648,7 +650,7 @@ fun StatementsScreen() {
     }
     val fromMs = Text.startOfDay(fromDate)
     val toMs = Text.startOfDay(toDate.plusDays(1)) - 1
-    fun rangeLabel(f: LocalDate, t: LocalDate) = "${f.dayOfMonth} ${f.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.UK)} to ${Text.date(Text.startOfDay(t))}"
+    fun rangeLabel(f: LocalDate, t: LocalDate) = str(R.string.wallet_x_x_to_x, f.dayOfMonth, f.month.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.UK), Text.date(Text.startOfDay(t)))
     fun produce(cur: Currency, from: Long, to: Long, asPdf: Boolean, record: Boolean, share: Boolean) {
         scope.launchCall(call) {
             val lines = Documents.statementLines(b, a, cur, from, to)
@@ -658,7 +660,7 @@ fun StatementsScreen() {
             val mime = if (asPdf) "application/pdf" else "text/csv"
             if (record) b.recordStatement(cur, Text.localDate(from).toString(), Text.localDate(to).toString(), if (asPdf) "PDF" else "CSV", lines.size)
             if (share) Share.file(context, file, mime, file.name)
-            else banner.show("Statement ready", Share.saveToDownloads(context, file, mime) + if (lines.isEmpty()) ". No transactions in this period." else "", BannerKind.Success)
+            else banner.show(str(R.string.wallet_statement_ready), Share.saveToDownloads(context, file, mime) + if (lines.isEmpty()) str(R.string.wallet_no_transactions_in_this_period) else "", BannerKind.Success)
         }
     }
     val earliest = today.minusYears(2)
@@ -678,50 +680,50 @@ fun StatementsScreen() {
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back() }) },
         overlay = {
-            PickerSheet(accountPicker, "Statement for", a.wallets.map { it.currency }, cur.code, { cur = Currency.of(it) }, { accountPicker = false },
+            PickerSheet(accountPicker, str(R.string.wallet_statement_for), a.wallets.map { it.currency }, cur.code, { cur = Currency.of(it) }, { accountPicker = false },
                 subtitles = a.wallets.associate { it.currency to "${it.cur.displayName} · •• ${it.last4}" }, leading = { code -> Flag(Currency.of(code).flag) })
             val dp = datePicker
             DateSheet(
                 visible = dp != null,
-                title = if (dp == "from") "Statement from" else "Statement to",
+                title = if (dp == "from") str(R.string.wallet_statement_from) else str(R.string.wallet_statement_to),
                 selected = LocalDate.parse(if (dp == "from") customFrom else customTo),
                 min = earliest,
                 max = today,
                 onPick = { d -> if (dp == "from") pickFrom(d) else pickTo(d) },
                 onDismiss = { datePicker = null },
-                subtitle = if (dp == "from") "The first day to include." else "The last day to include.",
-                note = "Statements cover up to 12 months, as far back as ${Text.date(Text.startOfDay(earliest))}.",
+                subtitle = if (dp == "from") str(R.string.wallet_the_first_day_to_include) else str(R.string.wallet_the_last_day_to_include),
+                note = str(R.string.wallet_statements_cover_up_to_12_months, Text.date(Text.startOfDay(earliest))),
             )
         },
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ScreenTitle("Statements", "Proof of every transfer, for you, your bank or your accountant.", Modifier.weight(1f))
+            ScreenTitle(str(R.string.wallet_statements), str(R.string.wallet_proof_of_every_transfer_for_you), Modifier.weight(1f))
             Illustration(Art.Doc, 76.dp)
         }
         val w = a.wallet(cur)
-        SelectField("Account", "${cur.code} account •• ${w?.last4 ?: ""}", { accountPicker = true }, leading = { Flag(cur.flag) })
+        SelectField(str(R.string.wallet_account), str(R.string.wallet_x_account_x, cur.code, w?.last4 ?: ""), { accountPicker = true }, leading = { Flag(cur.flag) })
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Period")
+            FieldLabel(str(R.string.wallet_period))
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Chip("This month", period == 0, { period = 0 })
+                Chip(str(R.string.wallet_this_month), period == 0, { period = 0 })
                 Chip(Text.monthName(Text.startOfDay(lastMonth)), period == 1, { period = 1 })
-                Chip("Custom range", period == 2, { period = 2 })
+                Chip(str(R.string.wallet_custom_range), period == 2, { period = 2 })
             }
             if (period == 2) Row(Modifier.padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                SelectField("From", Text.date(Text.startOfDay(fromDate)), { datePicker = "from" }, Modifier.weight(1f), focused = datePicker == "from")
-                SelectField("To", Text.date(Text.startOfDay(toDate)), { datePicker = "to" }, Modifier.weight(1f), focused = datePicker == "to")
+                SelectField(str(R.string.wallet_from), Text.date(Text.startOfDay(fromDate)), { datePicker = "from" }, Modifier.weight(1f), focused = datePicker == "from")
+                SelectField(str(R.string.wallet_to), Text.date(Text.startOfDay(toDate)), { datePicker = "to" }, Modifier.weight(1f), focused = datePicker == "to")
             }
             val days = java.time.temporal.ChronoUnit.DAYS.between(fromDate, toDate) + 1
-            Cap(rangeLabel(fromDate, toDate) + " · $days ${if (days == 1L) "day" else "days"}", size = 12.5f)
+            Cap(if (days == 1L) str(R.string.wallet_range_one_day, rangeLabel(fromDate, toDate)) else str(R.string.wallet_range_x_days, rangeLabel(fromDate, toDate), days), size = 12.5f)
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            FieldLabel("Format")
+            FieldLabel(str(R.string.wallet_format))
             Segmented(listOf("PDF", "CSV"), if (pdf) 0 else 1, { pdf = it == 0 })
         }
-        ArroButton("Download statement", { produce(cur, fromMs, toMs, pdf, record = true, share = false) }, loading = call.busy.value, icon = Icons.Download)
+        ArroButton(str(R.string.wallet_download_statement), { produce(cur, fromMs, toMs, pdf, record = true, share = false) }, loading = call.busy.value, icon = Icons.Download)
         FieldHint(call.error.value)
         if (a.statements.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Over("Recent")
+            Over(str(R.string.wallet_recent))
             Group {
                 a.statements.take(6).forEachIndexed { i, s ->
                     if (i > 0) GroupDivider()
@@ -729,9 +731,9 @@ fun StatementsScreen() {
                     val t = LocalDate.parse(s.to)
                     val wholeMonth = f.dayOfMonth == 1 && t == f.withDayOfMonth(f.lengthOfMonth())
                     val title = if (wholeMonth) Text.monthYear(Text.startOfDay(f)) else rangeLabel(f, t)
-                    ListRow(title, flat = true, minHeight = 56.dp, subtitle = "${s.currency} · ${s.format} · ${s.count} ${if (s.count == 1) "transaction" else "transactions"}",
+                    ListRow(title, flat = true, minHeight = 56.dp, subtitle = if (s.count == 1) str(R.string.wallet_statement_one_transaction, s.currency, s.format) else str(R.string.wallet_statement_x_transactions, s.currency, s.format, s.count),
                         leading = { Tile(Icons.Document, TileStyle.Warn, 36.dp, iconSize = 18.dp) },
-                        trailing = { Ic(Icons.Share, tint = C.Ink, contentDescription = "Share") },
+                        trailing = { Ic(Icons.Share, tint = C.Ink, contentDescription = str(R.string.wallet_share)) },
                         onClick = { produce(Currency.of(s.currency), Text.startOfDay(f), Text.startOfDay(t.plusDays(1)) - 1, s.format == "PDF", record = false, share = true) })
                 }
             }

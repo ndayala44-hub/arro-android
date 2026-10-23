@@ -1,5 +1,7 @@
 package app.arro.ui.screens.account
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -100,29 +102,29 @@ fun LoyaltyScreen() {
     val rewardsPaid = r.friends.count { it.rewardMinor > 0 }.let { if (r.friends.isEmpty() && r.earnedMinor > 0) (r.earnedMinor / Loyalty.REFERRAL_REWARD_MINOR).toInt() else it }
 
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Loyalty and rewards") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.loyalty_loyalty_and_rewards)) },
         gap = 16.dp,
         overlay = {
             val pick = swap
             Sheet(pick != null, { if (!call.busy.value) swap = null }) {
                 if (pick != null) {
                     val (pts, credit) = pick
-                    SheetHeader("Swap ${Money.points(pts)} points?", { swap = null }, "You'll get ${Money.format(credit, Currency.GBP)} off the Arro fee on your next transfers.")
+                    SheetHeader(str(R.string.loyalty_swap_x_points, Money.points(pts)), { swap = null }, str(R.string.loyalty_you_ll_get_x_off_the, Money.format(credit, Currency.GBP)))
                     Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        KV("Points now", Money.points(a.pointsBalance))
-                        KV("Points after", Money.points(a.pointsBalance - pts))
-                        KV("Fee credit", Money.format(a.feeCreditMinor + credit, Currency.GBP), strong = true)
+                        KV(str(R.string.loyalty_points_now), Money.points(a.pointsBalance))
+                        KV(str(R.string.loyalty_points_after), Money.points(a.pointsBalance - pts))
+                        KV(str(R.string.loyalty_fee_credit), Money.format(a.feeCreditMinor + credit, Currency.GBP), strong = true)
                     }
                     FieldHint(call.error.value)
                     Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ArroButton("Swap points", {
+                        ArroButton(str(R.string.loyalty_swap_points), {
                             scope.launchCall(call) {
                                 b.redeemPoints(pts)
                                 swap = null
-                                banner.show("Fee credit added", "${Money.format(credit, Currency.GBP)} comes off the Arro fee on your next transfers.", BannerKind.Success)
+                                banner.show(str(R.string.loyalty_fee_credit_added), str(R.string.loyalty_x_comes_off_the_arro_fee, Money.format(credit, Currency.GBP)), BannerKind.Success)
                             }
                         }, loading = call.busy.value)
-                        ArroButton("Cancel", { swap = null }, style = Btn.Text)
+                        ArroButton(str(R.string.loyalty_cancel), { swap = null }, style = Btn.Text)
                     }
                 }
             }
@@ -132,20 +134,20 @@ fun LoyaltyScreen() {
         Panel(kind = PanelKind.Dark, padding = 18.dp, gap = 12.dp) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Over("Points", color = C.Lime)
+                    Over(str(R.string.loyalty_points), color = C.Lime)
                     Txt(Money.points(a.pointsBalance), T.Big28, color = C.OnNight)
-                    Cap("Worth ${Money.format(Loyalty.creditFor(a.pointsBalance), Currency.GBP)} in fees", color = C.DarkCap, size = 12f)
+                    Cap(str(R.string.loyalty_worth_x_in_fees, Money.format(Loyalty.creditFor(a.pointsBalance), Currency.GBP)), color = C.DarkCap, size = 12f)
                 }
                 Box(Modifier.width(1.dp).height(64.dp).background(C.OnNight.copy(alpha = 0.16f)))
                 Column(Modifier.weight(1f).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Over("Referral earnings", color = C.Lime)
+                    Over(str(R.string.loyalty_referral_earnings), color = C.Lime)
                     Txt(Money.format(r.earnedMinor, Currency.GBP), T.Big28, color = C.OnNight)
-                    Cap("$rewardsPaid ${if (rewardsPaid == 1) "reward" else "rewards"} · in your balance", color = C.DarkCap, size = 12f)
+                    Cap(str(R.string.loyalty_x_x_in_your_balance, rewardsPaid, if (rewardsPaid == 1) str(R.string.loyalty_reward) else str(R.string.loyalty_rewards)), color = C.DarkCap, size = 12f)
                 }
             }
-            if (a.feeCreditMinor > 0) Pill("${Money.format(a.feeCreditMinor, Currency.GBP)} fee credit ready for your next transfer", PillKind.Lime)
+            if (a.feeCreditMinor > 0) Pill(str(R.string.loyalty_x_fee_credit_ready_for_your, Money.format(a.feeCreditMinor, Currency.GBP)), PillKind.Lime)
         }
-        Segmented(listOf("Points", "Referrals"), tab, { tab = it })
+        Segmented(listOf(str(R.string.loyalty_points), str(R.string.loyalty_referrals)), tab, { tab = it })
         if (tab == 0) PointsTab(a, now) { swap = it } else ReferralsTab(a, now)
     }
 }
@@ -157,30 +159,30 @@ private fun PointsTab(a: Account, now: Long, onSwap: (Pair<Int, Long>) -> Unit) 
     val banner = LocalBanner.current
     val pending = a.transfers.filter { it.isOpen }.sumOf { Loyalty.preview(it.feeMinor, it.pointsDiscountMinor) }
     if (a.points.isEmpty()) {
-        EmptyState(Art.Gift, "No points yet", "You earn 1 point for every 1p of Arro fee once a transfer is delivered, " +
-            "plus ${Loyalty.FIRST_TRANSFER_BONUS} bonus points on your first.") {
-            ArroButton("Send money", { startSend(c, nav, banner) })
+        EmptyState(Art.Gift, str(R.string.loyalty_no_points_yet), str(R.string.loyalty_you_earn_1_point_for_every) +
+            str(R.string.loyalty_plus_x_bonus_points_on_your, Loyalty.FIRST_TRANSFER_BONUS)) {
+            ArroButton(str(R.string.loyalty_send_money), { startSend(c, nav, banner) })
         }
-        if (pending > 0) Note("${Money.points(pending)} points are on the way from transfers that haven't been delivered yet.", NoteKind.Info, Icons.Clock)
+        if (pending > 0) Note(str(R.string.loyalty_x_points_are_on_the_way, Money.points(pending)), NoteKind.Info, Icons.Clock)
         return
     }
-    if (pending > 0) Note("${Money.points(pending)} more points are on the way from transfers that haven't been delivered yet.", NoteKind.Info, Icons.Clock)
+    if (pending > 0) Note(str(R.string.loyalty_x_more_points_are_on_the, Money.points(pending)), NoteKind.Info, Icons.Clock)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Over("Swap points for fee credit")
+        Over(str(R.string.loyalty_swap_points_for_fee_credit))
         Group {
             Loyalty.tiers.forEachIndexed { i, (pts, credit) ->
                 if (i > 0) GroupDivider()
                 val enough = a.pointsBalance >= pts
-                ListRow("${Money.format(credit, Currency.GBP)} off fees", flat = true, minHeight = 58.dp,
-                    subtitle = if (enough) "${Money.points(pts)} points" else "${Money.points(pts)} points · ${Money.points(pts - a.pointsBalance)} to go",
+                ListRow(str(R.string.loyalty_x_off_fees, Money.format(credit, Currency.GBP)), flat = true, minHeight = 58.dp,
+                    subtitle = if (enough) str(R.string.loyalty_x_points, Money.points(pts)) else str(R.string.loyalty_x_points_x_to_go, Money.points(pts), Money.points(pts - a.pointsBalance)),
                     leading = { Tile(Icons.Percent, if (enough) TileStyle.Lime else TileStyle.Tint, 36.dp, iconSize = 16.dp) },
-                    trailing = { ArroButton("Swap", { onSwap(pts to credit) }, style = Btn.Line, size = BtnSize.S, enabled = enough) })
+                    trailing = { ArroButton(str(R.string.loyalty_swap), { onSwap(pts to credit) }, style = Btn.Line, size = BtnSize.S, enabled = enough) })
             }
         }
-        Cap("Fee credit comes off the Arro fee on your next transfers, automatically. It can't be paid out as cash.", size = 12f)
+        Cap(str(R.string.loyalty_fee_credit_comes_off_the_arro), size = 12f)
     }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Over("Points history")
+        Over(str(R.string.loyalty_points_history))
         Group {
             a.points.take(40).forEachIndexed { i, e ->
                 if (i > 0) GroupDivider()
@@ -193,10 +195,10 @@ private fun PointsTab(a: Account, now: Long, onSwap: (Pair<Int, Long>) -> Unit) 
         }
     }
     Panel(gap = 8.dp) {
-        Txt("How points work", T.H3)
-        Cap("1 point for every 1p of Arro fee you pay, added when the transfer is delivered. Each transfer earns points once.")
-        Cap("${Loyalty.FIRST_TRANSFER_BONUS} bonus points on your first delivered transfer. Cancelled, failed and refunded transfers don't earn points.")
-        Cap("${Money.points(Loyalty.POINTS_PER_POUND)} points = £1.00 off fees.")
+        Txt(str(R.string.loyalty_how_points_work), T.H3)
+        Cap(str(R.string.loyalty_n_1_point_for_every_1p_of))
+        Cap(str(R.string.loyalty_x_bonus_points_on_your_first, Loyalty.FIRST_TRANSFER_BONUS))
+        Cap(str(R.string.loyalty_x_points_1_00_off_fees, Money.points(Loyalty.POINTS_PER_POUND)))
     }
 }
 
@@ -208,27 +210,27 @@ private fun ReferralsTab(a: Account, now: Long) {
     val r = a.referral
     val waiting = r.friends.count { it.status == FriendStatus.SIGNED_UP }
     Group {
-        ListRow("Invite friends", flat = true, minHeight = 58.dp, subtitle = "Your code ${r.code} · £10 for every friend who sends £100 or more",
+        ListRow(str(R.string.loyalty_invite_friends), flat = true, minHeight = 58.dp, subtitle = str(R.string.loyalty_your_code_x_10_for_every, r.code),
             leading = { Tile(Icons.Gift, TileStyle.Lime, 36.dp, iconSize = 16.dp) }, trailing = { Chevron() }, onClick = { nav.go(Routes.REFER) })
         GroupDivider()
-        ListRow("Copy invite code", flat = true, minHeight = 52.dp, leading = { Tile(Icons.Copy, size = 36.dp, iconSize = 16.dp) },
-            onClick = { Share.copy(context, "Arro invite code", r.code); banner.show("Invite code copied", kind = BannerKind.Success) })
+        ListRow(str(R.string.loyalty_copy_invite_code), flat = true, minHeight = 52.dp, leading = { Tile(Icons.Copy, size = 36.dp, iconSize = 16.dp) },
+            onClick = { Share.copy(context, str(R.string.loyalty_arro_invite_code), r.code); banner.show(str(R.string.loyalty_invite_code_copied), kind = BannerKind.Success) })
     }
     if (r.friends.isEmpty() && r.earnedMinor == 0L) {
-        EmptyState(Art.Gift, "No referral rewards yet", "Share your code. Once a friend's first transfer of £100 or more is delivered, " +
-            "£10 goes into your GBP balance.") {
-            ArroButton("Invite friends", { nav.go(Routes.REFER) }, style = Btn.Lime, icon = Icons.Share)
+        EmptyState(Art.Gift, str(R.string.loyalty_no_referral_rewards_yet), str(R.string.loyalty_share_your_code_once_a_friend) +
+            str(R.string.loyalty_n_10_goes_into_your_gbp_balance)) {
+            ArroButton(str(R.string.loyalty_invite_friends), { nav.go(Routes.REFER) }, style = Btn.Lime, icon = Icons.Share)
         }
         return
     }
     Panel(gap = 10.dp) {
-        KV("Friends joined", "${maxOf(r.friendsJoined, r.friends.size)}")
-        KV("Rewards paid", "${r.friends.count { it.rewardMinor > 0 }}")
-        if (waiting > 0) KV("Waiting for a first £100 transfer", "$waiting")
-        KV("Total earned", Money.format(r.earnedMinor, Currency.GBP), strong = true)
+        KV(str(R.string.loyalty_friends_joined), "${maxOf(r.friendsJoined, r.friends.size)}")
+        KV(str(R.string.loyalty_rewards_paid), "${r.friends.count { it.rewardMinor > 0 }}")
+        if (waiting > 0) KV(str(R.string.loyalty_waiting_for_a_first_100_transfer), "$waiting")
+        KV(str(R.string.loyalty_total_earned), Money.format(r.earnedMinor, Currency.GBP), strong = true)
     }
     if (r.friends.isNotEmpty()) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Over("Friends")
+        Over(str(R.string.loyalty_friends))
         Group {
             r.friends.sortedByDescending { maxOf(it.joinedAt, it.qualifiedAt) }.forEachIndexed { i, f ->
                 if (i > 0) GroupDivider()
@@ -237,14 +239,14 @@ private fun ReferralsTab(a: Account, now: Long) {
         }
     }
     Panel(kind = PanelKind.Lime, gap = 10.dp) {
-        Txt("Where your rewards go", T.H3)
-        Cap("Referral rewards are paid into your GBP balance, so you can send or convert them like any other money there.", color = C.Forest)
-        ArroButton("View GBP balance", { nav.go(Routes.walletAccount("GBP")) }, style = Btn.Line, size = BtnSize.S)
+        Txt(str(R.string.loyalty_where_your_rewards_go), T.H3)
+        Cap(str(R.string.loyalty_referral_rewards_are_paid_into_your), color = C.Forest)
+        ArroButton(str(R.string.loyalty_view_gbp_balance), { nav.go(Routes.walletAccount("GBP")) }, style = Btn.Line, size = BtnSize.S)
     }
-    if (r.friends.any { it.sample }) Note("Friends marked Sample are demo data in this test build. Real referrals appear here when friends join with your code.", NoteKind.Info, Icons.Info)
+    if (r.friends.any { it.sample }) Note(str(R.string.loyalty_friends_marked_sample_are_demo_data), NoteKind.Info, Icons.Info)
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Cap("Up to ${Loyalty.REFERRAL_YEARLY_CAP} rewards a year. ", size = 12f)
-        LinkText("Terms apply", { nav.go(Routes.legal("referral")) }, color = C.Ink, underline = true)
+        Cap(str(R.string.loyalty_up_to_x_rewards_a_year, Loyalty.REFERRAL_YEARLY_CAP), size = 12f)
+        LinkText(str(R.string.loyalty_terms_apply), { nav.go(Routes.legal("referral")) }, color = C.Ink, underline = true)
     }
 }
 
@@ -253,16 +255,16 @@ private fun FriendRow(f: ReferredFriend, now: Long) {
     val initials = f.name.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
     ListRow(f.name, flat = true, minHeight = 62.dp,
         subtitle = when {
-            f.status == FriendStatus.SIGNED_UP -> "Joined ${Text.relativeDay(f.joinedAt, now).lowercase()} · reward once they send £100 or more"
-            f.rewardMinor > 0 -> "Sent ${Money.format(f.qualifyingMinor, Currency.GBP, false)} · reward paid ${Text.dayMonth(f.qualifiedAt)}"
-            else -> "Sent ${Money.format(f.qualifyingMinor, Currency.GBP, false)} · yearly reward limit reached"
+            f.status == FriendStatus.SIGNED_UP -> str(R.string.loyalty_joined_x_reward_once_they_send, Text.relativeDay(f.joinedAt, now).lowercase())
+            f.rewardMinor > 0 -> str(R.string.loyalty_sent_x_reward_paid_x, Money.format(f.qualifyingMinor, Currency.GBP, false), Text.dayMonth(f.qualifiedAt))
+            else -> str(R.string.loyalty_sent_x_yearly_reward_limit_reached, Money.format(f.qualifyingMinor, Currency.GBP, false))
         },
         leading = { Avatar(initials, (f.name.length % 6) + 1, 36.dp) },
         trailing = {
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 if (f.rewardMinor > 0) Txt("+" + Money.format(f.rewardMinor, Currency.GBP), T.Num, color = C.Ok)
-                else Pill(if (f.status == FriendStatus.SIGNED_UP) "Waiting" else "No reward", PillKind.Neutral)
-                if (f.sample) Txt("Sample", T.Cap.copy(fontSize = 11.sp), color = C.Slate)
+                else Pill(if (f.status == FriendStatus.SIGNED_UP) str(R.string.loyalty_waiting) else str(R.string.loyalty_no_reward), PillKind.Neutral)
+                if (f.sample) Txt(str(R.string.loyalty_sample), T.Cap.copy(fontSize = 11.sp), color = C.Slate)
             }
         })
 }

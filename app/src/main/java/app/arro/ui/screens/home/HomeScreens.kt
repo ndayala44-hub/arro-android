@@ -1,5 +1,7 @@
 package app.arro.ui.screens.home
 
+import app.arro.R
+import app.arro.ui.str
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -150,28 +152,28 @@ fun HomeScreen() {
                 HomeHeader(a, firstRun)
                 Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Cap("Total balance")
+                        Cap(str(R.string.home_total_balance))
                         if (!firstRun) Box(Modifier.clip(CircleShape).clickable { hidden = !hidden }.padding(2.dp)) {
-                            Ic(Icons.Eye, size = 16.dp, tint = C.Slate, contentDescription = if (hidden) "Show balance" else "Hide balance")
+                            Ic(Icons.Eye, size = 16.dp, tint = C.Slate, contentDescription = if (hidden) str(R.string.home_show_balance) else str(R.string.home_hide_balance))
                         }
                     }
                     if (hidden) Txt("£••••", T.Amount, Modifier.padding(top = 6.dp))
                     else BigAmount(b.totalInGbp(a), Currency.GBP, Modifier.padding(top = 6.dp))
                     if (!firstRun) Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Pill("${a.wallets.size} currenc${if (a.wallets.size == 1) "y" else "ies"}", PillKind.Neutral)
+                        Pill(if (a.wallets.size == 1) str(R.string.home_one_currency) else str(R.string.home_x_currencies, a.wallets.size), PillKind.Neutral)
                         when (a.kyc.status) {
-                            KycStatus.APPROVED -> Pill("Verified", PillKind.Ok, dot = true)
-                            KycStatus.IN_REVIEW -> Pill("Checking your ID", PillKind.Info, dot = true, modifier = Modifier.tap { nav.go(Routes.KYC_STATUS) })
-                            else -> Pill("Verify your identity", PillKind.Warn, dot = true, modifier = Modifier.tap { nav.go(Routes.KYC) })
+                            KycStatus.APPROVED -> Pill(str(R.string.home_verified), PillKind.Ok, dot = true)
+                            KycStatus.IN_REVIEW -> Pill(str(R.string.home_checking_your_id), PillKind.Info, dot = true, modifier = Modifier.tap { nav.go(Routes.KYC_STATUS) })
+                            else -> Pill(str(R.string.home_verify_your_identity), PillKind.Warn, dot = true, modifier = Modifier.tap { nav.go(Routes.KYC) })
                         }
                     }
                 }
                 QuickActions(
                     listOf(
-                        Triple("Send", Icons.ArrowUpRight) { startSend(c, nav, banner) },
-                        Triple("Add money", Icons.Plus) { nav.go(Routes.addMoney()) },
-                        Triple("Convert", Icons.Swap) { nav.go(Routes.convert()) },
-                        Triple("Rates", Icons.Trending) { nav.go(Routes.RATES) },
+                        Triple(str(R.string.home_send), Icons.ArrowUpRight) { startSend(c, nav, banner) },
+                        Triple(str(R.string.home_add_money), Icons.Plus) { nav.go(Routes.addMoney()) },
+                        Triple(str(R.string.home_convert), Icons.Swap) { nav.go(Routes.convert()) },
+                        Triple(str(R.string.home_rates), Icons.Trending) { nav.go(Routes.RATES) },
                     ),
                     Modifier.padding(start = 20.dp, end = 20.dp, top = if (firstRun) 22.dp else 24.dp),
                 )
@@ -192,15 +194,15 @@ private fun HomeHeader(a: Account, firstRun: Boolean) {
         Row(Modifier.weight(1f).clip(RoundedCornerShape(24.dp)).tap { nav.go(Routes.ACCOUNT) }, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Avatar(a.initials, 0)
             Column {
-                Cap(if (firstRun) "Welcome to Arro" else Text.greeting(System.currentTimeMillis()), size = 12f)
+                Cap(if (firstRun) str(R.string.home_welcome_to_arro) else Text.greeting(System.currentTimeMillis()), size = 12f)
                 Txt(a.displayName, T.H3, maxLines = 1)
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (!firstRun) RoundIcon(Icons.Search, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = "Search and help")
+            if (!firstRun) RoundIcon(Icons.Search, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = str(R.string.home_search_and_help))
             RoundIcon(Icons.Bell, { nav.go(Routes.NOTIFICATIONS) }, style = IconBtn.Soft, badge = a.unreadCount > 0,
-                description = if (a.unreadCount > 0) "Notifications, ${a.unreadCount} unread" else "Notifications")
-            RoundIcon(Icons.Award, { nav.go(Routes.LOYALTY) }, style = IconBtn.Soft, description = "Loyalty and rewards, ${Money.points(a.pointsBalance)} points")
+                description = if (a.unreadCount > 0) str(R.string.home_notifications_x_unread, a.unreadCount) else str(R.string.home_notifications))
+            RoundIcon(Icons.Award, { nav.go(Routes.LOYALTY) }, style = IconBtn.Soft, description = str(R.string.home_loyalty_and_rewards_x_points, Money.points(a.pointsBalance)))
         }
     }
 }
@@ -223,15 +225,15 @@ private fun DashboardBody(a: Account, hidden: Boolean, now: Long) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Tile(Icons.Plus, TileStyle.Tint, size = 36.dp, round = true)
-                Txt("Open another currency", T.Cap.copy(fontWeight = FontWeight.Medium), color = C.Ink)
+                Txt(str(R.string.home_open_another_currency), T.Cap.copy(fontWeight = FontWeight.Medium), color = C.Ink)
             }
         }
     }
     // send again
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 26.dp)) {
-        SectionHeader("Send again", "See all", { nav.go(Routes.RECIPIENTS) })
+        SectionHeader(str(R.string.home_send_again), str(R.string.home_see_all), { nav.go(Routes.RECIPIENTS) })
         val recents = Insights.recentRecipients(a).take(4)
-        FiveGrid(listOf<@Composable () -> Unit>({ PersonChip("Add", "", 0, null, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, add = true) }) +
+        FiveGrid(listOf<@Composable () -> Unit>({ PersonChip(str(R.string.home_add), "", 0, null, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, add = true) }) +
             recents.map<app.arro.core.Recipient, @Composable () -> Unit> { r -> { PersonChip(r.firstName, r.initials, r.color, app.arro.core.Catalog.countryOrNull(r.country)?.currency?.flag ?: "gb", { startSend(c, nav, banner, recipient = r) }) } })
     }
     // this month
@@ -241,20 +243,20 @@ private fun DashboardBody(a: Account, hidden: Boolean, now: Long) {
     val people = a.transfers.filter { it.createdAt >= thisMonth.start && it.status != TransferStatus.CANCELLED }.map { it.recipientId }.distinct().size
     Panel(Modifier.padding(start = 20.dp, end = 20.dp, top = 26.dp), PanelKind.Dark, gap = 12.dp, onClick = { nav.go(Routes.INSIGHTS) }) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Over("${Text.monthName(now)} so far", color = C.Lime)
+            Over(str(R.string.home_x_so_far, Text.monthName(now)), color = C.Lime)
             Ic(Icons.ChevronRight, tint = C.OnNight)
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
             Column {
                 Txt(Money.format(thisMonth.totalMinor, Currency.GBP), T.Big28, color = C.OnNight)
-                Cap("sent to $people ${if (people == 1) "person" else "people"}", Modifier.padding(top = 2.dp), color = C.DarkCap)
+                Cap(str(R.string.home_sent_to_x_x, people, if (people == 1) str(R.string.home_person) else str(R.string.home_people)), Modifier.padding(top = 2.dp), color = C.DarkCap)
                 val diff = thisMonth.totalMinor - previous.totalMinor
                 Pill(
                     when {
-                        previous.totalMinor == 0L -> "First month with Arro"
-                        diff < 0 -> "${Money.format(-diff, Currency.GBP, false)} less than ${Text.monthName(previous.start)}"
-                        diff > 0 -> "${Money.format(diff, Currency.GBP, false)} more than ${Text.monthName(previous.start)}"
-                        else -> "Same as ${Text.monthName(previous.start)}"
+                        previous.totalMinor == 0L -> str(R.string.home_first_month_with_arro)
+                        diff < 0 -> str(R.string.home_x_less_than_x, Money.format(-diff, Currency.GBP, false), Text.monthName(previous.start))
+                        diff > 0 -> str(R.string.home_x_more_than_x, Money.format(diff, Currency.GBP, false), Text.monthName(previous.start))
+                        else -> str(R.string.home_same_as_x, Text.monthName(previous.start))
                     },
                     PillKind.Lime, modifier = Modifier.padding(top = 12.dp),
                 )
@@ -264,21 +266,22 @@ private fun DashboardBody(a: Account, hidden: Boolean, now: Long) {
     }
     // rates
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 26.dp)) {
-        SectionHeader("Today's rates", "All rates", { nav.go(Routes.RATES) })
+        SectionHeader(str(R.string.home_today_s_rates), str(R.string.home_all_rates), { nav.go(Routes.RATES) })
         Group {
             listOf(Currency.RWF, Currency.KES, Currency.NGN).forEachIndexed { i, cur ->
                 if (i > 0) GroupDivider()
                 val rate = Rates.customer(state.rates, Currency.GBP, cur)
                 val ch = Rates.change24h(state.rates, cur, now)
-                ListRow("GBP → ${cur.code}", flat = true, minHeight = 56.dp, onClick = { nav.go(Routes.rate(cur.code)) },
+                ListRow(str(R.string.home_gbp_x, cur.code), flat = true, minHeight = 56.dp, onClick = { nav.go(Routes.rate(cur.code)) },
                     leading = { FlagPair("gb", cur.flag) },
                     trailing = { TrailingValue(Money.rate(rate), "${if (ch >= 0) "▲" else "▼"} ${Money.percent(kotlin.math.abs(ch))}", if (ch >= 0) C.Ok else C.Err) })
             }
         }
+        app.arro.ui.screens.rates.RatesAttribution(Modifier.padding(top = 8.dp))
     }
     // recent
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 26.dp)) {
-        SectionHeader("Recent transfers", "See all", { nav.go(Routes.ACTIVITY) })
+        SectionHeader(str(R.string.home_recent_transfers), str(R.string.home_see_all), { nav.go(Routes.ACTIVITY) })
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             b.feed(a).take(4).forEach { item -> FeedRow(item, now) }
         }
@@ -324,7 +327,7 @@ fun FeedRow(item: FeedItem, now: Long, showFromAmount: Boolean = false) {
                 LedgerType.CONVERSION -> ListRow(
                     e.title, subtitle = "${Text.when_(e.createdAt, now)} · ${Money.format(e.amountMinor, cur)}",
                     leading = { Tile(Icons.Swap, TileStyle.Info, size = 44.dp, round = true) },
-                    trailing = { TrailingValue("+" + Money.format(e.counterMinor, Currency.of(e.counterCurrency)), "Converted", C.Ok) },
+                    trailing = { TrailingValue("+" + Money.format(e.counterMinor, Currency.of(e.counterCurrency)), str(R.string.home_converted), C.Ok) },
                     onClick = { nav.go(Routes.walletAccount(e.counterCurrency)) },
                 )
                 else -> ListRow(
@@ -340,12 +343,12 @@ fun FeedRow(item: FeedItem, now: Long, showFromAmount: Boolean = false) {
 
 /** Status text and colour for a transfer, as shown under amounts. */
 fun statusLabel(t: Transfer): Pair<String, Color> = when (t.status) {
-    TransferStatus.PROCESSING, TransferStatus.IN_PROGRESS -> "In progress" to C.Info
-    TransferStatus.ON_HOLD -> "Action needed" to C.Warn
-    TransferStatus.DELIVERED -> (if (t.payoutType == app.arro.core.PayoutType.CASH) "Ready to collect" else "Delivered") to C.Ok
-    TransferStatus.FAILED -> "Failed" to C.Err
-    TransferStatus.CANCELLED -> "Cancelled" to C.Slate
-    TransferStatus.REFUNDED -> "Refunded" to C.Slate
+    TransferStatus.PROCESSING, TransferStatus.IN_PROGRESS -> str(R.string.home_in_progress) to C.Info
+    TransferStatus.ON_HOLD -> str(R.string.home_action_needed) to C.Warn
+    TransferStatus.DELIVERED -> (if (t.payoutType == app.arro.core.PayoutType.CASH) str(R.string.home_ready_to_collect) else str(R.string.home_delivered)) to C.Ok
+    TransferStatus.FAILED -> str(R.string.home_failed) to C.Err
+    TransferStatus.CANCELLED -> str(R.string.home_cancelled) to C.Slate
+    TransferStatus.REFUNDED -> str(R.string.home_refunded) to C.Slate
 }
 
 @Composable
@@ -358,33 +361,33 @@ private fun FirstRunBody(a: Account) {
     val done = listOf(true, verified, hasMethod, a.transfers.isNotEmpty())
     ArroCard(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Txt("Get set up", T.H2)
-            Txt("${done.count { it }} of 4", T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
+            Txt(str(R.string.home_get_set_up), T.H2)
+            Txt(str(R.string.home_x_of_4, done.count { it }), T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
         }
         ProgressBar(done.count { it } / 4f, Modifier.padding(top = 14.dp), fill = C.LimeDeep)
         Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SetupItem("Create your account", true) {}
-            SetupItem(if (a.kyc.status == KycStatus.IN_REVIEW) "Verify your identity · checking" else "Verify your identity", verified) {
+            SetupItem(str(R.string.home_create_your_account), true) {}
+            SetupItem(if (a.kyc.status == KycStatus.IN_REVIEW) str(R.string.home_verify_your_identity_checking) else str(R.string.home_verify_your_identity), verified) {
                 nav.go(if (a.kyc.status == KycStatus.NOT_STARTED || a.kyc.status == KycStatus.REJECTED) Routes.KYC else Routes.KYC_STATUS)
             }
-            SetupItem("Add a card or bank", hasMethod) { nav.go(Routes.PAY_METHODS) }
-            SetupItem("Send your first transfer", a.transfers.isNotEmpty()) { startSend(c, nav, banner) }
+            SetupItem(str(R.string.home_add_a_card_or_bank), hasMethod) { nav.go(Routes.PAY_METHODS) }
+            SetupItem(str(R.string.home_send_your_first_transfer), a.transfers.isNotEmpty()) { startSend(c, nav, banner) }
         }
     }
     if (a.firstTransferFree) Panel(Modifier.padding(start = 20.dp, end = 20.dp, top = 16.dp), PanelKind.Lime) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
             Illustration(Art.Gift, 52.dp)
             Column(Modifier.weight(1f)) {
-                Txt("Your first transfer has no Arro fee", T.H3)
-                Cap("Applies to any amount up to £1,000.", Modifier.padding(top = 2.dp))
+                Txt(str(R.string.home_your_first_transfer_has_no_arro), T.H3)
+                Cap(str(R.string.home_applies_to_any_amount_up_to), Modifier.padding(top = 2.dp))
             }
         }
     }
     Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 22.dp)) {
-        Txt("Recent transfers", T.H2)
+        Txt(str(R.string.home_recent_transfers), T.H2)
         Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Illustration(Art.Plane, 52.dp)
-            Cap("No transfers yet. Your first one will show up here with live tracking.", Modifier.weight(1f))
+            Cap(str(R.string.home_no_transfers_yet_your_first_one), Modifier.weight(1f))
         }
     }
 }
@@ -425,21 +428,21 @@ fun NotificationsScreen() {
     ArroScreen(
         topBar = {
             TopBar(onBack = { nav.back() }, right = {
-                app.arro.ui.components.ArroButton("Mark all read", { b.markAllRead() }, style = Btn.Text, size = BtnSize.S, fill = false, enabled = a.unreadCount > 0)
+                app.arro.ui.components.ArroButton(str(R.string.home_mark_all_read), { b.markAllRead() }, style = Btn.Text, size = BtnSize.S, fill = false, enabled = a.unreadCount > 0)
             })
         },
     ) {
-        ScreenTitle("Notifications")
-        Segmented(listOf("All", "Transfers", "Account"), filter, { filter = it })
+        ScreenTitle(str(R.string.home_notifications))
+        Segmented(listOf(str(R.string.home_all), str(R.string.home_transfers), str(R.string.home_account)), filter, { filter = it })
         if (items.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(top = 40.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Illustration(Art.Bell, 128.dp)
-                Txt("You're all caught up", T.H2)
-                Cap("Transfer updates, rate alerts and security messages will appear here.")
+                Txt(str(R.string.home_you_re_all_caught_up), T.H2)
+                Cap(str(R.string.home_transfer_updates_rate_alerts_and_security))
             }
         }
         val (today, earlier) = items.partition { Text.isSameDay(it.createdAt, now) }
-        listOf("Today" to today, "Earlier" to earlier).forEach { (label, list) ->
+        listOf(str(R.string.home_today) to today, str(R.string.home_earlier) to earlier).forEach { (label, list) ->
             if (list.isNotEmpty()) {
                 Over(label, Modifier.padding(top = 4.dp))
                 list.forEach { n ->
@@ -508,39 +511,39 @@ fun InsightsScreen() {
             "$y" to a.transfers.filter { it.createdAt in from until to && it.status != TransferStatus.CANCELLED && it.status != TransferStatus.REFUNDED }.sumOf { it.sendMinor }
         }
     }
-    val periodWord = when (p) { Insights.Period.MONTH -> Text.monthName(now); Insights.Period.QUARTER -> "this quarter"; Insights.Period.YEAR -> "${Text.localDate(now).year}" }
+    val periodWord = when (p) { Insights.Period.MONTH -> Text.monthName(now); Insights.Period.QUARTER -> str(R.string.home_this_quarter); Insights.Period.YEAR -> "${Text.localDate(now).year}" }
     val prevWord = when (p) {
         Insights.Period.MONTH -> Text.monthName(Text.startOfDay(Text.localDate(now).withDayOfMonth(1).minusMonths(1)))
-        Insights.Period.QUARTER -> "last quarter"
+        Insights.Period.QUARTER -> str(R.string.home_last_quarter)
         Insights.Period.YEAR -> "${Text.localDate(now).year - 1}"
     }
     val diff = s.totalMinor - s.previousMinor
     val sentence = when {
-        s.totalMinor == 0L -> "You haven't sent anything in ${if (p == Insights.Period.MONTH) periodWord else periodWord} yet."
-        s.previousMinor == 0L -> "You've sent ${Money.format(s.totalMinor, Currency.GBP, false)} so far, with ${s.daysLeft} days to go."
-        diff < 0 -> "You've sent ${Money.format(-diff, Currency.GBP, false)} less than in $prevWord, with ${s.daysLeft} days to go."
-        diff > 0 -> "You've sent ${Money.format(diff, Currency.GBP, false)} more than in $prevWord, with ${s.daysLeft} days to go."
-        else -> "You've sent the same as in $prevWord, with ${s.daysLeft} days to go."
+        s.totalMinor == 0L -> str(R.string.home_you_haven_t_sent_anything_in, if (p == Insights.Period.MONTH) periodWord else periodWord)
+        s.previousMinor == 0L -> str(R.string.home_you_ve_sent_x_so_far, Money.format(s.totalMinor, Currency.GBP, false), s.daysLeft)
+        diff < 0 -> str(R.string.home_you_ve_sent_x_less_than, Money.format(-diff, Currency.GBP, false), prevWord, s.daysLeft)
+        diff > 0 -> str(R.string.home_you_ve_sent_x_more_than, Money.format(diff, Currency.GBP, false), prevWord, s.daysLeft)
+        else -> str(R.string.home_you_ve_sent_the_same_as, prevWord, s.daysLeft)
     }
     TabScreen(Tab.Home, top = {
         TopBar(onBack = { nav.back() }, right = { app.arro.ui.components.BarCaption(s.periodLabel) })
     }) {
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ScreenTitle("Insights")
-            Segmented(listOf("Month", "Quarter", "Year"), period, { period = it })
+            ScreenTitle(str(R.string.home_insights))
+            Segmented(listOf(str(R.string.home_month), str(R.string.home_quarter), str(R.string.home_year)), period, { period = it })
             Panel(kind = PanelKind.Lime) {
                 Txt(sentence, T.H2.copy(fontSize = 19.sp))
                 Row(Modifier.fillMaxWidth().padding(top = 14.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
                     Column {
                         BigAmount(s.totalMinor, Currency.GBP, size = 34.sp)
-                        Cap("sent in $periodWord", Modifier.padding(top = 4.dp))
+                        Cap(str(R.string.home_sent_in_x, periodWord), Modifier.padding(top = 4.dp))
                     }
                     InsightBars(bars)
                 }
             }
             if (s.shares.isNotEmpty()) {
                 Column {
-                    SectionHeader("Where it went")
+                    SectionHeader(str(R.string.home_where_it_went))
                     val max = s.shares.maxOf { it.totalMinor }.coerceAtLeast(1)
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         s.shares.forEach { sh ->
@@ -561,15 +564,15 @@ fun InsightsScreen() {
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ArroCard(Modifier.weight(1f)) {
-                    Cap("Fees paid")
+                    Cap(str(R.string.home_fees_paid))
                     Txt(Money.format(s.feesMinor, Currency.GBP), T.Big22.copy(fontSize = 20.sp), Modifier.padding(top = 4.dp))
-                    Cap("across ${s.transfers} transfer${if (s.transfers == 1) "" else "s"}", Modifier.padding(top = 2.dp), size = 12f)
+                    Cap(str(R.string.home_across_x_transfer_x, s.transfers, if (s.transfers == 1) "" else "s"), Modifier.padding(top = 2.dp), size = 12f)
                 }
                 ArroCard(Modifier.weight(1f)) {
-                    Cap("Fastest delivery")
+                    Cap(str(R.string.home_fastest_delivery))
                     val f = s.fastest
                     Txt(if (f != null) Text.duration(f.deliveredAt - f.createdAt) else "–", T.Big22.copy(fontSize = 20.sp), Modifier.padding(top = 4.dp))
-                    Cap(if (f != null) "to ${f.firstName}, ${f.providerName}" else "No deliveries yet", Modifier.padding(top = 2.dp), size = 12f)
+                    Cap(if (f != null) str(R.string.home_to_x_x, f.firstName, f.providerName) else str(R.string.home_no_deliveries_yet), Modifier.padding(top = 2.dp), size = 12f)
                 }
             }
         }

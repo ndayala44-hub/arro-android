@@ -14,6 +14,15 @@ import org.junit.Assert.fail
 import org.junit.Test
 import java.time.LocalDate
 
+/** The sample account the app reads from gradle.properties; tests set it directly. */
+fun useSampleAccount() {
+    DemoConfig.enabled = true
+    DemoConfig.email = "eric.nshuti@mail.com"
+    DemoConfig.phone = "+447700900412"
+    DemoConfig.password = "Arro2026!"
+    DemoConfig.passcode = "246810"
+}
+
 class FakeClock(var t: Long) : Clock {
     override fun now() = t
     fun advance(ms: Long) { t += ms }
@@ -23,6 +32,7 @@ class CoreTest {
     private val start = 1_792_000_000_000L // a fixed moment in October 2026
 
     private fun backend(clock: FakeClock = FakeClock(start)): Pair<ArroBackend, FakeClock> {
+        useSampleAccount()
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val b = ArroBackend(MemoryStore(), RateSource { null }, scope, clock, Dispatchers.Unconfined, latency = false)
         return b to clock

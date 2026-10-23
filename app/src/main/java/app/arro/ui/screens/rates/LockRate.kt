@@ -1,5 +1,7 @@
 package app.arro.ui.screens.rates
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,18 +72,18 @@ import app.arro.ui.theme.T
 internal fun BannerState.offerError(e: ArroException): Boolean {
     show(
         when (e.code) {
-            "offline" -> "Live rates unavailable"
-            "offer_ended" -> "This offer has ended"
-            "no_offer" -> "No offer right now"
-            "kyc" -> "Verify your identity first"
-            else -> "Couldn't lock the rate"
+            "offline" -> str(R.string.lock_rate_live_rates_unavailable)
+            "offer_ended" -> str(R.string.lock_rate_this_offer_has_ended)
+            "no_offer" -> str(R.string.lock_rate_no_offer_right_now)
+            "kyc" -> str(R.string.lock_rate_verify_your_identity_first)
+            else -> str(R.string.lock_rate_couldn_t_lock_the_rate)
         },
         e.message ?: "", if (e.code == "no_offer" || e.code == "offer_ended") BannerKind.Info else BannerKind.Error,
     )
     return true
 }
 
-private fun lockedBody(l: RateLock) = "${Money.rateLine(Currency.GBP, Currency.of(l.to), l.rate)} until ${Text.time(l.expiresAt)}."
+private fun lockedBody(l: RateLock) = str(R.string.lock_rate_x_until_x, Money.rateLine(Currency.GBP, Currency.of(l.to), l.rate), Text.time(l.expiresAt))
 
 // ------------------------------------------------------------------ 9.05 Lock a rate
 
@@ -117,25 +119,25 @@ fun LockRateScreen(code: String) {
     }
 
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Lock a rate") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.lock_rate_lock_a_rate)) },
         gap = 16.dp,
         footer = {
             when {
-                lock != null -> ArroButton("Send at this rate", { sendNow() }, enabled = country != null, icon = Icons.ArrowUpRight)
+                lock != null -> ArroButton(str(R.string.lock_rate_send_at_this_rate), { sendNow() }, enabled = country != null, icon = Icons.ArrowUpRight)
                 offer != null -> {
-                    ArroButton("Lock this rate for ${offer.lockMinutes} minutes", {
+                    ArroButton(str(R.string.lock_rate_lock_this_rate_for_x_minutes, offer.lockMinutes), {
                         scope.launchCall(call, onError = { banner.offerError(it) }) {
                             val l = b.lockOffer(offer.id)
-                            banner.show("Rate locked", lockedBody(l), BannerKind.Success)
+                            banner.show(str(R.string.lock_rate_rate_locked), lockedBody(l), BannerKind.Success)
                         }
                     }, loading = call.busy.value, icon = Icons.Lock)
-                    ArroButton("Not now", { b.dismissOffer(); nav.back() }, style = Btn.Text)
+                    ArroButton(str(R.string.lock_rate_not_now), { b.dismissOffer(); nav.back() }, style = Btn.Text)
                 }
                 else -> {
-                    ArroButton("Get a rate offer", {
+                    ArroButton(str(R.string.lock_rate_get_a_rate_offer), {
                         scope.launchCall(call, onError = { banner.offerError(it) }) { b.requestOffer(cur) }
                     }, loading = call.busy.value, enabled = online)
-                    ArroButton("Send at today's rate", { sendNow() }, style = Btn.Line, enabled = country != null)
+                    ArroButton(str(R.string.lock_rate_send_at_today_s_rate), { sendNow() }, style = Btn.Line, enabled = country != null)
                 }
             }
         },
@@ -144,9 +146,9 @@ fun LockRateScreen(code: String) {
             lock != null -> LockedPanel(lock, now)
             offer != null -> OfferPanel(offer, now)
             else -> {
-                if (ended != null) Note("Your locked rate of ${Money.rate(ended.rate, Money.rateDecimals(ended.rate))} ${cur.code} ended at ${Text.time(ended.expiresAt)}. " +
-                    "Ask for a new offer, or send at today's rate.", NoteKind.Warn, Icons.Clock)
-                ScreenTitle("Lock a better rate", "When there's a better rate for ${cur.code}, you can hold it for ${ArroBackend.OFFER_LOCK_MINUTES} minutes while you send.")
+                if (ended != null) Note(str(R.string.lock_rate_your_locked_rate_of_x_x, Money.rate(ended.rate, Money.rateDecimals(ended.rate)), cur.code, Text.time(ended.expiresAt)) +
+                    str(R.string.lock_rate_ask_for_a_new_offer_or), NoteKind.Warn, Icons.Clock)
+                ScreenTitle(str(R.string.lock_rate_lock_a_better_rate), str(R.string.lock_rate_when_there_s_a_better_rate, cur.code, ArroBackend.OFFER_LOCK_MINUTES))
             }
         }
 
@@ -154,37 +156,38 @@ fun LockRateScreen(code: String) {
         val held = lock?.rate ?: offer?.rate
         Panel(gap = 10.dp) {
             if (held != null) {
-                KV(if (lock != null) "Your locked rate" else "Offer rate", Money.rateLine(Currency.GBP, cur, held), strong = true)
-                KV("Today's live rate", Money.rateLine(Currency.GBP, cur, live))
-                KV("${Money.format(sample, Currency.GBP, false)} sends", Money.format(Money.convert(sample, Currency.GBP, cur, held), cur), strong = true)
+                KV(if (lock != null) str(R.string.lock_rate_your_locked_rate) else str(R.string.lock_rate_offer_rate), Money.rateLine(Currency.GBP, cur, held), strong = true)
+                KV(str(R.string.lock_rate_today_s_live_rate), Money.rateLine(Currency.GBP, cur, live))
+                KV(str(R.string.lock_rate_x_sends, Money.format(sample, Currency.GBP, false)), Money.format(Money.convert(sample, Currency.GBP, cur, held), cur), strong = true)
                 val extra = Money.convert(sample, Currency.GBP, cur, held) - Money.convert(sample, Currency.GBP, cur, live)
-                val less: (@Composable () -> Unit)? = if (extra > 0) { { Pill("${Money.format(extra, cur)} less", PillKind.Neutral) } } else null
-                KV("At today's rate", Money.format(Money.convert(sample, Currency.GBP, cur, live), cur), trailing = less)
+                val less: (@Composable () -> Unit)? = if (extra > 0) { { Pill(str(R.string.lock_rate_x_less, Money.format(extra, cur)), PillKind.Neutral) } } else null
+                KV(str(R.string.lock_rate_at_today_s_rate), Money.format(Money.convert(sample, Currency.GBP, cur, live), cur), trailing = less)
             } else {
-                KV("Today's live rate", Money.rateLine(Currency.GBP, cur, live), strong = true)
-                KV("${Money.format(sample, Currency.GBP, false)} sends", Money.format(Money.convert(sample, Currency.GBP, cur, live), cur))
-                KV("Updated", if (fetched > 0) Text.relativeDay(fetched, now) else "Not yet")
+                KV(str(R.string.lock_rate_today_s_live_rate), Money.rateLine(Currency.GBP, cur, live), strong = true)
+                KV(str(R.string.lock_rate_x_sends, Money.format(sample, Currency.GBP, false)), Money.format(Money.convert(sample, Currency.GBP, cur, live), cur))
+                KV(str(R.string.lock_rate_updated), if (fetched > 0) Text.relativeDay(fetched, now) else str(R.string.lock_rate_not_yet))
             }
-            Cap(if (state.rates.demoMoved) "Demo: the market rate was moved from Demo controls. The next live update replaces it."
-                else "Live rates come from ${state.rates.source.ifBlank { "our rate provider" }} and move with the market. They aren't guaranteed until you lock one.", size = 12f)
+            RatesAttribution()
+            Cap(if (state.rates.demoMoved) str(R.string.lock_rate_demo_the_market_rate_was_moved)
+                else str(R.string.lock_rate_live_rates_come_from_x_and, state.rates.source.ifBlank { str(R.string.lock_rate_our_rate_provider) }), size = 12f)
         }
 
         if (!b.ratesLive() && lock == null && offer == null) {
-            Note(if (fetched > 0) "We couldn't update rates since ${Text.relativeDay(fetched, now).lowercase()}. Offers need live rates."
-                else "We haven't been able to get live rates yet. Offers need live rates.", NoteKind.Warn, Icons.WifiOff)
+            Note(if (fetched > 0) str(R.string.lock_rate_we_couldn_t_update_rates_since, Text.relativeDay(fetched, now).lowercase())
+                else str(R.string.lock_rate_we_haven_t_been_able_to), NoteKind.Warn, Icons.WifiOff)
         }
         if (otherOffer != null && lock == null) {
-            Note("There's a rate offer for ${otherOffer.to} for the next ${Text.countdown(otherOffer.expiresAt - now)}.", NoteKind.Lime, Icons.Bolt,
-                action = "See it", onAction = { nav.go(Routes.lockRate(otherOffer.to)) })
+            Note(str(R.string.lock_rate_there_s_a_rate_offer_for, otherOffer.to, Text.countdown(otherOffer.expiresAt - now)), NoteKind.Lime, Icons.Bolt,
+                action = str(R.string.lock_rate_see_it), onAction = { nav.go(Routes.lockRate(otherOffer.to)) })
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Over("How locking works")
+            Over(str(R.string.lock_rate_how_locking_works))
             listOf(
-                "A locked rate is held for one transfer to ${cur.code}, for ${ArroBackend.OFFER_LOCK_MINUTES} minutes.",
-                "It stays the same even if the market moves. If it ends before you send, you get today's rate.",
-                "Arro fees and your sending limits still apply. Balance conversions use the live rate.",
-                "Offers in this test build are demo promotions, priced from the live mid-market rate.",
+                str(R.string.lock_rate_a_locked_rate_is_held_for, cur.code, ArroBackend.OFFER_LOCK_MINUTES),
+                str(R.string.lock_rate_it_stays_the_same_even_if),
+                str(R.string.lock_rate_arro_fees_and_your_sending_limits),
+                str(R.string.lock_rate_offers_in_this_test_build_are),
             ).forEach { line ->
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Box(Modifier.padding(top = 7.dp).size(5.dp).background(C.LimeDeep, CircleShape))
@@ -202,14 +205,14 @@ private fun LockedPanel(l: RateLock, now: Long) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Ic(Icons.Lock, size = 16.dp, tint = C.Lime)
-                Over("Rate locked", color = C.Lime)
+                Over(str(R.string.lock_rate_rate_locked), color = C.Lime)
             }
-            if (l.offerId.isNotEmpty()) Pill("Demo offer", PillKind.OnDark)
+            if (l.offerId.isNotEmpty()) Pill(str(R.string.lock_rate_demo_offer), PillKind.OnDark)
         }
         Txt(Money.rateLine(Currency.GBP, Currency.of(l.to), l.rate), T.Big28, color = C.OnNight)
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Txt(Text.countdown(l.expiresAt - now), T.Big22, color = C.Lime)
-            Cap("left · held until ${Text.time(l.expiresAt)}", Modifier.padding(bottom = 3.dp), color = C.DarkCap)
+            Cap(str(R.string.lock_rate_left_held_until_x, Text.time(l.expiresAt)), Modifier.padding(bottom = 3.dp), color = C.DarkCap)
         }
         ProgressBar((l.expiresAt - now).toFloat() / total, track = C.OnNight.copy(alpha = 0.16f), fill = C.Lime, height = 6.dp)
     }
@@ -221,15 +224,15 @@ private fun OfferPanel(o: RateOffer, now: Long) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Ic(Icons.Bolt, size = 16.dp, tint = C.Lime)
-                Over("Rate offer", color = C.Lime)
+                Over(str(R.string.lock_rate_rate_offer), color = C.Lime)
             }
-            if (o.demo) Pill("Demo offer", PillKind.OnDark)
+            if (o.demo) Pill(str(R.string.lock_rate_demo_offer), PillKind.OnDark)
         }
         Txt(Money.rateLine(Currency.GBP, Currency.of(o.to), o.rate), T.Big28, color = C.OnNight)
-        Cap("Usually ${Money.rate(o.standardRate, Money.rateDecimals(o.standardRate))} ${o.to} today. Lock it to hold it for ${o.lockMinutes} minutes.", color = C.DarkCap)
+        Cap(str(R.string.lock_rate_usually_x_x_today_lock_it, Money.rate(o.standardRate, Money.rateDecimals(o.standardRate)), o.to, o.lockMinutes), color = C.DarkCap)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Ic(Icons.Clock, size = 16.dp, tint = C.Lime)
-            Txt("Offer ends in ${Text.countdown(o.expiresAt - now)}", T.Body14.copy(fontWeight = FontWeight.SemiBold), color = C.OnNight)
+            Txt(str(R.string.lock_rate_offer_ends_in_x, Text.countdown(o.expiresAt - now)), T.Body14.copy(fontWeight = FontWeight.SemiBold), color = C.OnNight)
         }
     }
 }
@@ -259,20 +262,20 @@ fun RateOfferCard(a: Account, modifier: Modifier = Modifier) {
             Ic(if (lock != null) Icons.Lock else Icons.Bolt, tint = C.Lime)
         }
         Column(Modifier.weight(1f)) {
-            Txt(if (lock != null) "Rate locked · ${Text.countdown(lock.expiresAt - now)}" else "Rate offer · ends in ${Text.countdown(offer!!.expiresAt - now)}",
+            Txt(if (lock != null) str(R.string.lock_rate_rate_locked_x, Text.countdown(lock.expiresAt - now)) else str(R.string.lock_rate_rate_offer_ends_in_x, Text.countdown(offer!!.expiresAt - now)),
                 T.H3, color = C.OnNight, maxLines = 1)
-            Cap(Money.rateLine(Currency.GBP, cur, lock?.rate ?: offer!!.rate) + if (lock != null) " until ${Text.time(lock.expiresAt)}" else " for ${offer!!.lockMinutes} min",
+            Cap(Money.rateLine(Currency.GBP, cur, lock?.rate ?: offer!!.rate) + if (lock != null) str(R.string.lock_rate_until_x, Text.time(lock.expiresAt)) else str(R.string.lock_rate_for_x_min, offer!!.lockMinutes),
                 color = C.DarkCap, size = 12f)
         }
         if (lock != null) {
-            ArroButton("Send", {
+            ArroButton(str(R.string.lock_rate_send), {
                 Catalog.countryForCurrency(cur)?.let { startSend(c, nav, banner, country = it.code) }
             }, style = Btn.Lime, size = BtnSize.S)
         } else {
-            ArroButton("Lock", {
+            ArroButton(str(R.string.lock_rate_lock), {
                 scope.launchCall(call, onError = { banner.offerError(it) }) {
                     val l = b.lockOffer(offer!!.id)
-                    banner.show("Rate locked", lockedBody(l), BannerKind.Success)
+                    banner.show(str(R.string.lock_rate_rate_locked), lockedBody(l), BannerKind.Success)
                 }
             }, style = Btn.Lime, size = BtnSize.S, loading = call.busy.value)
         }

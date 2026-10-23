@@ -1,5 +1,7 @@
 package app.arro.ui.screens.rates
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -112,6 +114,13 @@ import app.arro.ui.theme.T
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
+/** "Rates by Exchange Rate API", linked, as the free rates endpoint's terms ask on every page that shows its rates. */
+@Composable
+fun RatesAttribution(modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LinkText(str(R.string.rates_attribution), { app.arro.platform.Share.openUrl(context, str(R.string.rates_attribution_url)) }, modifier, color = C.Slate, underline = true)
+}
+
 private fun arrow(v: Double) = if (v >= 0) "▲" else "▼"
 private fun changeColor(v: Double) = if (v >= 0) C.Ok else C.Err
 
@@ -154,43 +163,43 @@ fun RatesScreen() {
     ArroScreen(
         topBar = {
             TopBar(onBack = { nav.back() }, right = {
-                ArroButton(if (active.isEmpty()) "Alerts" else "Alerts · ${active.size}", { alertsOpen = true }, style = Btn.Lime, size = BtnSize.S, icon = Icons.Bell, fill = false)
+                ArroButton(if (active.isEmpty()) str(R.string.rates_alerts) else str(R.string.rates_alerts_x, active.size), { alertsOpen = true }, style = Btn.Lime, size = BtnSize.S, icon = Icons.Bell, fill = false)
             })
         },
         gap = 14.dp,
         overlay = {
             Sheet(alertsOpen, { alertsOpen = false }) {
-                SheetHeader("Rate alerts", { alertsOpen = false }, "We'll tell you when £1 buys more. Alerts last 30 days.")
+                SheetHeader(str(R.string.rates_rate_alerts), { alertsOpen = false }, str(R.string.rates_we_ll_tell_you_when_1))
                 Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (a.rateAlerts.isEmpty()) Cap("No alerts yet. Choose a currency to set your first one.")
+                    if (a.rateAlerts.isEmpty()) Cap(str(R.string.rates_no_alerts_yet_choose_a_currency))
                     a.rateAlerts.sortedByDescending { it.createdAt }.forEach { al ->
                         val cur = Currency.of(al.to)
                         val reached = al.triggeredAt > 0
                         val expired = !reached && al.expiresAt <= now
-                        ListRow("GBP → ${al.to} at ${Money.rate(al.target, Money.rateDecimals(al.target))}",
+                        ListRow(str(R.string.rates_gbp_x_at_x, al.to, Money.rate(al.target, Money.rateDecimals(al.target))),
                             subtitle = when {
-                                reached -> "Reached ${Text.relativeDay(al.triggeredAt, now)}"
-                                expired -> "Expired"
-                                else -> "Now ${Money.rate(b.customerRate(cur), Money.rateDecimals(al.target))} · ends ${Text.dayMonth(al.expiresAt)}" +
-                                    (a.recipient(al.autoSendRecipientId)?.let { " · auto-sends to ${it.firstName}" } ?: "")
+                                reached -> str(R.string.rates_reached_x, Text.relativeDay(al.triggeredAt, now))
+                                expired -> str(R.string.rates_expired)
+                                else -> str(R.string.rates_now_x_ends_x, Money.rate(b.customerRate(cur), Money.rateDecimals(al.target)), Text.dayMonth(al.expiresAt)) +
+                                    (a.recipient(al.autoSendRecipientId)?.let { str(R.string.rates_auto_sends_to_x, it.firstName) } ?: "")
                             },
                             leading = { Flag(cur.flag, 32.dp) },
-                            trailing = { RoundIcon(Icons.Trash, { b.deleteRateAlert(al.id); banner.show("Alert deleted", kind = BannerKind.Info) }, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = "Delete alert") },
+                            trailing = { RoundIcon(Icons.Trash, { b.deleteRateAlert(al.id); banner.show(str(R.string.rates_alert_deleted), kind = BannerKind.Info) }, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = str(R.string.rates_delete_alert)) },
                             onClick = { alertsOpen = false; nav.go(Routes.rateAlert(al.to)) })
                     }
-                    ArroButton("New alert", { alertsOpen = false; nav.go(Routes.rateAlert(active.firstOrNull()?.to?.let { t -> Rates.payoutCurrencies.firstOrNull { it.code != t }?.code } ?: "RWF")) }, icon = Icons.Plus)
+                    ArroButton(str(R.string.rates_new_alert), { alertsOpen = false; nav.go(Routes.rateAlert(active.firstOrNull()?.to?.let { t -> Rates.payoutCurrencies.firstOrNull { it.code != t }?.code } ?: "RWF")) }, icon = Icons.Plus)
                 }
             }
         },
     ) {
-        ScreenTitle("Exchange rates", "What £1 buys right now, with our margin included." + if (fetched > 0) " Updated ${Text.time(fetched)}." else "")
+        ScreenTitle(str(R.string.rates_exchange_rates), str(R.string.rates_what_1_buys_right_now_with) + if (fetched > 0) str(R.string.rates_updated_x, Text.time(fetched)) else "")
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            Chip("From GBP", true, { banner.show("Rates are shown from GBP", "Transfers are paid in pounds. More source currencies are coming.") }, flag = "gb", icon = Icons.ChevronDown)
-            Cap("24-hour change", Modifier.weight(1f))
-            LinkText(if (call.busy.value) "Updating…" else "Refresh", {
+            Chip(str(R.string.rates_from_gbp), true, { banner.show(str(R.string.rates_rates_are_shown_from_gbp), str(R.string.rates_transfers_are_paid_in_pounds_more)) }, flag = "gb", icon = Icons.ChevronDown)
+            Cap(str(R.string.rates_n_24_hour_change), Modifier.weight(1f))
+            LinkText(if (call.busy.value) str(R.string.rates_updating) else str(R.string.rates_refresh), {
                 scope.launchCall(call) {
                     val ok = b.refreshRates()
-                    banner.show(if (ok) "Rates updated" else "Couldn't reach the rates service", if (ok) "Live mid-market rates, with our margin included." else "Showing the last rates we had.", if (ok) BannerKind.Success else BannerKind.Error)
+                    banner.show(if (ok) str(R.string.rates_rates_updated) else str(R.string.rates_couldn_t_reach_the_rates_service), if (ok) str(R.string.rates_live_mid_market_rates_with_our) else str(R.string.rates_showing_the_last_rates_we_had), if (ok) BannerKind.Success else BannerKind.Error)
                 }
             }, color = C.Ink, strong = true)
         }
@@ -213,7 +222,9 @@ fun RatesScreen() {
                     onClick = { nav.go(Routes.rate(cur.code)) })
             }
         }
-        LinkText("How we price, and how we compare", { nav.go(Routes.rateCompare()) }, color = C.Ink, strong = true, underline = true)
+        LinkText(str(R.string.rates_how_we_price_and_how_we), { nav.go(Routes.rateCompare()) }, color = C.Ink, strong = true, underline = true)
+        // Attribution required by the free ExchangeRate-API endpoint that supplies the live rates.
+        RatesAttribution()
     }
 }
 
@@ -252,17 +263,17 @@ fun RateDetailScreen(code: String) {
     val stepMs = if (range.hourly) 3_600_000L * range.stride else 86_400_000L * range.stride
     val sel = selected?.coerceIn(0, series.lastIndex)
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "GBP → ${cur.code}", right = { RoundIcon(Icons.Bell, { nav.go(Routes.rateAlert(cur.code)) }, style = IconBtn.Soft, description = "Set rate alert") }) },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.rates_gbp_x, cur.code), right = { RoundIcon(Icons.Bell, { nav.go(Routes.rateAlert(cur.code)) }, style = IconBtn.Soft, description = str(R.string.rates_set_rate_alert)) }) },
         footer = {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ArroButton("Set alert", { nav.go(Routes.rateAlert(cur.code)) }, Modifier.weight(1f), style = Btn.Line, fill = true)
-                ArroButton("Send at this rate", { if (country != null) startSend(c, nav, banner, country = country.code) }, Modifier.weight(1.4f), fill = true, enabled = country != null)
+                ArroButton(str(R.string.rates_set_alert), { nav.go(Routes.rateAlert(cur.code)) }, Modifier.weight(1f), style = Btn.Line, fill = true)
+                ArroButton(str(R.string.rates_send_at_this_rate), { if (country != null) startSend(c, nav, banner, country = country.code) }, Modifier.weight(1.4f), fill = true, enabled = country != null)
             }
         },
     ) {
         Column {
-            Cap(if (sel != null) "On ${if (range.hourly) Text.dayMonth(now - (series.lastIndex - sel) * stepMs) + ", " + Text.time(now - (series.lastIndex - sel) * stepMs) else Text.date(now - (series.lastIndex - sel) * stepMs)}, 1 British pound bought"
-                else "1 British pound buys")
+            Cap(if (sel != null) str(R.string.rates_on_x_1_british_pound_bought, if (range.hourly) Text.dayMonth(now - (series.lastIndex - sel) * stepMs) + ", " + Text.time(now - (series.lastIndex - sel) * stepMs) else Text.date(now - (series.lastIndex - sel) * stepMs))
+                else str(R.string.rates_n_1_british_pound_buys))
             val shown = if (sel != null) series[sel] else rate
             val whole = Money.rate(shown, decimals)
             val dot = whole.indexOf('.')
@@ -271,31 +282,31 @@ fun RateDetailScreen(code: String) {
                 withStyle(SpanStyle(fontSize = 24.sp, color = C.Slate)) { append((if (dot > 0) whole.substring(dot) else "") + " " + cur.code) }
             }, T.Amount, Modifier.padding(top = 6.dp))
             Txt(buildAnnotatedString {
-                withStyle(SpanStyle(color = changeColor(dayChange))) { append("${arrow(dayChange)} ${Money.rate(abs(dayAbs), decimals)} (${Money.percent(abs(dayChange))}) today") }
+                withStyle(SpanStyle(color = changeColor(dayChange))) { append(str(R.string.rates_x_x_x_today, arrow(dayChange), Money.rate(abs(dayAbs), decimals), Money.percent(abs(dayChange)))) }
                 withStyle(SpanStyle(color = C.Slate)) { append(" · ") }
-                withStyle(SpanStyle(color = changeColor(monthChange))) { append("${arrow(monthChange)} ${Money.percent(abs(monthChange))} this month") }
+                withStyle(SpanStyle(color = changeColor(monthChange))) { append(str(R.string.rates_x_x_this_month, arrow(monthChange), Money.percent(abs(monthChange)))) }
             }, T.Cap.copy(fontWeight = FontWeight.SemiBold), Modifier.padding(top = 8.dp))
         }
         Segmented(Range.entries.map { it.label }, range.ordinal, { range = Range.entries[it]; selected = null })
         RateChart(series, sel, { selected = it }, decimals,
-            startLabel = if (range == Range.D1) "24 hours ago" else Text.dayMonth(now - (range.points - 1) * (if (range.hourly) 3_600_000L else 86_400_000L)))
+            startLabel = if (range == Range.D1) str(R.string.rates_n_24_hours_ago) else Text.dayMonth(now - (range.points - 1) * (if (range.hourly) 3_600_000L else 86_400_000L)))
         Panel(gap = 10.dp) {
-            KV("Mid-market rate", Money.rate(mid, decimals))
-            KV("Our margin", Money.percent(Rates.TRANSFER_MARGIN * 100, 2))
-            KV("${Money.format(sample, Currency.GBP, false)} sends", Money.format(sends, cur), strong = true)
+            KV(str(R.string.rates_mid_market_rate), Money.rate(mid, decimals))
+            KV(str(R.string.rates_our_margin), Money.percent(Rates.TRANSFER_MARGIN * 100, 2))
+            KV(str(R.string.rates_x_sends, Money.format(sample, Currency.GBP, false)), Money.format(sends, cur), strong = true)
         }
         val lockNow = a.offerLock(cur.code, now)
         val offerNow = a.liveOffer(now)?.takeIf { it.to == cur.code }
         ListRow(
             when {
-                lockNow != null -> "Rate locked until ${Text.time(lockNow.expiresAt)}"
-                offerNow != null -> "Rate offer: ${Money.rate(offerNow.rate, decimals)} ${cur.code}"
-                else -> "Lock a rate"
+                lockNow != null -> str(R.string.rates_rate_locked_until_x, Text.time(lockNow.expiresAt))
+                offerNow != null -> str(R.string.rates_rate_offer_x_x, Money.rate(offerNow.rate, decimals), cur.code)
+                else -> str(R.string.rates_lock_a_rate)
             },
             subtitle = when {
-                lockNow != null -> "${Money.rateLine(Currency.GBP, cur, lockNow.rate)} for your next transfer"
-                offerNow != null -> "Lock it for ${offerNow.lockMinutes} minutes before ${Text.time(offerNow.expiresAt)}"
-                else -> "Hold a better rate for ${ArroBackend.OFFER_LOCK_MINUTES} minutes while you send"
+                lockNow != null -> str(R.string.rates_x_for_your_next_transfer, Money.rateLine(Currency.GBP, cur, lockNow.rate))
+                offerNow != null -> str(R.string.rates_lock_it_for_x_minutes_before, offerNow.lockMinutes, Text.time(offerNow.expiresAt))
+                else -> str(R.string.rates_hold_a_better_rate_for_x, ArroBackend.OFFER_LOCK_MINUTES)
             },
             minHeight = 56.dp,
             leading = { app.arro.ui.components.Tile(Icons.Lock, app.arro.ui.components.TileStyle.Lime, 36.dp, iconSize = 16.dp) }, trailing = { Chevron() },
@@ -303,7 +314,7 @@ fun RateDetailScreen(code: String) {
         )
         if (a.rateAlerts.any { it.to == cur.code && it.triggeredAt == 0L }) {
             val al = a.rateAlerts.first { it.to == cur.code && it.triggeredAt == 0L }
-            ListRow("Alert at ${Money.rate(al.target, decimals)}", subtitle = "We'll tell you when £1 buys this much", minHeight = 56.dp,
+            ListRow(str(R.string.rates_alert_at_x, Money.rate(al.target, decimals)), subtitle = str(R.string.rates_we_ll_tell_you_when_1_2), minHeight = 56.dp,
                 leading = { app.arro.ui.components.Tile(Icons.Bell, app.arro.ui.components.TileStyle.Lime, 36.dp, iconSize = 16.dp) }, trailing = { Chevron() },
                 onClick = { nav.go(Routes.rateAlert(cur.code)) })
         }
@@ -316,7 +327,7 @@ private fun RateChart(series: List<Double>, selected: Int?, onSelect: (Int?) -> 
     val hi = series.max(); val lo = series.min()
     val hiIdx = series.indexOf(hi)
     Column {
-        Cap("High ${Money.rate(hi, decimals)}", size = 11f)
+        Cap(str(R.string.rates_high_x, Money.rate(hi, decimals)), size = 11f)
         BoxWithConstraints(Modifier.fillMaxWidth().height(150.dp).padding(vertical = 4.dp)) {
             val n = series.size
             fun indexAt(x: Float, width: Float) = ((x / width) * (n - 1)).roundToInt().coerceIn(0, n - 1)
@@ -348,9 +359,9 @@ private fun RateChart(series: List<Double>, selected: Int?, onSelect: (Int?) -> 
                 if (selected == null && hiIdx != n - 1) drawCircle(C.Ink, 3.dp.toPx(), Offset(x(hiIdx), y(hi)))
             }
         }
-        Cap("Low ${Money.rate(lo, decimals)}", size = 11f)
+        Cap(str(R.string.rates_low_x, Money.rate(lo, decimals)), size = 11f)
         Row(Modifier.fillMaxWidth().padding(top = 6.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Cap(startLabel, size = 11f); Cap("Now", size = 11f)
+            Cap(startLabel, size = 11f); Cap(str(R.string.rates_now), size = 11f)
         }
     }
 }
@@ -387,13 +398,13 @@ fun RateAlertScreen(code: String) {
     val others = a.rateAlerts.filter { it.to != cur.code && it.triggeredAt == 0L }
     val below = target <= now
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Rate alert") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.rates_rate_alert)) },
         footer = {
-            if (existing != null) ArroButton("Delete this alert", { b.deleteRateAlert(existing.id); banner.show("Alert deleted", kind = BannerKind.Info); nav.back() }, style = Btn.DangerText)
-            ArroButton(if (existing != null) "Update alert" else "Create alert", {
+            if (existing != null) ArroButton(str(R.string.rates_delete_this_alert), { b.deleteRateAlert(existing.id); banner.show(str(R.string.rates_alert_deleted), kind = BannerKind.Info); nav.back() }, style = Btn.DangerText)
+            ArroButton(if (existing != null) str(R.string.rates_update_alert) else str(R.string.rates_create_alert), {
                 b.createRateAlert(cur, target, push, if (auto) autoRecipient?.id ?: "" else "", if (auto) autoMinor else 0)
-                banner.show(if (below) "Your rate is already there" else "Alert set",
-                    if (below) "£1 buys ${Money.rate(now, decimals)} ${cur.code} right now." else "We'll tell you when £1 buys ${Money.rate(target, decimals)} ${cur.code}.", BannerKind.Success)
+                banner.show(if (below) str(R.string.rates_your_rate_is_already_there) else str(R.string.rates_alert_set),
+                    if (below) str(R.string.rates_n_1_buys_x_x_right_now, Money.rate(now, decimals), cur.code) else str(R.string.rates_we_ll_tell_you_when_1_3, Money.rate(target, decimals), cur.code), BannerKind.Success)
                 nav.back()
             }, enabled = target > 0)
         },
@@ -401,12 +412,12 @@ fun RateAlertScreen(code: String) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Illustration(Art.Bell, 72.dp)
             Column {
-                Txt("Tell me when £1 buys", T.H2)
-                Cap("GBP → ${cur.code} · now ${Money.rate(now, decimals)}", Modifier.padding(top = 2.dp))
+                Txt(str(R.string.rates_tell_me_when_1_buys), T.H2)
+                Cap(str(R.string.rates_gbp_x_now_x, cur.code, Money.rate(now, decimals)), Modifier.padding(top = 2.dp))
             }
         }
         ArroCard(Modifier.selectionRing(18.dp, 4.dp), padding = 18.dp, border = C.Ink) {
-            FieldLabel("Target rate")
+            FieldLabel(str(R.string.rates_target_rate))
             Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
                 Txt(Money.rate(target, decimals), T.Big36.copy(fontSize = 38.sp), Modifier.weight(1f))
                 Txt(cur.code, T.H3, Modifier.padding(bottom = 6.dp))
@@ -416,33 +427,33 @@ fun RateAlertScreen(code: String) {
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Cap(Money.rate(lo, if (decimals == 4) 4 else 0), size = 12f)
-                Cap("Now ${Money.rate(now, if (decimals == 4) 4 else 0)}", size = 12f)
+                Cap(str(R.string.rates_now_x, Money.rate(now, if (decimals == 4) 4 else 0)), size = 12f)
                 Cap(Money.rate(hi, if (decimals == 4) 4 else 0), size = 12f)
             }
         }
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Chip("+0.5% · ${Money.rate(p05, decimals)}", preset == 0, { preset = 0; target = p05 })
             Chip("+1% · ${Money.rate(p1, decimals)}", preset == 1, { preset = 1; target = p1 })
-            Chip("Custom", preset == 2, { preset = 2 })
+            Chip(str(R.string.rates_custom), preset == 2, { preset = 2 })
         }
         if (preset == 2) ArroField(customText, { v ->
             customText = v.filter { it.isDigit() || it == '.' }.take(12)
             customText.replace(",", "").toDoubleOrNull()?.let { if (it > 0) target = Rates.round(it) }
-        }, label = "Exact target", placeholder = Money.rate(target, decimals).replace(",", ""), keyboard = KeyboardType.Decimal,
-            hint = if (below) "That's at or below today's rate, so we'd tell you straight away." else null)
-        else if (below) FieldHint(hint = "That's at or below today's rate, so we'd tell you straight away.")
+        }, label = str(R.string.rates_exact_target), placeholder = Money.rate(target, decimals).replace(",", ""), keyboard = KeyboardType.Decimal,
+            hint = if (below) str(R.string.rates_that_s_at_or_below_today) else null)
+        else if (below) FieldHint(hint = str(R.string.rates_that_s_at_or_below_today))
         Group {
-            ListRow("Notify me", flat = true, subtitle = "Push and email", trailing = { Toggle(push, { push = it }) })
+            ListRow(str(R.string.rates_notify_me), flat = true, subtitle = str(R.string.rates_push_and_email), trailing = { Toggle(push, { push = it }) })
             if (autoRecipient != null) {
                 GroupDivider()
-                ListRow("Send ${Money.format(autoMinor, Currency.GBP, false)} to ${autoRecipient.firstName} automatically", flat = true,
-                    subtitle = "Paid from your GBP balance when the rate hits", trailing = { Toggle(auto, { auto = it }) })
+                ListRow(str(R.string.rates_send_x_to_x_automatically, Money.format(autoMinor, Currency.GBP, false), autoRecipient.firstName), flat = true,
+                    subtitle = str(R.string.rates_paid_from_your_gbp_balance_when), trailing = { Toggle(auto, { auto = it }) })
             }
         }
-        if (auto && (a.wallet(Currency.GBP)?.balanceMinor ?: 0) < autoMinor + 300) Cap("Top up your GBP balance before then, or the automatic send can't go.", color = C.Warn, size = 12f)
-        Cap("Alerts last 30 days." + if (others.isNotEmpty()) " Your other ${if (others.size == 1) "alert" else "alerts"}: " +
-            others.joinToString { "GBP → ${it.to} at ${Money.rate(it.target, Money.rateDecimals(it.target))}" } + "." else "", size = 12f)
-        if (existing != null) Cap("Saving replaces your current ${cur.code} alert at ${Money.rate(existing.target, decimals)}.", size = 12f)
+        if (auto && (a.wallet(Currency.GBP)?.balanceMinor ?: 0) < autoMinor + 300) Cap(str(R.string.rates_top_up_your_gbp_balance_before), color = C.Warn, size = 12f)
+        Cap(str(R.string.rates_alerts_last_30_days) + if (others.isNotEmpty()) str(R.string.rates_your_other_x, if (others.size == 1) str(R.string.rates_alert) else str(R.string.rates_alerts_2)) +
+            others.joinToString { str(R.string.rates_gbp_x_at_x, it.to, Money.rate(it.target, Money.rateDecimals(it.target))) } + "." else "", size = 12f)
+        if (existing != null) Cap(str(R.string.rates_saving_replaces_your_current_x_alert, cur.code, Money.rate(existing.target, decimals)), size = 12f)
     }
 }
 
@@ -476,52 +487,52 @@ fun RateCompareScreen(code: String) {
     val sendMinor = fromDraft?.sendMinor ?: (Money.parse(draft.amountText, Currency.GBP)?.takeIf { draft.country == country.code && it >= 100 } ?: 25_000L)
     val type = fromDraft?.payoutType ?: if (draft.country == country.code) draft.payoutType else country.options.first().type
     val q = b.quote(cur, sendMinor, type, country.code, null)
-    val name = a.recipient(draft.recipientId)?.takeIf { it.country == country.code }?.firstName ?: "Your recipient"
+    val name = a.recipient(draft.recipientId)?.takeIf { it.country == country.code }?.firstName ?: str(R.string.rates_your_recipient)
     val mid = q.mid
-    val others = listOf(Other("Typical high-street bank", 1500, 0.030, C.Err), Other("Typical transfer app", 399, 0.0143, C.Warn))
+    val others = listOf(Other(str(R.string.rates_typical_high_street_bank), 1500, 0.030, C.Err), Other(str(R.string.rates_typical_transfer_app), 399, 0.0143, C.Warn))
     val decimals = Money.rateDecimals(mid)
     fun receive(margin: Double) = Money.convert(sendMinor, Currency.GBP, cur, Rates.round(mid * (1 - margin)))
     fun cost(fee: Long, margin: Double) = fee + Math.round(sendMinor * margin)
     val arroCost = q.feeMinor + q.marginMinor
     val gains = others.map { q.receiveMinor - receive(it.margin) }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("${Money.format(sendMinor, Currency.GBP, false)} to ${country.name} · ${type.label.lowercase()}") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.rates_x_to_x_x, Money.format(sendMinor, Currency.GBP, false), country.name, type.label.lowercase())) }) },
     ) {
-        ScreenTitle("What it really costs", "The fee plus the margin hidden in a rate. We show both.")
+        ScreenTitle(str(R.string.rates_what_it_really_costs), str(R.string.rates_the_fee_plus_the_margin_hidden))
         ArroCard(padding = 16.dp) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Txt("Arro", T.H3, Modifier.weight(1f)); Pill("Total cost ${Money.format(arroCost, Currency.GBP)}", PillKind.Lime)
+                Txt(str(R.string.rates_arro), T.H3, Modifier.weight(1f)); Pill(str(R.string.rates_total_cost_x, Money.format(arroCost, Currency.GBP)), PillKind.Lime)
             }
             Row(Modifier.padding(top = 12.dp).fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 if (q.feeMinor > 0) Box(Modifier.weight(q.feeMinor.toFloat()).height(12.dp).background(C.Ink))
                 if (q.marginMinor > 0) Box(Modifier.weight(q.marginMinor.toFloat()).height(12.dp).background(C.LimeDeep))
             }
             Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Legend(C.Ink, if (q.feeWaived) "Fee £0.00 · first transfer" else "Fee ${Money.format(q.feeMinor, Currency.GBP)}")
-                Legend(C.LimeDeep, "Rate margin ${Money.format(q.marginMinor, Currency.GBP)}")
+                Legend(C.Ink, if (q.feeWaived) str(R.string.rates_fee_0_00_first_transfer) else str(R.string.rates_fee_x, Money.format(q.feeMinor, Currency.GBP)))
+                Legend(C.LimeDeep, str(R.string.rates_rate_margin_x, Money.format(q.marginMinor, Currency.GBP)))
             }
             HDivider(Modifier.padding(vertical = 12.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Cap("$name receives", Modifier.weight(1f)); Txt(Money.format(q.receiveMinor, cur), T.Num.copy(fontSize = 18.sp))
+                Cap(str(R.string.rates_x_receives, name), Modifier.weight(1f)); Txt(Money.format(q.receiveMinor, cur), T.Num.copy(fontSize = 18.sp))
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Over("Same transfer elsewhere")
+            Over(str(R.string.rates_same_transfer_elsewhere))
             Group {
                 others.forEachIndexed { i, o ->
                     if (i > 0) GroupDivider()
-                    ListRow(o.label, flat = true, subtitle = "Fee ${Money.format(o.feeMinor, Currency.GBP)} · rate ${Money.rate(Rates.round(mid * (1 - o.margin)), decimals)}",
+                    ListRow(o.label, flat = true, subtitle = str(R.string.rates_fee_x_rate_x, Money.format(o.feeMinor, Currency.GBP), Money.rate(Rates.round(mid * (1 - o.margin)), decimals)),
                         verticalAlignment = Alignment.Top,
-                        trailing = { TrailingValue(Money.format(receive(o.margin), cur), "costs ${Money.format(cost(o.feeMinor, o.margin), Currency.GBP)}", o.color) })
+                        trailing = { TrailingValue(Money.format(receive(o.margin), cur), str(R.string.rates_costs_x, Money.format(cost(o.feeMinor, o.margin), Currency.GBP)), o.color) })
                 }
             }
         }
         Panel(kind = PanelKind.Lime, gap = 4.dp) {
-            Txt("$name gets more with Arro", T.Label, color = C.Forest)
-            Txt("+ ${Money.format(gains.min(), cur, false)} to ${Money.format(gains.max(), cur, false)}", T.Num.copy(fontSize = 18.sp))
+            Txt(str(R.string.rates_x_gets_more_with_arro, name), T.Label, color = C.Forest)
+            Txt(str(R.string.rates_x_to_x, Money.format(gains.min(), cur, false), Money.format(gains.max(), cur, false)), T.Num.copy(fontSize = 18.sp))
         }
-        Cap("Other providers' prices are typical published fees and rate margins for UK banks and transfer apps, for illustration. " +
-            "Mid-market rate ${Money.rate(mid, decimals)} at ${Text.time(state.rates.fetchedAt.takeIf { it > 0 } ?: b.now)}.", size = 11.5f)
+        Cap(str(R.string.rates_other_providers_prices_are_typical_published) +
+            str(R.string.rates_mid_market_rate_x_at_x, Money.rate(mid, decimals), Text.time(state.rates.fetchedAt.takeIf { it > 0 } ?: b.now)), size = 11.5f)
     }
 }
 

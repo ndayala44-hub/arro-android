@@ -1,5 +1,7 @@
 package app.arro.ui.screens.send
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -135,11 +137,11 @@ fun SendHubScreen() {
     val now = nowTicker(60_000)
     val q = query.trim().lowercase()
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Help, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = "Help") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { RoundIcon(Icons.Help, { nav.go(Routes.HELP) }, style = IconBtn.Soft, description = str(R.string.send_help)) }) },
         gap = 20.dp,
     ) {
-        ScreenTitle("Send money")
-        SearchField(query, { query = it }, "Name, phone number or country")
+        ScreenTitle(str(R.string.send_send_money))
+        SearchField(query, { query = it }, str(R.string.send_name_phone_number_or_country))
         if (q.isNotEmpty()) {
             val people = a.recipients.filter { r -> r.name.lowercase().contains(q) || r.methods.any { it.account.filter(Char::isDigit).contains(q.filter(Char::isDigit).ifEmpty { "~" }) } }
             val places = Catalog.countries.filter { it.name.lowercase().contains(q) || it.currency.code.lowercase().contains(q) }
@@ -152,34 +154,34 @@ fun SendHubScreen() {
                     ListRow(ct.name, subtitle = "${ct.currency.code} · ${ct.methodsSummary}", onClick = { startSend(c, nav, banner, country = ct.code) },
                         leading = { Flag(ct.currency.flag, 32.dp) }, trailing = { Chevron() })
                 }
-                if (people.isEmpty() && places.isEmpty()) Cap("No people or countries match \"$query\".")
+                if (people.isEmpty() && places.isEmpty()) Cap(str(R.string.send_no_people_or_countries_match_x, query))
             }
         } else {
             Column {
-                SectionHeader("How do you want to send?")
+                SectionHeader(str(R.string.send_how_do_you_want_to_send))
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ListRow("Send abroad", subtitle = "Mobile money, bank deposit or cash pickup", leading = { Tile(Icons.Globe, TileStyle.Dark) },
+                    ListRow(str(R.string.send_send_abroad), subtitle = str(R.string.send_mobile_money_bank_deposit_or_cash), leading = { Tile(Icons.Globe, TileStyle.Dark) },
                         trailing = { Chevron() }, onClick = { startSend(c, nav, banner) })
-                    ListRow("To an Arro user", subtitle = "Instant and free, by @username or phone", leading = { Tile(Icons.Users, TileStyle.Lime) },
+                    ListRow(str(R.string.send_to_an_arro_user), subtitle = str(R.string.send_instant_and_free_by_username_or), leading = { Tile(Icons.Users, TileStyle.Lime) },
                         trailing = { Chevron() }, onClick = { nav.go(Routes.SEND_ARRO) })
-                    ListRow("Cash pickup", subtitle = "Collected at a partner agent with ID", leading = { Tile(Icons.Cash, TileStyle.Warn) },
+                    ListRow(str(R.string.send_cash_pickup), subtitle = str(R.string.send_collected_at_a_partner_agent_with), leading = { Tile(Icons.Cash, TileStyle.Warn) },
                         trailing = { Chevron() }, onClick = {
                             startSend(c, nav, banner)
                             c.session.send.payoutType = PayoutType.CASH
                         })
-                    ListRow("Scan a QR code", subtitle = "Pay someone's Arro code", leading = { Tile(Icons.Scan, TileStyle.Info) },
+                    ListRow(str(R.string.send_scan_a_qr_code), subtitle = str(R.string.send_pay_someone_s_arro_code), leading = { Tile(Icons.Scan, TileStyle.Info) },
                         trailing = { Chevron() }, onClick = { nav.go(Routes.SCAN_QR) })
                 }
             }
             Column {
-                SectionHeader("Recent recipients", "See all", { nav.go(Routes.RECIPIENTS) })
+                SectionHeader(str(R.string.send_recent_recipients), str(R.string.send_see_all), { nav.go(Routes.RECIPIENTS) })
                 val recents = app.arro.core.Insights.recentRecipients(a).take(4)
-                FiveGrid(listOf<@Composable () -> Unit>({ PersonChip("Add", "", 0, null, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, add = true) }) +
+                FiveGrid(listOf<@Composable () -> Unit>({ PersonChip(str(R.string.send_add), "", 0, null, { c.session.recipient.reset(forSend = false); nav.go(Routes.RCP_ADD) }, add = true) }) +
                     recents.map<app.arro.core.Recipient, @Composable () -> Unit> { r -> { PersonChip(r.firstName, r.initials, r.color, Catalog.countryOrNull(r.country)?.currency?.flag ?: "gb", { startSend(c, nav, banner, recipient = r) }) } })
             }
             val rate = Rates.customer(state.rates, Currency.GBP, Currency.RWF)
             val ch = Rates.change24h(state.rates, Currency.RWF, now)
-            Note("GBP → RWF is ${if (ch >= 0) "up" else "down"} ${Money.percent(kotlin.math.abs(ch))} today. 1 GBP = ${Money.rate(rate)} RWF.", NoteKind.Lime, Icons.Trending,
+            Note(str(R.string.send_gbp_rwf_is_x_x_today, if (ch >= 0) str(R.string.send_up) else str(R.string.send_down), Money.percent(kotlin.math.abs(ch)), Money.rate(rate)), NoteKind.Lime, Icons.Trending,
                 Modifier.padding(top = 8.dp))
         }
     }
@@ -211,23 +213,23 @@ fun SendCountryScreen() {
     val others = Catalog.countries.filter { it.code !in recentCodes }.filter(match)
     val unsupported = Catalog.unsupported.firstOrNull { q.length >= 3 && it.lowercase().startsWith(q) }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 1 of 5") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.send_step_1_of_5)) }) },
     ) {
-        ScreenTitle("Where are you\nsending?")
-        SearchField(query, { query = it }, "Country or currency", focusRequester = focus)
+        ScreenTitle(str(R.string.send_where_are_you_sending))
+        SearchField(query, { query = it }, str(R.string.send_country_or_currency), focusRequester = focus)
         if (recent.isEmpty() && others.isEmpty()) {
             Column(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Illustration(Art.Globe, 120.dp)
                 val name = unsupported ?: query.trim().replaceFirstChar { it.uppercase() }
-                Txt("We don't send to $name yet", T.H2.copy(fontSize = 20.sp), align = TextAlign.Center)
-                Cap("We add new countries regularly. Tell us you're interested and we'll let you know.", Modifier.width(290.dp), align = TextAlign.Center, size = 14f)
+                Txt(str(R.string.send_we_don_t_send_to_x, name), T.H2.copy(fontSize = 20.sp), align = TextAlign.Center)
+                Cap(str(R.string.send_we_add_new_countries_regularly_tell), Modifier.width(290.dp), align = TextAlign.Center, size = 14f)
                 val asked = name in state.notifyCountries
-                ArroButton(if (asked) "We'll let you know" else "Notify me", {
+                ArroButton(if (asked) str(R.string.send_we_ll_let_you_know) else str(R.string.send_notify_me), {
                     b.notifyWhenAvailable(name)
-                    banner.show("We'll let you know", "You'll get a notification when Arro sends to $name.", BannerKind.Success)
+                    banner.show(str(R.string.send_we_ll_let_you_know), str(R.string.send_you_ll_get_a_notification_when, name), BannerKind.Success)
                 }, Modifier.padding(top = 8.dp), style = Btn.Line, size = BtnSize.M, icon = Icons.Bell, enabled = !asked)
             }
-            Over("Popular destinations")
+            Over(str(R.string.send_popular_destinations))
             Group {
                 listOf("IN", "RW").map { Catalog.country(it) }.forEachIndexed { i, ct ->
                     if (i > 0) GroupDivider()
@@ -236,11 +238,11 @@ fun SendCountryScreen() {
             }
         } else {
             if (recent.isNotEmpty()) {
-                Over("Your recent destinations")
+                Over(str(R.string.send_your_recent_destinations))
                 Group { recent.forEachIndexed { i, ct -> if (i > 0) GroupDivider(); CountryRow(ct) { choose(ct) } } }
             }
             if (others.isNotEmpty()) {
-                Over(if (recent.isEmpty()) "Destinations" else "All destinations")
+                Over(if (recent.isEmpty()) str(R.string.send_destinations) else str(R.string.send_all_destinations))
                 Group { others.forEachIndexed { i, ct -> if (i > 0) GroupDivider(); CountryRow(ct) { choose(ct) } } }
             }
         }
@@ -287,7 +289,7 @@ fun SendAmountScreen() {
             b.holdRate(to)
             // A locked offer ending is announced app-wide; a quote hold running out is announced here, as before.
             if (previous != null && previous.to == to.code && previous.kind == LockKind.QUOTE && previous.expiredUnused(b.now)) {
-                banner.show("Your rate was refreshed", "Here's a new 30-minute rate lock.", BannerKind.Info)
+                banner.show(str(R.string.send_your_rate_was_refreshed), str(R.string.send_here_s_a_new_30_minute), BannerKind.Info)
             }
         }
         heldId = b.account?.activeLock(to.code, b.now)?.id
@@ -316,21 +318,21 @@ fun SendAmountScreen() {
         val intPart = (parts[0].toLongOrNull() ?: 0L).let { java.text.NumberFormat.getIntegerInstance(java.util.Locale.UK).format(it) }
         if (parts.size > 1) intPart + "." + parts[1] else intPart
     }
-    val title = if (arro) "Send to ${recipient?.firstName ?: "Arro user"}" else "Send to ${country.name}"
+    val title = if (arro) str(R.string.send_send_to_x, recipient?.firstName ?: str(R.string.send_arro_user)) else str(R.string.send_send_to_x, country.name)
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = title, right = { BarCaption("2 of 5") }) },
+        topBar = { TopBar(onBack = { nav.back() }, title = title, right = { BarCaption(str(R.string.send_n_2_of_5)) }) },
         bodyPadding = 20.dp,
         gap = 0.dp,
         scroll = false,
         footer = {
-            ArroButton("Continue", {
+            ArroButton(str(R.string.send_continue), {
                 d.quote = quote
                 nav.go(if (d.recipientId != null && d.methodId != null) Routes.SEND_FUNDING else Routes.SEND_RECIPIENT)
             }, enabled = canGo)
         },
         overlay = {
-            FeesSheet(feesOpen, { feesOpen = false }, quote, recipient?.firstName ?: "They", lock) { feesOpen = false; nav.go(Routes.rateCompare(to.code)) }
-            PickerSheet(countryPicker, "Where are you sending?", Catalog.countries.map { it.name }, country.name, { name ->
+            FeesSheet(feesOpen, { feesOpen = false }, quote, recipient?.firstName ?: str(R.string.send_they), lock) { feesOpen = false; nav.go(Routes.rateCompare(to.code)) }
+            PickerSheet(countryPicker, str(R.string.send_where_are_you_sending_2), Catalog.countries.map { it.name }, country.name, { name ->
                 val ct = Catalog.countries.first { it.name == name }
                 val keep = d.amountText
                 d.reset(ct.code); d.amountText = keep
@@ -343,18 +345,18 @@ fun SendAmountScreen() {
             Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).border(1.5.dp, C.Line, RoundedCornerShape(22.dp))) {
                 Column {
                     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 16.dp)) {
-                        app.arro.ui.components.FieldLabel("You send")
+                        app.arro.ui.components.FieldLabel(str(R.string.send_you_send))
                         Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
                                 Txt(sendText, T.Big36, maxLines = 1)
                                 Box(Modifier.padding(start = 3.dp).size(2.dp, 30.dp).background(C.LimeDeep, RoundedCornerShape(1.dp)))
                             }
-                            Chip("GBP", flag = "gb", icon = null, onClick = { banner.show("You send in pounds", "Transfers are paid in GBP from your card, bank or balance.") })
+                            Chip("GBP", flag = "gb", icon = null, onClick = { banner.show(str(R.string.send_you_send_in_pounds), str(R.string.send_transfers_are_paid_in_gbp_from)) })
                         }
                     }
                     Box(Modifier.fillMaxWidth().height(1.5.dp).background(C.Line))
                     Column(Modifier.fillMaxWidth().background(C.Tint).padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 14.dp)) {
-                        app.arro.ui.components.FieldLabel(if (arro) "${recipient?.firstName ?: "They"} receives" else "They receive")
+                        app.arro.ui.components.FieldLabel(if (arro) str(R.string.send_x_receives, recipient?.firstName ?: str(R.string.send_they)) else str(R.string.send_they_receive))
                         Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Txt(Money.number(quote.receiveMinor, to, forceDecimals = false), T.Big36, Modifier.weight(1f), maxLines = 1)
                             Chip(to.code, flag = to.flag, onClick = { if (!arro) countryPicker = true })
@@ -372,9 +374,9 @@ fun SendAmountScreen() {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                         Ic(Icons.Lock, size = 16.dp, tint = if (lock?.kind == LockKind.OFFER) C.Ok else C.Slate)
                         Txt(when {
-                            lock == null -> "Getting today's rate"
-                            lock.kind == LockKind.OFFER -> "Offer rate locked ${Text.countdown(lock.expiresAt - now)}"
-                            else -> "Rate locked ${Text.countdown(lock.expiresAt - now)}"
+                            lock == null -> str(R.string.send_getting_today_s_rate)
+                            lock.kind == LockKind.OFFER -> str(R.string.send_offer_rate_locked_x, Text.countdown(lock.expiresAt - now))
+                            else -> str(R.string.send_rate_locked_x, Text.countdown(lock.expiresAt - now))
                         }, T.Body14, color = if (lock?.kind == LockKind.OFFER) C.Ok else C.Slate)
                     }
                     Txt(Money.rateLine(Currency.GBP, to, quote.rate), T.Body14.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"))
@@ -386,36 +388,36 @@ fun SendAmountScreen() {
                             .clickable(enabled = !lockCall.busy.value, role = androidx.compose.ui.semantics.Role.Button) {
                                 scope.launchCall(lockCall, onError = { banner.offerError(it) }) {
                                     val l = b.lockOffer(offer.id)
-                                    banner.show("Rate locked", "${Money.rateLine(Currency.GBP, to, l.rate)} until ${Text.time(l.expiresAt)}.", BannerKind.Success)
+                                    banner.show(str(R.string.send_rate_locked), str(R.string.send_x_until_x, Money.rateLine(Currency.GBP, to, l.rate), Text.time(l.expiresAt)), BannerKind.Success)
                                 }
                             }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Ic(Icons.Bolt, size = 16.dp, tint = C.Forest)
-                        Txt("Offer: ${Money.rate(offer.rate, Money.rateDecimals(offer.rate))} for ${offer.lockMinutes} min · ${Text.countdown(offer.expiresAt - now)} left",
+                        Txt(str(R.string.send_offer_x_for_x_min_x, Money.rate(offer.rate, Money.rateDecimals(offer.rate)), offer.lockMinutes, Text.countdown(offer.expiresAt - now)),
                             T.Body14, Modifier.weight(1f), color = C.Forest, maxLines = 1)
-                        Txt(if (lockCall.busy.value) "Locking…" else "Lock", T.Link.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
+                        Txt(if (lockCall.busy.value) str(R.string.send_locking) else str(R.string.send_lock), T.Link.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Txt("Arro fee", T.Body14, color = C.Slate)
+                    Txt(str(R.string.send_arro_fee), T.Body14, color = C.Slate)
                     Txt(when {
-                        quote.feeWaived -> "Free on your first transfer"
-                        quote.discountMinor > 0 -> "${Money.format(quote.feeMinor, Currency.GBP)} − ${Money.format(quote.discountMinor, Currency.GBP)} credit"
+                        quote.feeWaived -> str(R.string.send_free_on_your_first_transfer)
+                        quote.discountMinor > 0 -> str(R.string.send_x_x_credit, Money.format(quote.feeMinor, Currency.GBP), Money.format(quote.discountMinor, Currency.GBP))
                         else -> Money.format(quote.feeMinor, Currency.GBP)
                     }, T.Body14.copy(fontFeatureSettings = "tnum"), color = if (quote.feeWaived) C.Ok else C.Ink)
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Txt("Total to pay", T.Body14, color = C.Slate)
+                    Txt(str(R.string.send_total_to_pay), T.Body14, color = C.Slate)
                     Txt(Money.format(quote.totalMinor, Currency.GBP), T.Body14.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"))
                 }
                 if (limit != null) FieldHint(limit)
-                else if (tooSmall) FieldHint("The smallest amount you can send is £1.00.")
+                else if (tooSmall) FieldHint(str(R.string.send_the_smallest_amount_you_can_send))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (!arro) LinkText("See the full price breakdown", { feesOpen = true }, color = C.Ink, strong = true, underline = true)
+                    if (!arro) LinkText(str(R.string.send_see_the_full_price_breakdown), { feesOpen = true }, color = C.Ink, strong = true, underline = true)
                     androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
-                    if (earn > 0 && amount >= 100) Txt("You'll earn ${Money.points(earn)} points", T.Cap.copy(fontWeight = FontWeight.Medium), color = C.Ok)
+                    if (earn > 0 && amount >= 100) Txt(str(R.string.send_you_ll_earn_x_points, Money.points(earn)), T.Cap.copy(fontWeight = FontWeight.Medium), color = C.Ok)
                 }
             }
             // delivery method
@@ -423,12 +425,12 @@ fun SendAmountScreen() {
                 val option = country.option(d.payoutType) ?: country.options.first()
                 ListRow(
                     option.type.label, Modifier.padding(top = 12.dp), subtitle = when (option.type) {
-                        PayoutType.MOBILE_MONEY, PayoutType.EWALLET, PayoutType.UPI -> "Usually arrives in minutes"
+                        PayoutType.MOBILE_MONEY, PayoutType.EWALLET, PayoutType.UPI -> str(R.string.send_usually_arrives_in_minutes)
                         else -> option.speed
                     },
                     minHeight = 56.dp, titleStyle = T.RowTitle.copy(fontSize = 14.sp),
                     leading = { Tile(deliveryIcon(option.type), deliveryTile(option.type), size = 36.dp, iconSize = 16.dp) },
-                    trailing = { Txt("Change", T.Link.copy(fontWeight = FontWeight.SemiBold), color = C.Ink) },
+                    trailing = { Txt(str(R.string.send_change), T.Link.copy(fontWeight = FontWeight.SemiBold), color = C.Ink) },
                     onClick = { nav.go(Routes.SEND_DELIVERY) },
                 )
             }
@@ -444,38 +446,38 @@ private fun androidx.compose.foundation.layout.BoxScope.FeesSheet(
     visible: Boolean, onDismiss: () -> Unit, q: app.arro.core.Quote, name: String, lock: app.arro.core.RateLock?, onCompare: () -> Unit,
 ) {
     Sheet(visible, onDismiss) {
-        SheetHeader("Price breakdown", onDismiss, "Everything you pay, and exactly what arrives.")
+        SheetHeader(str(R.string.send_price_breakdown), onDismiss, str(R.string.send_everything_you_pay_and_exactly_what))
         Column(Modifier.padding(top = 18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            KV("You send", Money.format(q.sendMinor, Currency.GBP))
-            KV("Arro fee · ${q.payoutType.short}", if (q.feeWaived) "Free" else "+ " + Money.format(q.feeMinor, Currency.GBP))
-            if (q.discountMinor > 0) KV("Points credit", "− " + Money.format(q.discountMinor, Currency.GBP), valueColor = C.Ok)
-            if (q.fundingFeeMinor > 0) KV("Credit card fee", "+ " + Money.format(q.fundingFeeMinor, Currency.GBP))
-            KV("Total you pay", Money.format(q.totalMinor, Currency.GBP), strong = true)
+            KV(str(R.string.send_you_send), Money.format(q.sendMinor, Currency.GBP))
+            KV(str(R.string.send_arro_fee_x, q.payoutType.short), if (q.feeWaived) str(R.string.send_free) else "+ " + Money.format(q.feeMinor, Currency.GBP))
+            if (q.discountMinor > 0) KV(str(R.string.send_points_credit), "− " + Money.format(q.discountMinor, Currency.GBP), valueColor = C.Ok)
+            if (q.fundingFeeMinor > 0) KV(str(R.string.send_credit_card_fee), "+ " + Money.format(q.fundingFeeMinor, Currency.GBP))
+            KV(str(R.string.send_total_you_pay), Money.format(q.totalMinor, Currency.GBP), strong = true)
         }
         Box(Modifier.padding(vertical = 16.dp).fillMaxWidth().height(1.dp).background(C.Line))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            KV("Mid-market rate", Money.rateLine(q.from, q.to, q.mid))
-            KV("Your rate", Money.rateLine(q.from, q.to, q.rate))
-            KV("Margin in our rate", "${Money.percent(q.marginPercent, 2)} · about ${Money.format(q.marginMinor, Currency.GBP)}")
+            KV(str(R.string.send_mid_market_rate), Money.rateLine(q.from, q.to, q.mid))
+            KV(str(R.string.send_your_rate), Money.rateLine(q.from, q.to, q.rate))
+            KV(str(R.string.send_margin_in_our_rate), str(R.string.send_x_about_x, Money.percent(q.marginPercent, 2), Money.format(q.marginMinor, Currency.GBP)))
         }
         Panel(Modifier.padding(top = 16.dp), PanelKind.Lime) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                app.arro.ui.components.FieldLabel("$name receives", color = C.Forest)
+                app.arro.ui.components.FieldLabel(str(R.string.send_x_receives, name), color = C.Forest)
                 Txt(Money.format(q.receiveMinor, q.to), T.Big22)
             }
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Cap("Total cost of this transfer", color = C.Forest)
+                Cap(str(R.string.send_total_cost_of_this_transfer), color = C.Forest)
                 Txt(Money.format(q.totalCostMinor, Currency.GBP), T.Num.copy(fontSize = 14.sp))
             }
         }
         Note(when {
-            lock == null -> "We're getting today's rate. Nothing is deducted on arrival."
-            lock.kind == LockKind.OFFER -> "Your locked offer rate is guaranteed until ${Text.time(lock.expiresAt)}, for this transfer. Nothing is deducted on arrival."
-            else -> "Your rate is guaranteed until ${Text.time(lock.expiresAt)}. Nothing is deducted on arrival."
+            lock == null -> str(R.string.send_we_re_getting_today_s_rate)
+            lock.kind == LockKind.OFFER -> str(R.string.send_your_locked_offer_rate_is_guaranteed, Text.time(lock.expiresAt))
+            else -> str(R.string.send_your_rate_is_guaranteed_until_x, Text.time(lock.expiresAt))
         }, NoteKind.Info, Icons.Lock, Modifier.padding(top = 14.dp))
         Row(Modifier.padding(top = 20.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ArroButton("Compare prices", onCompare, Modifier.weight(1f), style = Btn.Line)
-            ArroButton("Got it", onDismiss, Modifier.weight(1f))
+            ArroButton(str(R.string.send_compare_prices), onCompare, Modifier.weight(1f), style = Btn.Line)
+            ArroButton(str(R.string.send_got_it), onDismiss, Modifier.weight(1f))
         }
     }
 }
@@ -496,9 +498,9 @@ fun SendDeliveryScreen() {
     val receive = b.quote(country.currency, amount, selected, d.country).receiveMinor
     val outage = state.demo.outageProviderId
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Sending ${Money.format(amount, Currency.GBP)}") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.send_sending_x, Money.format(amount, Currency.GBP))) }) },
         footer = {
-            ArroButton("Continue with ${selected.short}", {
+            ArroButton(str(R.string.send_continue_with_x, selected.short), {
                 val down = Catalog.providersFor(d.country, selected).let { ps -> ps.isNotEmpty() && ps.all { it.id == outage } }
                 if (down) { nav.go(Routes.SEND_UNAVAILABLE); return@ArroButton }
                 if (selected != d.payoutType) { d.recipientId = null; d.methodId = null }
@@ -511,7 +513,7 @@ fun SendDeliveryScreen() {
             })
         },
     ) {
-        ScreenTitle("How should it\narrive?", "Same rate on every option. Fees and speed differ.")
+        ScreenTitle(str(R.string.send_how_should_it_arrive), str(R.string.send_same_rate_on_every_option_fees))
         country.options.forEach { o ->
             val on = o.type == selected
             val fee = if (b.quote(country.currency, amount, o.type, d.country).feeWaived) 0L else o.feeMinor
@@ -522,23 +524,23 @@ fun SendDeliveryScreen() {
                 leading = { Tile(deliveryIcon(o.type), if (on) deliveryTile(o.type) else TileStyle.Tint) },
                 trailing = { Radio(on, Modifier.padding(top = 2.dp)) },
                 content = {
-                    if (o.badge != null) Pill(o.badge, if (o.badge == "Fastest") PillKind.Lime else PillKind.Neutral, modifier = Modifier.padding(top = 4.dp))
+                    if (o.badge != null) Pill(o.badge, if (o.badge == str(R.string.send_fastest)) PillKind.Lime else PillKind.Neutral, modifier = Modifier.padding(top = 4.dp))
                     Txt(o.description, T.RowSub, Modifier.padding(top = 4.dp), color = C.Slate)
                     Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Ic(if (o.speed == "Minutes") Icons.Bolt else Icons.Clock, size = 16.dp)
+                            Ic(if (o.speed == str(R.string.send_minutes)) Icons.Bolt else Icons.Clock, size = 16.dp)
                             Txt(o.speed, T.Cap, color = C.Ink)
                         }
-                        Txt(if (fee == 0L) "No fee" else "Fee ${Money.format(fee, Currency.GBP)}", T.Cap, color = C.Ink)
-                        Txt("Pay ${Money.format(amount + fee, Currency.GBP)}", T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
+                        Txt(if (fee == 0L) str(R.string.send_no_fee) else str(R.string.send_fee_x, Money.format(fee, Currency.GBP)), T.Cap, color = C.Ink)
+                        Txt(str(R.string.send_pay_x, Money.format(amount + fee, Currency.GBP)), T.Cap.copy(fontWeight = FontWeight.SemiBold), color = C.Ink)
                     }
-                    if (downNames.isNotEmpty()) Txt("${downNames.joinToString()} is briefly offline", T.Small, Modifier.padding(top = 6.dp), color = C.Warn)
+                    if (downNames.isNotEmpty()) Txt(str(R.string.send_x_is_briefly_offline, downNames.joinToString()), T.Small, Modifier.padding(top = 6.dp), color = C.Warn)
                 },
             )
         }
         Panel(kind = PanelKind.Lime) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                app.arro.ui.components.FieldLabel("They receive on every option", color = C.Forest)
+                app.arro.ui.components.FieldLabel(str(R.string.send_they_receive_on_every_option), color = C.Forest)
                 Txt(Money.format(receive, country.currency), T.Num.copy(fontSize = 16.sp))
             }
         }
@@ -561,14 +563,14 @@ fun SendRecipientScreen() {
     val able = inCountry.filter { it.methodFor(d.payoutType) != null }
     val other = inCountry.filter { it.methodFor(d.payoutType) == null && it.methods.isNotEmpty() }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 3 of 5") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.send_step_3_of_5)) }) },
     ) {
-        ScreenTitle("Who's it for?", "Showing people who can receive ${d.payoutType.short} in ${country.name}.")
-        SearchField(query, { query = it }, "Search recipients")
-        ListRow("Add a new recipient", subtitle = when (d.payoutType) {
-            PayoutType.BANK -> "Name, bank and account number"
-            PayoutType.CASH -> "Name as it appears on their ID"
-            else -> "Name and ${d.payoutType.short} number"
+        ScreenTitle(str(R.string.send_who_s_it_for), str(R.string.send_showing_people_who_can_receive_x, d.payoutType.short, country.name))
+        SearchField(query, { query = it }, str(R.string.send_search_recipients))
+        ListRow(str(R.string.send_add_a_new_recipient), subtitle = when (d.payoutType) {
+            PayoutType.BANK -> str(R.string.send_name_bank_and_account_number)
+            PayoutType.CASH -> str(R.string.send_name_as_it_appears_on_their)
+            else -> str(R.string.send_name_and_x_number, d.payoutType.short)
         }, dashed = true,
             leading = { Box(Modifier.size(44.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Ic(Icons.Plus, tint = C.OnLime) } },
             trailing = { Chevron() },
@@ -585,14 +587,14 @@ fun SendRecipientScreen() {
                 }
             }
         } else if (inCountry.isEmpty()) {
-            Cap(if (q.isEmpty()) "You haven't added anyone in ${country.name} yet." else "No recipients match \"$query\".")
+            Cap(if (q.isEmpty()) str(R.string.send_you_haven_t_added_anyone_in, country.name) else str(R.string.send_no_recipients_match_x, query))
         }
         if (other.isNotEmpty()) {
-            Over("Needs a different method")
+            Over(str(R.string.send_needs_a_different_method))
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 other.forEach { r ->
                     val m = r.defaultMethod!!
-                    ListRow(r.name, subtitle = "${m.providerName} · switch to ${m.type.short}",
+                    ListRow(r.name, subtitle = str(R.string.send_x_switch_to_x, m.providerName, m.type.short),
                         leading = { Avatar(r.initials, r.color, flag = country.currency.flag) },
                         enabled = true,
                         onClick = {
@@ -630,10 +632,10 @@ fun SendFundingScreen() {
     val card = methods.firstOrNull { it.kind == MethodKind.CARD && !it.credit } ?: methods.firstOrNull()
     val shortfall = q.totalMinor - gbp
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 4 of 5") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.send_step_4_of_5)) }) },
         gap = 14.dp,
         footer = {
-            ArroButton("Review transfer", {
+            ArroButton(str(R.string.send_review_transfer), {
                 if (selected == ArroBackend.BALANCE && gbp < q.totalMinor) { short = true; return@ArroButton }
                 d.fundingId = selected
                 d.quote = q
@@ -645,47 +647,47 @@ fun SendFundingScreen() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Illustration(Art.Wallet, 72.dp)
                     Column(Modifier.weight(1f)) {
-                        Txt("Not enough in your balance", T.H2.copy(fontSize = 21.sp))
-                        Cap("You're ${Money.format(shortfall, Currency.GBP)} short for this transfer.", Modifier.padding(top = 4.dp))
+                        Txt(str(R.string.send_not_enough_in_your_balance), T.H2.copy(fontSize = 21.sp))
+                        Cap(str(R.string.send_you_re_x_short_for_this, Money.format(shortfall, Currency.GBP)), Modifier.padding(top = 4.dp))
                     }
                 }
                 Panel(Modifier.padding(top = 16.dp), gap = 10.dp) {
-                    KV("Total to pay", Money.format(q.totalMinor, Currency.GBP))
-                    KV("GBP balance", Money.format(gbp, Currency.GBP))
-                    KV("Shortfall", Money.format(shortfall, Currency.GBP), strong = true, valueColor = C.Err, keyColor = C.Err)
+                    KV(str(R.string.send_total_to_pay), Money.format(q.totalMinor, Currency.GBP))
+                    KV(str(R.string.send_gbp_balance), Money.format(gbp, Currency.GBP))
+                    KV(str(R.string.send_shortfall), Money.format(shortfall, Currency.GBP), strong = true, valueColor = C.Err, keyColor = C.Err)
                 }
                 Column(Modifier.padding(top = 20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (topUpSource != null) ArroButton("Add ${Money.format(shortfall, Currency.GBP)} from ${topUpSource.issuer}", {
+                    if (topUpSource != null) ArroButton(str(R.string.send_add_x_from_x, Money.format(shortfall, Currency.GBP), topUpSource.issuer), {
                         scope.launchCall(call) {
                             b.topUp(Currency.GBP, shortfall, topUpSource.id)
                             short = false
                             d.fundingId = ArroBackend.BALANCE
                             d.quote = q
-                            banner.show("Money added", "${Money.format(shortfall, Currency.GBP)} is in your GBP balance.", BannerKind.Success)
+                            banner.show(str(R.string.send_money_added), str(R.string.send_x_is_in_your_gbp_balance, Money.format(shortfall, Currency.GBP)), BannerKind.Success)
                             nav.go(Routes.SEND_REVIEW)
                         }
                     }, loading = call.busy.value)
-                    if (card != null) ArroButton("Pay with ${card.label}", {
+                    if (card != null) ArroButton(str(R.string.send_pay_with_x, card.label), {
                         selected = card.id; short = false
                         d.fundingId = card.id; d.quote = base.copy(fundingFeeMinor = b.fundingFee(base.sendMinor, card.id))
                         nav.go(Routes.SEND_REVIEW)
                     }, style = Btn.Line)
-                    ArroButton("Change the amount", { short = false; nav.popBackStack(Routes.SEND_AMOUNT, false) }, style = Btn.Text)
+                    ArroButton(str(R.string.send_change_the_amount), { short = false; nav.popBackStack(Routes.SEND_AMOUNT, false) }, style = Btn.Text)
                     FieldHint(call.error.value)
                 }
             }
         },
     ) {
         Column {
-            ScreenTitle("How will you pay?")
+            ScreenTitle(str(R.string.send_how_will_you_pay))
             Row(Modifier.padding(top = 8.dp)) {
-                Txt("Total to pay ", T.Lede, color = C.Slate)
+                Txt(str(R.string.send_total_to_pay_2), T.Lede, color = C.Slate)
                 Txt(Money.format(q.totalMinor, Currency.GBP), T.Lede.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum"))
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             val balOn = selected == ArroBackend.BALANCE
-            ListRow("Arro balance", subtitle = "${Money.format(gbp, Currency.GBP)} available · instant", selected = balOn,
+            ListRow(str(R.string.send_arro_balance), subtitle = str(R.string.send_x_available_instant, Money.format(gbp, Currency.GBP)), selected = balOn,
                 leading = { Tile(Icons.Wallet, TileStyle.Lime) },
                 trailing = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { FeeLabel(0); Radio(balOn) } },
                 onClick = { selected = ArroBackend.BALANCE })
@@ -694,7 +696,7 @@ fun SendFundingScreen() {
                 val fee = b.fundingFee(base.sendMinor, m.id)
                 ListRow(
                     m.label,
-                    subtitle = if (m.kind == MethodKind.BANK) "${m.issuer} •• ${m.last4} · approve in your bank app" else "${m.issuer} · instant",
+                    subtitle = if (m.kind == MethodKind.BANK) str(R.string.send_x_x_approve_in_your_bank, m.issuer, m.last4) else str(R.string.send_x_instant, m.issuer),
                     selected = on,
                     leading = { Tile(if (m.kind == MethodKind.BANK) Icons.Bank else Icons.CreditCard, if (m.credit) TileStyle.Warn else if (m.kind == MethodKind.BANK) TileStyle.Tint else TileStyle.Info) },
                     trailing = { Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) { FeeLabel(fee); Radio(on) } },
@@ -702,8 +704,8 @@ fun SendFundingScreen() {
                 )
             }
         }
-        if (methods.any { it.credit }) Cap("Credit cards add a 1.75% fee on the amount you send, and your card issuer may treat it as a cash advance.", size = 12f)
-        ListRow("Add a card or bank", dashed = true, minHeight = 54.dp,
+        if (methods.any { it.credit }) Cap(str(R.string.send_credit_cards_add_a_1_75), size = 12f)
+        ListRow(str(R.string.send_add_a_card_or_bank), dashed = true, minHeight = 54.dp,
             leading = { Tile(Icons.Plus, TileStyle.Soft, size = 36.dp, iconSize = 16.dp) }, trailing = { Chevron() },
             onClick = { c.session.cardReturnToSend = true; nav.go(Routes.PAY_METHODS) })
     }
@@ -711,5 +713,5 @@ fun SendFundingScreen() {
 
 @Composable
 private fun FeeLabel(fee: Long) {
-    Txt(if (fee == 0L) "No fee" else "+ ${Money.format(fee, Currency.GBP)}", T.Cap.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = if (fee == 0L) C.Ok else C.Warn)
+    Txt(if (fee == 0L) str(R.string.send_no_fee) else "+ ${Money.format(fee, Currency.GBP)}", T.Cap.copy(fontSize = 12.sp, fontWeight = FontWeight.SemiBold), color = if (fee == 0L) C.Ok else C.Warn)
 }

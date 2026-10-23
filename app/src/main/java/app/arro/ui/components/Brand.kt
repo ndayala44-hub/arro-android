@@ -1,5 +1,6 @@
 package app.arro.ui.components
 
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,13 +24,13 @@ import app.arro.ui.theme.T
 @Composable
 fun BrandTile(size: Dp, dark: Boolean = false, modifier: Modifier = Modifier) {
     Box(modifier.size(size).background(if (dark) C.Night else C.Lime, RoundedCornerShape(size * (14f / 48f))), contentAlignment = Alignment.Center) {
-        Icon(painterResource(R.drawable.brand_symbol), contentDescription = "Arro", modifier = Modifier.size(size), tint = if (dark) C.Lime else C.OnLime)
+        Icon(painterResource(R.drawable.brand_symbol), contentDescription = str(R.string.ui_brand_arro), modifier = Modifier.size(size), tint = if (dark) C.Lime else C.OnLime)
     }
 }
 
 @Composable
 fun Wordmark(size: Float, color: Color = C.Ink, modifier: Modifier = Modifier) =
-    Txt("arro", T.Wordmark.copy(fontSize = size.sp), modifier, color = color)
+    Txt(str(R.string.brand_wordmark), T.Wordmark.copy(fontSize = size.sp), modifier, color = color)
 
 /** Tile plus wordmark, as in the top bars of the welcome and login screens. */
 @Composable

@@ -1,5 +1,6 @@
 package app.arro.widget
 
+import app.arro.ui.str
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -73,9 +74,9 @@ object Widgets {
     const val ACTION_REFRESH = "app.arro.widget.action.REFRESH"
     const val ACTION_EXPIRE = "app.arro.widget.action.EXPIRE"
     /** A rate older than this is labelled as possibly out of date. */
-    private const val STALE_MS = 60 * 60_000L
-    /** The widget's own refresh only fetches when rates are older than this. */
-    private const val REFRESH_AFTER_MS = 15 * 60_000L
+    private const val STALE_MS = 3 * 60 * 60_000L
+    /** The widget's own refresh only fetches when rates are older than this (the provider asks for at most hourly). */
+    private const val REFRESH_AFTER_MS = 60 * 60_000L
     /** Width from which the wider layouts are used. */
     private const val WIDE_DP = 250
 
@@ -166,30 +167,30 @@ object Widgets {
         val v = RemoteViews(context.packageName, R.layout.widget_balance)
         v.setOnClickPendingIntent(android.R.id.background, open(context, null))
         if (!d.signedIn) {
-            v.setTextViewText(R.id.balance_label, "Arro")
-            v.setTextViewText(R.id.balance_amount, "Log in")
-            v.setTextViewText(R.id.balance_sub, "Log in to Arro to see your balance and send money.")
-            v.setTextViewText(R.id.send_text, "Open Arro")
+            v.setTextViewText(R.id.balance_label, str(R.string.widget_arro))
+            v.setTextViewText(R.id.balance_amount, str(R.string.widget_log_in))
+            v.setTextViewText(R.id.balance_sub, str(R.string.widget_log_in_to_arro_to_see))
+            v.setTextViewText(R.id.send_text, str(R.string.widget_open_arro))
             v.setOnClickPendingIntent(R.id.send_button, open(context, null))
             return v
         }
-        v.setTextViewText(R.id.balance_label, "GBP balance")
+        v.setTextViewText(R.id.balance_label, str(R.string.widget_gbp_balance))
         v.setTextViewText(R.id.balance_amount, balanceText(d))
         v.setTextViewText(R.id.balance_sub, when {
-            !d.showPrivate -> "Hidden. Show it in Arro, Security."
-            d.frozen -> "Account frozen"
-            d.otherWallets > 0 -> "+${d.otherWallets} more ${if (d.otherWallets == 1) "currency" else "currencies"} · ${Text.time(System.currentTimeMillis())}"
-            else -> "As of ${Text.time(System.currentTimeMillis())}"
+            !d.showPrivate -> str(R.string.widget_hidden_show_it_in_arro_security)
+            d.frozen -> str(R.string.widget_account_frozen)
+            d.otherWallets > 0 -> str(R.string.widget_x_more_x_x, d.otherWallets, if (d.otherWallets == 1) str(R.string.widget_currency) else str(R.string.widget_currencies), Text.time(System.currentTimeMillis()))
+            else -> str(R.string.widget_as_of_x, Text.time(System.currentTimeMillis()))
         })
         v.setContentDescription(R.id.balance_amount, balanceDescription(d))
-        v.setTextViewText(R.id.send_text, "Send money")
+        v.setTextViewText(R.id.send_text, str(R.string.widget_send_money_2))
         // Quick Send opens the send flow after unlocking; the usual checks, review and approval still apply.
         v.setOnClickPendingIntent(R.id.send_button, open(context, Routes.QUICK_SEND))
         return v
     }
 
     private fun balanceText(d: WidgetData) = if (d.showPrivate) Money.format(d.balanceMinor, Currency.GBP) else "£ ••••"
-    private fun balanceDescription(d: WidgetData) = if (d.showPrivate) "Available balance ${Money.format(d.balanceMinor, Currency.GBP)}" else "Balance hidden"
+    private fun balanceDescription(d: WidgetData) = if (d.showPrivate) str(R.string.widget_available_balance_x, Money.format(d.balanceMinor, Currency.GBP)) else str(R.string.widget_balance_hidden)
 
     /**
      * Quick Send at each size: narrower widgets show fewer people, and short ones drop the "Send again" caption.
@@ -215,8 +216,8 @@ object Widgets {
         v.setViewVisibility(R.id.qs_title, if (tall) View.VISIBLE else View.GONE)
         v.setTextViewTextSize(R.id.qs_amount, TypedValue.COMPLEX_UNIT_SP, if (tall) 30f else 24f)
         // Send starts a transfer after unlocking; the usual checks, review and approval still apply.
-        v.setTextViewText(R.id.qs_send_text, if (d.signedIn) "Send" else "Open")
-        v.setContentDescription(R.id.qs_send, if (d.signedIn) "Send money" else "Open Arro")
+        v.setTextViewText(R.id.qs_send_text, if (d.signedIn) str(R.string.widget_send_2) else str(R.string.widget_open))
+        v.setContentDescription(R.id.qs_send, if (d.signedIn) str(R.string.widget_send_money_2) else str(R.string.widget_open_arro))
         v.setOnClickPendingIntent(R.id.qs_send, open(context, if (d.signedIn) Routes.QUICK_SEND else null))
         val slotIds = listOf(
             listOf(R.id.qs_r1, R.id.qs_r1_initials, R.id.qs_r1_flag, R.id.qs_r1_name),
@@ -237,24 +238,24 @@ object Widgets {
             val flagBitmap = flagRes(r.flag).takeIf { it != 0 }?.let { roundFlag(context, it) }
             if (flagBitmap != null) v.setImageViewBitmap(flag, flagBitmap)
             v.setViewVisibility(flag, if (flagBitmap != null) View.VISIBLE else View.GONE)
-            v.setContentDescription(box, "Send to ${r.firstName}")
+            v.setContentDescription(box, str(R.string.widget_send_to_x, r.firstName))
             v.setOnClickPendingIntent(box, open(context, Routes.quickSend(r.id)))
         }
         val hint = when {
-            !d.signedIn -> "Log in to Arro to see your balance and send money."
+            !d.signedIn -> str(R.string.widget_log_in_to_arro_to_see)
             !d.showPrivate -> context.getString(R.string.widget_recents_hidden)
-            people.isEmpty() -> "People you send to will appear here."
+            people.isEmpty() -> str(R.string.widget_people_you_send_to_will_appear)
             else -> null
         }
         v.setViewVisibility(R.id.qs_hint, if (hint == null) View.GONE else View.VISIBLE)
         v.setTextViewText(R.id.qs_hint, hint ?: "")
         v.setTextViewText(R.id.qs_label, when {
-            !d.signedIn -> "Arro"
-            d.frozen -> "Available balance · account frozen"
-            else -> "Available balance"
+            !d.signedIn -> str(R.string.widget_arro)
+            d.frozen -> str(R.string.widget_available_balance_account_frozen)
+            else -> str(R.string.widget_available_balance_2)
         })
-        v.setTextViewText(R.id.qs_amount, if (d.signedIn) balanceText(d) else "Log in")
-        v.setContentDescription(R.id.qs_amount, if (d.signedIn) balanceDescription(d) else "Logged out")
+        v.setTextViewText(R.id.qs_amount, if (d.signedIn) balanceText(d) else str(R.string.widget_log_in))
+        v.setContentDescription(R.id.qs_amount, if (d.signedIn) balanceDescription(d) else str(R.string.widget_logged_out))
         return v
     }
 
@@ -288,7 +289,7 @@ object Widgets {
         val cur = d.rateCur
         val now = System.currentTimeMillis()
         val sample = 25_000L
-        v.setTextViewText(R.id.rate_pair, "GBP → ${cur.code}")
+        v.setTextViewText(R.id.rate_pair, str(R.string.widget_gbp_x, cur.code))
         v.setOnClickPendingIntent(android.R.id.background, open(context, if (d.signedIn) Routes.rate(cur.code) else null))
         v.setOnClickPendingIntent(R.id.rate_refresh, refreshIntent(context))
         var status: String
@@ -297,46 +298,46 @@ object Widgets {
         when {
             d.lock != null -> {
                 val l = d.lock
-                badge(v, "Locked", R.drawable.widget_pill_locked)
+                badge(v, str(R.string.widget_locked), R.drawable.widget_pill_locked)
                 v.setTextViewText(R.id.rate_value, Money.rate(l.rate, Money.rateDecimals(l.rate)))
-                v.setTextViewText(R.id.rate_unit, "${cur.code} for £1 · locked rate")
-                status = "Held for your next transfer until ${Text.time(l.expiresAt)}"
-                extra = "£250 sends ${Money.format(Money.convert(sample, Currency.GBP, cur, l.rate), cur)}"
-                button(context, v, "Send at this rate", R.drawable.ic_arrow_up_right,
+                v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_locked_rate, cur.code))
+                status = str(R.string.widget_held_for_your_next_transfer_until, Text.time(l.expiresAt))
+                extra = str(R.string.widget_n_250_sends_x, Money.format(Money.convert(sample, Currency.GBP, cur, l.rate), cur))
+                button(context, v, str(R.string.widget_send_at_this_rate), R.drawable.ic_arrow_up_right,
                     Catalog.countryForCurrency(cur)?.let { Routes.quickSendTo(it.code) } ?: Routes.lockRate(cur.code))
             }
             d.offer != null -> {
                 val o = d.offer
-                badge(v, "Offer", R.drawable.widget_pill_offer)
+                badge(v, str(R.string.widget_offer), R.drawable.widget_pill_offer)
                 v.setTextViewText(R.id.rate_value, Money.rate(o.rate, Money.rateDecimals(o.rate)))
-                v.setTextViewText(R.id.rate_unit, "${cur.code} for £1 · offer, not locked yet")
-                status = "Offer ends ${Text.time(o.expiresAt)}. Usually ${Money.rate(o.standardRate, Money.rateDecimals(o.standardRate))}."
-                extra = "Lock it for ${o.lockMinutes} minutes"
-                button(context, v, "Lock this rate", R.drawable.ic_lock, Routes.lockRate(cur.code))
+                v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_offer_not_locked, cur.code))
+                status = str(R.string.widget_offer_ends_x_usually_x, Text.time(o.expiresAt), Money.rate(o.standardRate, Money.rateDecimals(o.standardRate)))
+                extra = str(R.string.widget_lock_it_for_x_minutes, o.lockMinutes)
+                button(context, v, str(R.string.widget_lock_this_rate), R.drawable.ic_lock, Routes.lockRate(cur.code))
             }
             d.liveRate == null -> {
                 badge(v, null, 0)
                 v.setTextViewText(R.id.rate_value, "—")
-                v.setTextViewText(R.id.rate_unit, "${cur.code} for £1")
+                v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1, cur.code))
                 status = ""
-                warn = if (refreshing) "Updating…" else if (!d.online) "You're offline. Rates appear once you're connected." else "Rate unavailable. Tap refresh to try again."
-                button(context, v, "Open Arro", R.drawable.ic_arrow_up_right, null)
+                warn = if (refreshing) str(R.string.widget_updating) else if (!d.online) str(R.string.widget_you_re_offline_rates_appear_once) else str(R.string.widget_rate_unavailable_tap_refresh_to_try)
+                button(context, v, str(R.string.widget_open_arro), R.drawable.ic_arrow_up_right, null)
             }
             else -> {
                 val rate = d.liveRate
-                badge(v, "Live", R.drawable.widget_pill_live)
+                badge(v, str(R.string.widget_live), R.drawable.widget_pill_live)
                 v.setTextViewText(R.id.rate_value, Money.rate(rate, Money.rateDecimals(rate)))
-                v.setTextViewText(R.id.rate_unit, "${cur.code} for £1 · today's rate")
+                v.setTextViewText(R.id.rate_unit, str(R.string.widget_x_for_1_today_s_rate, cur.code))
                 val stale = now - d.ratesAt > STALE_MS
-                status = "Updated ${Text.time(d.ratesAt)} · not guaranteed until locked" + if (d.demoMoved) " · demo market move" else ""
+                status = str(R.string.widget_updated_x_not_guaranteed_until_locked, Text.time(d.ratesAt)) + if (d.demoMoved) str(R.string.widget_demo_market_move) else ""
                 when {
-                    refreshing -> { warn = "Updating…"; status = "" }
-                    stale && !d.online -> { warn = "Offline · rate from ${Text.relativeDay(d.ratesAt, now).lowercase()}"; status = "" }
-                    stale -> { warn = "Updated ${Text.relativeDay(d.ratesAt, now).lowercase()} · may be out of date"; status = "" }
+                    refreshing -> { warn = str(R.string.widget_updating); status = "" }
+                    stale && !d.online -> { warn = str(R.string.widget_offline_rate_from_x, Text.relativeDay(d.ratesAt, now).lowercase()); status = "" }
+                    stale -> { warn = str(R.string.widget_updated_x_may_be_out_of, Text.relativeDay(d.ratesAt, now).lowercase()); status = "" }
                 }
-                extra = "£250 sends about ${Money.format(Money.convert(sample, Currency.GBP, cur, rate), cur)}"
-                if (d.signedIn) button(context, v, "Lock a rate", R.drawable.ic_lock, Routes.lockRate(cur.code))
-                else button(context, v, "Open Arro", R.drawable.ic_arrow_up_right, null)
+                extra = str(R.string.widget_n_250_sends_about_x, Money.format(Money.convert(sample, Currency.GBP, cur, rate), cur))
+                if (d.signedIn) button(context, v, str(R.string.widget_lock_a_rate), R.drawable.ic_lock, Routes.lockRate(cur.code))
+                else button(context, v, str(R.string.widget_open_arro), R.drawable.ic_arrow_up_right, null)
             }
         }
         v.setTextViewText(R.id.rate_status, status)

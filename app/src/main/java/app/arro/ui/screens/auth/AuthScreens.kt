@@ -1,5 +1,7 @@
 package app.arro.ui.screens.auth
 
+import app.arro.R
+import app.arro.ui.str
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
@@ -125,7 +127,8 @@ import app.arro.ui.theme.T
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-const val BIO_NAME = "fingerprint or face"
+/** What the biometric prompt is called in text ("Turn on fingerprint or face unlock"). */
+val BIO_NAME: String get() = str(R.string.auth_bio_name)
 
 // ------------------------------------------------------------------ 1.01 Splash
 
@@ -154,7 +157,7 @@ fun SplashScreen() {
         Column(Modifier.offset(y = (-60).dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(20.dp)) {
             BrandTile(104.dp)
             Wordmark(52f, C.OnNight)
-            Cap("Money home, in minutes.", color = C.DarkCap, size = 15f)
+            Cap(str(R.string.auth_money_home_in_minutes), color = C.DarkCap, size = 15f)
         }
         Column(
             Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 64.dp),
@@ -162,7 +165,7 @@ fun SplashScreen() {
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             ProgressBar(progress.value, Modifier.width(120.dp), track = C.OnNight.copy(alpha = 0.14f), fill = C.Lime, height = 4.dp)
-            Cap("Securing your connection", color = C.DarkCap, size = 12f)
+            Cap(str(R.string.auth_securing_your_connection), color = C.DarkCap, size = 12f)
         }
     }
 }
@@ -191,21 +194,21 @@ fun WelcomeScreen() {
                     else app.arro.ui.components.BackButton({ scope.launch { pager.animateScrollToPage(page - 1) } })
                 },
                 right = {
-                    if (page < 2) ArroButton("Skip", { scope.launch { pager.animateScrollToPage(2) } }, style = Btn.Text, size = BtnSize.S, fill = false)
+                    if (page < 2) ArroButton(str(R.string.auth_skip), { scope.launch { pager.animateScrollToPage(2) } }, style = Btn.Text, size = BtnSize.S, fill = false)
                 },
             )
         },
         footer = {
             if (page < 2) {
-                ArroButton("Next", { scope.launch { pager.animateScrollToPage(page + 1) } })
+                ArroButton(str(R.string.auth_next), { scope.launch { pager.animateScrollToPage(page + 1) } })
             } else {
-                ArroButton("Create account", { nav.go(Routes.PHONE) })
-                ArroButton("I already have an account", { nav.go(Routes.LOGIN) }, style = Btn.Line)
+                ArroButton(str(R.string.auth_create_account), { nav.go(Routes.PHONE) })
+                ArroButton(str(R.string.auth_i_already_have_an_account), { nav.go(Routes.LOGIN) }, style = Btn.Line)
                 val terms = buildAnnotatedString {
-                    append("By continuing you agree to our ")
-                    withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append("Terms") }
+                    append(str(R.string.auth_by_continuing_you_agree_to_our))
+                    withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(str(R.string.auth_terms)) }
                     append(" and ")
-                    withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append("Privacy Policy") }
+                    withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(str(R.string.auth_privacy_policy)) }
                     append(".")
                 }
                 Txt(terms, T.Cap.copy(fontSize = 12.sp), Modifier.fillMaxWidth().tap { nav.go(Routes.legal("terms")) }, color = C.Slate, align = TextAlign.Center)
@@ -216,17 +219,17 @@ fun WelcomeScreen() {
             Column(Modifier.fillMaxSize()) {
                 Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
                     when (p) {
-                        0 -> Halo(220.dp) { Illustration(Art.Globe, 240.dp, description = "A globe with a coin orbiting it") }
+                        0 -> Halo(220.dp) { Illustration(Art.Globe, 240.dp, description = str(R.string.auth_a_globe_with_a_coin_orbiting)) }
                         1 -> WelcomeQuote()
-                        else -> Halo(220.dp) { Illustration(Art.Shield, 240.dp, description = "A glass shield with a tick") }
+                        else -> Halo(220.dp) { Illustration(Art.Shield, 240.dp, description = str(R.string.auth_a_glass_shield_with_a_tick)) }
                     }
                 }
                 Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     CarouselDots(p, 3)
                     val (title, lede) = when (p) {
-                        0 -> "Send home\nin minutes" to "Mobile money, bank deposit or cash pickup, to the people who count on you in Rwanda, Kenya, Nigeria and beyond."
-                        1 -> "See exactly\nwhat arrives" to "Your rate, every fee and the exact amount they receive, shown before you pay. No surprises at the other end."
-                        else -> "Protected at\nevery step" to "Encrypted payments, recipients checked by name, and real people on hand if anything needs fixing."
+                        0 -> str(R.string.auth_send_home_in_minutes) to str(R.string.auth_mobile_money_bank_deposit_or_cash)
+                        1 -> str(R.string.auth_see_exactly_what_arrives) to str(R.string.auth_your_rate_every_fee_and_the)
+                        else -> str(R.string.auth_protected_at_every_step) to str(R.string.auth_encrypted_payments_recipients_checked_by_name)
                     }
                     ScreenTitle(title, size = TitleSize.XL)
                     Txt(lede, T.Lede, color = C.Slate)
@@ -241,21 +244,21 @@ private fun WelcomeQuote() {
     val b = backend()
     val q = remember { b.quote(Currency.RWF, 25_000, PayoutType.MOBILE_MONEY, "RW") }
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Halo(220.dp) { Illustration(Art.Welcome, 240.dp, description = "A stack of glass coins") }
+        Halo(220.dp) { Illustration(Art.Welcome, 240.dp, description = str(R.string.auth_a_stack_of_glass_coins)) }
         Column(
             Modifier.offset(y = (-18).dp).width(268.dp)
                 .shadow(18.dp, RoundedCornerShape(20.dp), ambientColor = C.Ink.copy(alpha = 0.12f), spotColor = C.Ink.copy(alpha = 0.12f))
                 .background(C.White, RoundedCornerShape(20.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Cap("You send"); Txt(Money.format(q.sendMinor, Currency.GBP), T.Num)
+                Cap(str(R.string.auth_you_send)); Txt(Money.format(q.sendMinor, Currency.GBP), T.Num)
             }
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Cap("Fee"); Txt(Money.format(1_99, Currency.GBP), T.Num.copy(fontSize = 14.sp, fontWeight = FontWeight.Normal))
+                Cap(str(R.string.auth_fee)); Txt(Money.format(1_99, Currency.GBP), T.Num.copy(fontSize = 14.sp, fontWeight = FontWeight.Normal))
             }
             HDivider(Modifier.padding(vertical = 10.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Cap("Claudine gets"); Txt(Money.format(q.receiveMinor, Currency.RWF), T.Num, color = C.Ok)
+                Cap(str(R.string.auth_claudine_gets)); Txt(Money.format(q.receiveMinor, Currency.RWF), T.Num, color = C.Ok)
             }
         }
     }
@@ -282,22 +285,22 @@ fun PhoneScreen() {
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 1 of 4") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.auth_step_1_of_4)) }) },
         gap = 24.dp,
         footer = {
-            ArroButton("Send code", { submit() }, loading = call.busy.value)
-            LoginPrompt("Already with Arro?", "Log in") { nav.go(Routes.LOGIN) }
+            ArroButton(str(R.string.auth_send_code), { submit() }, loading = call.busy.value)
+            LoginPrompt(str(R.string.auth_already_with_arro), str(R.string.auth_log_in)) { nav.go(Routes.LOGIN) }
         },
         overlay = {
-            PickerSheet(picker, "Country of residence", listOf("United Kingdom"), "United Kingdom", {}, { picker = false },
-                subtitles = mapOf("United Kingdom" to "Arro is available to UK residents"), leading = { Flag("gb") })
+            PickerSheet(picker, str(R.string.auth_country_of_residence), listOf(str(R.string.auth_united_kingdom)), str(R.string.auth_united_kingdom), {}, { picker = false },
+                subtitles = mapOf(str(R.string.auth_united_kingdom) to str(R.string.auth_arro_is_available_to_uk_residents)), leading = { Flag("gb") })
         },
     ) {
         StepBars(1, 4)
-        ScreenTitle("What's your\nmobile number?", "We'll text you a 6-digit code to confirm it's really you.")
-        SelectField("Country of residence", "United Kingdom", { picker = true }, leading = { Flag("gb") })
+        ScreenTitle(str(R.string.auth_what_s_your_mobile_number), str(R.string.auth_we_ll_text_you_a_6))
+        SelectField(str(R.string.auth_country_of_residence), str(R.string.auth_united_kingdom), { picker = true }, leading = { Flag("gb") })
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            app.arro.ui.components.FieldLabel("Mobile number")
+            app.arro.ui.components.FieldLabel(str(R.string.auth_mobile_number))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 SelectField(null, "+44", { picker = true }, Modifier.width(104.dp), leading = { Flag("gb", 18.dp) })
                 ArroField(
@@ -308,9 +311,9 @@ fun PhoneScreen() {
             }
             FieldHint(error ?: call.error.value)
         }
-        Note("We only use your number for security codes and transfer updates. We never sell it.", NoteKind.Lime, Icons.Lock)
+        Note(str(R.string.auth_we_only_use_your_number_for), NoteKind.Lime, Icons.Lock)
         if (state.account != null) {
-            Note("Creating a new account replaces the Arro account saved on this phone.", NoteKind.Warn, Icons.Info)
+            Note(str(R.string.auth_creating_a_new_account_replaces_the), NoteKind.Warn, Icons.Info)
         }
     }
 }
@@ -338,7 +341,7 @@ fun OtpScreen() {
     var resendAt by remember { mutableStateOf(System.currentTimeMillis() + 60_000) }
     val now = app.arro.ui.nowTicker()
     fun verify(v: String = code) {
-        if (v.length < 6) { call.error.value = "Enter all 6 digits."; return }
+        if (v.length < 6) { call.error.value = str(R.string.auth_enter_all_6_digits); return }
         scope.launchCall(call) {
             b.verifySignupCode(v)
             nav.go(Routes.ACCOUNT_SETUP)
@@ -349,21 +352,21 @@ fun OtpScreen() {
         c.banners.collect { e -> if (e is BackendEvent.Code && e.to == reg.phone) { delay(900); code = e.code; verify(e.code) } }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 2 of 4") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.auth_step_2_of_4)) }) },
         gap = 24.dp,
-        footer = { ArroButton("Verify", { verify() }, loading = call.busy.value, enabled = code.length == 6) },
+        footer = { ArroButton(str(R.string.auth_verify), { verify() }, loading = call.busy.value, enabled = code.length == 6) },
     ) {
         StepBars(2, 4)
-        Illustration(Art.Phone, 128.dp, description = "A phone receiving a message")
+        Illustration(Art.Phone, 128.dp, description = str(R.string.auth_a_phone_receiving_a_message))
         Column {
-            ScreenTitle("Enter the code")
+            ScreenTitle(str(R.string.auth_enter_the_code))
             Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Txt(buildAnnotatedString {
-                    append("Sent by SMS to ")
+                    append(str(R.string.auth_sent_by_sms_to))
                     withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(Text.formatPhone(reg.phone)) }
                     append(". ")
                 }, T.Lede, color = C.Slate)
-                LinkText("Edit", { nav.back() }, color = C.Ink, strong = true)
+                LinkText(str(R.string.auth_edit), { nav.back() }, color = C.Ink, strong = true)
             }
         }
         CodeInput(code, { code = it; call.error.value = null }, error = call.error.value != null, onComplete = { verify(it) })
@@ -371,18 +374,18 @@ fun OtpScreen() {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             if (now < resendAt) {
                 Txt(buildAnnotatedString {
-                    append("Resend code in ")
+                    append(str(R.string.auth_resend_code_in))
                     withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(Text.countdown(resendAt - now)) }
                 }, T.Cap, color = C.Slate)
             } else {
-                LinkText("Resend code", {
+                LinkText(str(R.string.auth_resend_code), {
                     scope.launch { runCatching { b.resendSignupCode() }; resendAt = System.currentTimeMillis() + 60_000 }
                 }, color = C.Ink, strong = true)
             }
-            LinkText("Get a call instead", {
+            LinkText(str(R.string.auth_get_a_call_instead), {
                 scope.launch {
                     runCatching { b.resendSignupCode() }
-                    banner.show("Calling ${Text.formatPhone(reg.phone)}", "An automated call will read out your code.", BannerKind.Info)
+                    banner.show(str(R.string.auth_calling_x, Text.formatPhone(reg.phone)), str(R.string.auth_an_automated_call_will_read_out), BannerKind.Info)
                 }
             }, color = C.Ink, strong = true)
         }
@@ -405,27 +408,27 @@ fun AccountSetupScreen() {
     fun submit() {
         emailError = Validation.email(email)
         if (emailError != null) return
-        if (!Validation.password(password).required) { call.error.value = "Your password needs at least 8 characters, upper and lower case letters and a number."; return }
+        if (!Validation.password(password).required) { call.error.value = str(R.string.auth_your_password_needs_at_least_8); return }
         scope.launchCall(call) {
             b.setLogin(email, password, marketing)
             nav.go(Routes.PASSCODE)
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("Step 3 of 4") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.auth_step_3_of_4)) }) },
         gap = 20.dp,
-        footer = { ArroButton("Continue", { submit() }, loading = call.busy.value) },
+        footer = { ArroButton(str(R.string.auth_continue), { submit() }, loading = call.busy.value) },
     ) {
         StepBars(3, 4)
-        ScreenTitle("Set up your login", "Your email is where receipts and statements go.")
-        ArroField(email, { email = it.trim(); emailError = null }, label = "Email address", placeholder = "name@mail.com",
+        ScreenTitle(str(R.string.auth_set_up_your_login), str(R.string.auth_your_email_is_where_receipts_and))
+        ArroField(email, { email = it.trim(); emailError = null }, label = str(R.string.auth_email_address), placeholder = "name@mail.com",
             keyboard = KeyboardType.Email, error = emailError)
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            PasswordField(password, { password = it; call.error.value = null }, "Password", onDone = { submit() })
+            PasswordField(password, { password = it; call.error.value = null }, str(R.string.auth_password), onDone = { submit() })
             PasswordStrength(password)
         }
         FieldHint(call.error.value)
-        CheckRow(marketing, { marketing = it }, "Email me rate alerts and product news. I can opt out anytime.")
+        CheckRow(marketing, { marketing = it }, str(R.string.auth_email_me_rate_alerts_and_product))
     }
 }
 
@@ -444,10 +447,10 @@ fun PasscodeSetupScreen() {
         if (code.length < 6) return
         val f = first
         if (f == null) {
-            if (Validation.passcodeWeak(code)) { error = "That's easy to guess. Avoid repeated or sequential digits."; code = ""; return }
+            if (Validation.passcodeWeak(code)) { error = str(R.string.auth_that_s_easy_to_guess_avoid); code = ""; return }
             first = code; code = ""; error = null
         } else if (f != code) {
-            error = "Those passcodes don't match. Try again."; first = null; code = ""
+            error = str(R.string.auth_those_passcodes_don_t_match_try); first = null; code = ""
         } else {
             scope.launchCall(call) {
                 b.finishRegistration(code)
@@ -456,14 +459,14 @@ fun PasscodeSetupScreen() {
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { if (first != null) { first = null; code = "" } else nav.back() }, right = { BarCaption("Step 4 of 4") }) },
+        topBar = { TopBar(onBack = { if (first != null) { first = null; code = "" } else nav.back() }, right = { BarCaption(str(R.string.auth_step_4_of_4)) }) },
         gap = 24.dp,
         scroll = false,
-        footer = { ArroButton(if (first == null) "Continue" else "Confirm passcode", { confirm() }, enabled = code.length == 6, loading = call.busy.value) },
+        footer = { ArroButton(if (first == null) str(R.string.auth_continue) else str(R.string.auth_confirm_passcode), { confirm() }, enabled = code.length == 6, loading = call.busy.value) },
     ) {
         StepBars(4, 4)
-        ScreenTitle(if (first == null) "Create a passcode" else "Confirm your passcode",
-            if (first == null) "Six digits to open Arro and approve every transfer. Avoid birthdays and repeated numbers." else "Enter the same six digits again.")
+        ScreenTitle(if (first == null) str(R.string.auth_create_a_passcode) else str(R.string.auth_confirm_your_passcode),
+            if (first == null) str(R.string.auth_six_digits_to_open_arro_and) else str(R.string.auth_enter_the_same_six_digits_again))
         PasscodeDots(code.length, error = error != null, modifier = Modifier.padding(top = 18.dp, bottom = 6.dp))
         FieldHint(error ?: call.error.value)
         Spacer(Modifier.weight(1f))
@@ -486,29 +489,29 @@ fun BiometricSetupScreen() {
         bodyPadding = 0.dp,
         topBar = { TopBar(onBack = null) },
         footer = {
-            ArroButton("Turn on $BIO_NAME unlock", {
+            ArroButton(str(R.string.auth_turn_on_x_unlock, BIO_NAME), {
                 val activity = context as? FragmentActivity
                 if (activity == null || !Biometrics.available(context)) {
-                    banner.show("Not set up on this phone", "Add a fingerprint or face in your phone's settings, then turn this on in Security.", BannerKind.Error)
+                    banner.show(str(R.string.auth_not_set_up_on_this_phone), str(R.string.auth_add_a_fingerprint_or_face_in), BannerKind.Error)
                     next()
                 } else {
-                    Biometrics.prompt(activity, "Turn on $BIO_NAME unlock", "Confirm it's you", negative = "Cancel",
-                        onSuccess = { b.setBiometric(true); banner.show("Biometric unlock is on", kind = BannerKind.Success); next() },
-                        onFallback = {}, onError = { banner.show("Couldn't turn it on", it, BannerKind.Error) })
+                    Biometrics.prompt(activity, str(R.string.auth_turn_on_x_unlock, BIO_NAME), str(R.string.auth_confirm_it_s_you), negative = str(R.string.auth_cancel),
+                        onSuccess = { b.setBiometric(true); banner.show(str(R.string.auth_biometric_unlock_is_on), kind = BannerKind.Success); next() },
+                        onFallback = {}, onError = { banner.show(str(R.string.auth_couldn_t_turn_it_on), it, BannerKind.Error) })
                 }
             }, icon = Icons.FaceId)
-            ArroButton("Not now", { next() }, style = Btn.Text)
+            ArroButton(str(R.string.auth_not_now), { next() }, style = Btn.Text)
         },
     ) {
         Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-            Halo(220.dp) { Illustration(Art.FaceScan, 240.dp, description = "Face being scanned") }
+            Halo(220.dp) { Illustration(Art.FaceScan, 240.dp, description = str(R.string.auth_face_being_scanned)) }
         }
         Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ScreenTitle("Unlock with\na glance", size = TitleSize.XL)
-            Txt("Use your $BIO_NAME to open Arro and approve transfers. Your biometric data never leaves this phone.", T.Lede, color = C.Slate)
+            ScreenTitle(str(R.string.auth_unlock_with_a_glance), size = TitleSize.XL)
+            Txt(str(R.string.auth_use_your_x_to_open_arro, BIO_NAME), T.Lede, color = C.Slate)
             Column(Modifier.padding(top = 6.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                CheckLine("Faster than typing your passcode")
-                CheckLine("Change it anytime in Security")
+                CheckLine(str(R.string.auth_faster_than_typing_your_passcode))
+                CheckLine(str(R.string.auth_change_it_anytime_in_security))
             }
         }
     }
@@ -543,31 +546,33 @@ fun LoginScreen() {
     ArroScreen(
         topBar = { TopBar(onBack = { nav.back() }) },
         gap = 24.dp,
-        footer = { LoginPrompt("New to Arro?", "Create an account") { nav.go(Routes.PHONE) } },
+        footer = { LoginPrompt(str(R.string.auth_new_to_arro), str(R.string.auth_create_an_account)) { nav.go(Routes.PHONE) } },
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) { BrandLockup(26.dp, 22f) }
         Column(Modifier.padding(top = 8.dp)) {
-            ScreenTitle("Welcome back", "Log in with the email or mobile number you signed up with.", size = TitleSize.XL)
+            ScreenTitle(str(R.string.auth_welcome_back), str(R.string.auth_log_in_with_the_email_or), size = TitleSize.XL)
         }
-        ArroField(id, { id = it; call.error.value = null }, label = "Email or mobile number", placeholder = "name@mail.com or 07700 900412",
+        ArroField(id, { id = it; call.error.value = null }, label = str(R.string.auth_email_or_mobile_number), placeholder = str(R.string.auth_name_mail_com_or_07700_900412),
             keyboard = KeyboardType.Email)
-        PasswordField(password, { password = it; call.error.value = null }, "Password", error = call.error.value, onDone = { submit() },
-            labelTrailing = { LinkText("Forgot password?", { nav.go(Routes.FORGOT) }, color = C.Ink, strong = true) })
-        ArroButton("Log in", { submit() }, Modifier.padding(top = 4.dp), loading = call.busy.value, enabled = id.isNotBlank() && password.isNotEmpty())
+        PasswordField(password, { password = it; call.error.value = null }, str(R.string.auth_password), error = call.error.value, onDone = { submit() },
+            labelTrailing = { LinkText(str(R.string.auth_forgot_password), { nav.go(Routes.FORGOT) }, color = C.Ink, strong = true) })
+        ArroButton(str(R.string.auth_log_in), { submit() }, Modifier.padding(top = 4.dp), loading = call.busy.value, enabled = id.isNotBlank() && password.isNotEmpty())
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             HDivider(Modifier.weight(1f)); Cap("or"); HDivider(Modifier.weight(1f))
         }
-        ArroButton("Log in with $BIO_NAME", {
+        ArroButton(str(R.string.auth_log_in_with_x, BIO_NAME), {
             val activity = context as? FragmentActivity
             when {
-                !bioReady -> banner.show("Biometric unlock isn't on", "Log in with your password, then turn it on in Security.", BannerKind.Info)
-                activity == null || !Biometrics.available(context) -> banner.show("Not available", "This phone has no fingerprint or face set up.", BannerKind.Error)
-                else -> Biometrics.prompt(activity, "Log in to Arro", state.account?.email ?: "", negative = "Use password",
-                    onSuccess = { runCatching { b.loginWithBiometrics(); nav.resetTo(Routes.HOME) }.onFailure { banner.show(it.message ?: "Try your password", kind = BannerKind.Error) } })
+                !bioReady -> banner.show(str(R.string.auth_biometric_unlock_isn_t_on), str(R.string.auth_log_in_with_your_password_then), BannerKind.Info)
+                activity == null || !Biometrics.available(context) -> banner.show(str(R.string.auth_not_available), str(R.string.auth_this_phone_has_no_fingerprint_or), BannerKind.Error)
+                else -> Biometrics.prompt(activity, str(R.string.auth_log_in_to_arro), state.account?.email ?: "", negative = str(R.string.auth_use_password),
+                    onSuccess = { runCatching { b.loginWithBiometrics(); nav.resetTo(Routes.HOME) }.onFailure { banner.show(it.message ?: str(R.string.auth_try_your_password), kind = BannerKind.Error) } })
             }
         }, style = Btn.Line, icon = Icons.FaceId)
-        Note("Exploring Arro? Use the sample account: ${Seed.DEMO_EMAIL}, password ${Seed.DEMO_PASSWORD}.", NoteKind.Lime, Icons.Info,
-            action = "Fill in sample account", onAction = { id = Seed.DEMO_EMAIL; password = Seed.DEMO_PASSWORD })
+        if (app.arro.core.DemoConfig.enabled) {
+            Note(str(R.string.auth_exploring_arro_use_the_sample_account, Seed.DEMO_EMAIL, Seed.DEMO_PASSWORD), NoteKind.Lime, Icons.Info,
+                action = str(R.string.auth_fill_in_sample_account), onAction = { id = Seed.DEMO_EMAIL; password = Seed.DEMO_PASSWORD })
+        }
     }
 }
 
@@ -590,7 +595,7 @@ fun UnlockScreen(expired: Boolean) {
     fun unlocked() { c.session.sessionExpired = false; code = "" }
     fun promptBio() {
         val activity = context as? FragmentActivity ?: return
-        Biometrics.prompt(activity, "Unlock Arro", "Welcome back, ${account.firstName}", onSuccess = { b.unlockWithBiometrics(); unlocked() }, onFallback = { showPad = true })
+        Biometrics.prompt(activity, str(R.string.auth_unlock_arro), str(R.string.auth_welcome_back_x, account.firstName), onSuccess = { b.unlockWithBiometrics(); unlocked() }, onFallback = { showPad = true })
     }
     LaunchedEffect(showPad) { if (showPad && bio && !expired) promptBio() }
     BackHandler { (context as? Activity)?.moveTaskToBack(true) }
@@ -599,7 +604,7 @@ fun UnlockScreen(expired: Boolean) {
             b.unlockWithPasscode(v); unlocked()
         } catch (e: ArroException) {
             error = e.message; code = ""; shake++
-            if (e.code == "locked_out") banner.show("Log in again", e.message ?: "", BannerKind.Error)
+            if (e.code == "locked_out") banner.show(str(R.string.auth_log_in_again), e.message ?: "", BannerKind.Error)
         }
     }
     app.arro.ui.components.DarkSystemBars()
@@ -612,10 +617,10 @@ fun UnlockScreen(expired: Boolean) {
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Spacer(Modifier.statusBarsPadding().height(100.dp))
-                Illustration(Art.Lock, 240.dp, description = "A glass padlock")
+                Illustration(Art.Lock, 240.dp, description = str(R.string.auth_a_glass_padlock))
                 Column(Modifier.padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ScreenTitle("Session ended", size = TitleSize.XL, color = C.OnNight, align = TextAlign.Center)
-                    Txt("For your security we locked Arro after 5 minutes without activity. Nothing was lost.", T.Lede, color = C.DarkCap, align = TextAlign.Center)
+                    ScreenTitle(str(R.string.auth_session_ended), size = TitleSize.XL, color = C.OnNight, align = TextAlign.Center)
+                    Txt(str(R.string.auth_for_your_security_we_locked_arro), T.Lede, color = C.DarkCap, align = TextAlign.Center)
                 }
                 val open = account.transfers.firstOrNull { it.isOpen }
                 Row(
@@ -625,13 +630,13 @@ fun UnlockScreen(expired: Boolean) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Ic(Icons.Check, tint = C.Lime)
-                    Txt(if (open != null) "Your transfer to ${open.firstName} is still on its way." else "Your balances and transfers are safe.", T.Body14, color = C.OnNight)
+                    Txt(if (open != null) str(R.string.auth_your_transfer_to_x_is_still, open.firstName) else str(R.string.auth_your_balances_and_transfers_are_safe), T.Body14, color = C.OnNight)
                 }
                 Spacer(Modifier.weight(1f))
                 Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    if (bio) ArroButton("Unlock with $BIO_NAME", { promptBio() }, style = Btn.Lime, icon = Icons.FaceId)
-                    else ArroButton("Unlock with passcode", { showPad = true }, style = Btn.Lime, icon = Icons.Lock)
-                    ArroButton("Log in with password", { c.session.sessionExpired = false; b.logout() }, style = Btn.LineOnDark)
+                    if (bio) ArroButton(str(R.string.auth_unlock_with_x, BIO_NAME), { promptBio() }, style = Btn.Lime, icon = Icons.FaceId)
+                    else ArroButton(str(R.string.auth_unlock_with_passcode), { showPad = true }, style = Btn.Lime, icon = Icons.Lock)
+                    ArroButton(str(R.string.auth_log_in_with_password), { c.session.sessionExpired = false; b.logout() }, style = Btn.LineOnDark)
                 }
             }
         } else {
@@ -639,8 +644,8 @@ fun UnlockScreen(expired: Boolean) {
             Column(Modifier.align(Alignment.TopCenter).widthIn(max = MaxContentWidth).fillMaxSize()) {
                 Column(Modifier.fillMaxWidth().statusBarsPadding().padding(top = 60.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
                     Box(Modifier.size(64.dp).background(C.Lime, CircleShape), contentAlignment = Alignment.Center) { Txt(account.initials, T.H2.copy(fontSize = 22.sp), color = C.OnLime) }
-                    Txt("Welcome back, ${account.firstName}", T.H2.copy(fontSize = 22.sp), color = C.OnNight)
-                    Cap(error ?: "Enter your passcode", color = if (error != null) Color(0xFFFF9B8F) else C.DarkCap)
+                    Txt(str(R.string.auth_welcome_back_x, account.firstName), T.H2.copy(fontSize = 22.sp), color = C.OnNight)
+                    Cap(error ?: str(R.string.auth_enter_your_passcode), color = if (error != null) Color(0xFFFF9B8F) else C.DarkCap)
                     val dx = remember { Animatable(0f) }
                     LaunchedEffect(shake) { if (shake > 0) { for (x in listOf(14f, -12f, 9f, -6f, 3f, 0f)) dx.animateTo(x, tween(45)) } }
                     PasscodeDots(code.length, dark = true, error = error != null, modifier = Modifier.padding(top = 18.dp).offset(x = dx.value.dp))
@@ -651,11 +656,11 @@ fun UnlockScreen(expired: Boolean) {
                     onDelete = { code = code.dropLast(1) },
                     modifier = Modifier.padding(horizontal = 36.dp),
                     dark = true,
-                    bottomLeft = if (bio) ({ Box(Modifier.size(58.dp).tap { promptBio() }, contentAlignment = Alignment.Center) { Ic(Icons.FaceId, size = 28.dp, tint = C.Lime, contentDescription = "Use $BIO_NAME") } }) else null,
+                    bottomLeft = if (bio) ({ Box(Modifier.size(58.dp).tap { promptBio() }, contentAlignment = Alignment.Center) { Ic(Icons.FaceId, size = 28.dp, tint = C.Lime, contentDescription = str(R.string.auth_use_x, BIO_NAME)) } }) else null,
                 )
                 Row(Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 28.dp, end = 28.dp, top = 20.dp, bottom = 28.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    LinkText("Forgot passcode?", { c.session.sessionExpired = false; b.logout() }, color = C.OnNight, strong = true)
-                    LinkText("Not ${account.firstName}? Switch", { c.session.sessionExpired = false; b.logout() }, color = C.DarkCap)
+                    LinkText(str(R.string.auth_forgot_passcode), { c.session.sessionExpired = false; b.logout() }, color = C.OnNight, strong = true)
+                    LinkText(str(R.string.auth_not_x_switch, account.firstName), { c.session.sessionExpired = false; b.logout() }, color = C.DarkCap)
                 }
             }
         }
@@ -680,15 +685,15 @@ fun ForgotScreen() {
         topBar = { TopBar(onBack = { nav.back() }) },
         gap = 24.dp,
         footer = {
-            ArroButton("Send reset code", { submit() }, loading = call.busy.value, enabled = email.isNotBlank())
-            ArroButton("I no longer use this email", { nav.go(Routes.HELP) }, style = Btn.Text)
+            ArroButton(str(R.string.auth_send_reset_code), { submit() }, loading = call.busy.value, enabled = email.isNotBlank())
+            ArroButton(str(R.string.auth_i_no_longer_use_this_email), { nav.go(Routes.HELP) }, style = Btn.Text)
         },
     ) {
-        Illustration(Art.Envelope, 128.dp, description = "An envelope")
-        ScreenTitle("Reset your\npassword", "Enter the email on your account. We'll send a 6-digit code to set a new password.")
-        ArroField(email, { email = it.trim(); call.error.value = null }, label = "Email address", keyboard = KeyboardType.Email,
+        Illustration(Art.Envelope, 128.dp, description = str(R.string.auth_an_envelope))
+        ScreenTitle(str(R.string.auth_reset_your_password), str(R.string.auth_enter_the_email_on_your_account))
+        ArroField(email, { email = it.trim(); call.error.value = null }, label = str(R.string.auth_email_address), keyboard = KeyboardType.Email,
             imeAction = ImeAction.Done, error = call.error.value, onDone = { submit() })
-        Note("For your safety, new transfers are paused for 24 hours after a password reset. Transfers already on their way are not affected.", NoteKind.Info, Icons.Info)
+        Note(str(R.string.auth_for_your_safety_new_transfers_are), NoteKind.Info, Icons.Info)
     }
 }
 
@@ -713,9 +718,9 @@ fun ResetScreen() {
         topBar = { TopBar(onBack = { nav.back() }) },
         gap = 20.dp,
         footer = {
-            ArroButton("Update password", {
+            ArroButton(str(R.string.auth_update_password), {
                 scope.launchCall(call) {
-                    if (!match) throw ArroException("The passwords don't match.")
+                    if (!match) throw ArroException(str(R.string.auth_the_passwords_don_t_match))
                     c.session.resetUntil = b.resetPassword(password)
                     nav.resetTo(Routes.RESET_DONE)
                 }
@@ -723,24 +728,24 @@ fun ResetScreen() {
         },
     ) {
         Column {
-            ScreenTitle("Choose a new\npassword")
+            ScreenTitle(str(R.string.auth_choose_a_new_password))
             Txt(buildAnnotatedString {
-                append("Enter the code we emailed to ")
+                append(str(R.string.auth_enter_the_code_we_emailed_to))
                 withStyle(SpanStyle(color = C.Ink, fontWeight = FontWeight.SemiBold)) { append(Text.maskEmail(b.resetEmail)) }
                 append(".")
             }, T.Lede, Modifier.padding(top = 8.dp), color = C.Slate)
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            app.arro.ui.components.FieldLabel("Reset code")
+            app.arro.ui.components.FieldLabel(str(R.string.auth_reset_code))
             CodeInput(code, { code = it; verified = false; verifyCall.error.value = null }, error = verifyCall.error.value != null, onComplete = { verify(it) })
-            FieldHint(verifyCall.error.value, if (verified) "Code confirmed" else null)
+            FieldHint(verifyCall.error.value, if (verified) str(R.string.auth_code_confirmed) else null)
         }
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            PasswordField(password, { password = it }, "New password", imeAction = ImeAction.Next)
+            PasswordField(password, { password = it }, str(R.string.auth_new_password), imeAction = ImeAction.Next)
             PasswordStrength(password, showRules = false)
         }
-        PasswordField(confirm, { confirm = it }, "Confirm new password", ok = if (match) "Passwords match" else null,
-            error = if (confirm.length >= password.length && confirm.isNotEmpty() && !match) "The passwords don't match." else null)
+        PasswordField(confirm, { confirm = it }, str(R.string.auth_confirm_new_password), ok = if (match) str(R.string.auth_passwords_match) else null,
+            error = if (confirm.length >= password.length && confirm.isNotEmpty() && !match) str(R.string.auth_the_passwords_don_t_match) else null)
         FieldHint(call.error.value)
     }
 }
@@ -754,16 +759,16 @@ fun ResetDoneScreen() {
         background = C.Tint,
         scroll = false,
         bodyPadding = 0.dp,
-        footer = { ArroButton("Log in", { nav.resetTo(Routes.LOGIN) }) },
+        footer = { ArroButton(str(R.string.auth_log_in), { nav.resetTo(Routes.LOGIN) }) },
     ) {
         Box(Modifier.weight(1f).fillMaxWidth().padding(top = 40.dp), contentAlignment = Alignment.Center) {
-            Halo(220.dp) { Illustration(Art.Shield, 240.dp, description = "A glass shield with a tick") }
+            Halo(220.dp) { Illustration(Art.Shield, 240.dp, description = str(R.string.auth_a_glass_shield_with_a_tick)) }
         }
         Column(Modifier.padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            ScreenTitle("Password\nupdated", size = TitleSize.XL, align = TextAlign.Center)
-            Txt("We've signed you out on your other devices. Log in with your new password to carry on.", T.Lede, color = C.Slate, align = TextAlign.Center)
-            Note("New transfers are paused until ${Text.time(until)} ${if (Text.isSameDay(until, System.currentTimeMillis())) "today" else "tomorrow"} while we make sure this was you. Didn't change it?",
-                NoteKind.Warn, Icons.Clock, Modifier.padding(top = 8.dp), action = "Contact us now", onAction = { nav.go(Routes.CHAT) })
+            ScreenTitle(str(R.string.auth_password_updated), size = TitleSize.XL, align = TextAlign.Center)
+            Txt(str(R.string.auth_we_ve_signed_you_out_on), T.Lede, color = C.Slate, align = TextAlign.Center)
+            Note(str(R.string.auth_new_transfers_are_paused_until_x, Text.time(until), if (Text.isSameDay(until, System.currentTimeMillis())) str(R.string.auth_today) else str(R.string.auth_tomorrow)),
+                NoteKind.Warn, Icons.Clock, Modifier.padding(top = 8.dp), action = str(R.string.auth_contact_us_now), onAction = { nav.go(Routes.CHAT) })
         }
     }
 }

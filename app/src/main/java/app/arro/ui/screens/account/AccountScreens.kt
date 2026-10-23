@@ -1,5 +1,7 @@
 package app.arro.ui.screens.account
 
+import app.arro.R
+import app.arro.ui.str
 import android.Manifest
 import android.content.Intent
 import android.os.Build
@@ -164,7 +166,7 @@ fun AccountScreen() {
         Tab.Account,
         overlay = {
             AppearanceSheet(appearanceOpen, a.settings.appearance, { choice -> b.updateSettings { it.copy(appearance = choice) } }) { appearanceOpen = false }
-            ConfirmDialog(logoutConfirm, "Log out of Arro?", "You'll need your email and password to log in again on this phone.", "Log out", {
+            ConfirmDialog(logoutConfirm, str(R.string.account_log_out_of_arro), str(R.string.account_you_ll_need_your_email_and), str(R.string.account_log_out), {
                 logoutConfirm = false
                 b.logout()
                 nav.resetTo(Routes.LOGIN)
@@ -172,7 +174,7 @@ fun AccountScreen() {
         },
     ) {
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(top = 14.dp)) {
-            RoundIcon(Icons.Help, { nav.go(Routes.HELP) }, Modifier.align(Alignment.TopEnd).padding(end = 20.dp), style = IconBtn.Soft, description = "Help")
+            RoundIcon(Icons.Help, { nav.go(Routes.HELP) }, Modifier.align(Alignment.TopEnd).padding(end = 20.dp), style = IconBtn.Soft, description = str(R.string.account_help))
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(Modifier.size(88.dp)) {
                     Avatar(a.initials, 0, 84.dp, modifier = Modifier.align(Alignment.Center))
@@ -180,15 +182,15 @@ fun AccountScreen() {
                         Modifier.align(Alignment.BottomEnd).size(28.dp).background(C.Lime, CircleShape).border(3.dp, C.White, CircleShape)
                             .then(Modifier.padding(0.dp)),
                         contentAlignment = Alignment.Center,
-                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Lime, size = 26.dp, iconSize = 13.dp, description = "Edit personal details") }
+                    ) { RoundIcon(Icons.Pencil, { nav.go(Routes.PERSONAL) }, style = IconBtn.Lime, size = 26.dp, iconSize = 13.dp, description = str(R.string.account_edit_personal_details)) }
                 }
                 Txt(a.displayName, T.Title.copy(fontSize = 22.sp), Modifier.padding(top = 4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Cap("@" + a.username.ifBlank { a.profile.firstNames.lowercase().take(4) + a.profile.lastName.lowercase().take(1) })
                     when (a.kyc.status) {
-                        KycStatus.APPROVED -> Pill("Verified", PillKind.Ok, dot = true)
-                        KycStatus.IN_REVIEW -> Pill("Checking ID", PillKind.Info, dot = true)
-                        else -> Pill("Not verified", PillKind.Warn, dot = true)
+                        KycStatus.APPROVED -> Pill(str(R.string.account_verified), PillKind.Ok, dot = true)
+                        KycStatus.IN_REVIEW -> Pill(str(R.string.account_checking_id), PillKind.Info, dot = true)
+                        else -> Pill(str(R.string.account_not_verified), PillKind.Warn, dot = true)
                     }
                 }
             }
@@ -198,63 +200,65 @@ fun AccountScreen() {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(40.dp).background(C.Lime.copy(alpha = 0.16f), RoundedCornerShape(12.dp)), contentAlignment = Alignment.Center) { Ic(Icons.Gift, tint = C.Lime) }
                     Column(Modifier.weight(1f)) {
-                        Txt("Invite friends", T.H3, color = C.OnNight)
-                        Cap("Get £10 for every friend who sends", color = C.DarkCap, size = 12f)
+                        Txt(str(R.string.account_invite_friends), T.H3, color = C.OnNight)
+                        Cap(str(R.string.account_get_10_for_every_friend_who), color = C.DarkCap, size = 12f)
                     }
                     Ic(Icons.ChevronRight, tint = C.Lime)
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Over("Account")
+                Over(str(R.string.account_account))
                 Group {
-                    SettingsRow("Personal details", Icons.User) { nav.go(Routes.PERSONAL) }
+                    SettingsRow(str(R.string.account_personal_details), Icons.User) { nav.go(Routes.PERSONAL) }
                     GroupDivider()
-                    SettingsRow("Verification and limits", Icons.IdCard, if (a.verified) a.kyc.level.label else "Not verified") { nav.go(Routes.VERIFICATION) }
+                    SettingsRow(str(R.string.account_verification_and_limits), Icons.IdCard, if (a.verified) a.kyc.level.label else str(R.string.account_not_verified)) { nav.go(Routes.VERIFICATION) }
                     GroupDivider()
-                    SettingsRow("Payment methods", Icons.CreditCard, a.paymentMethods.count { it.status == MethodStatus.ACTIVE }.takeIf { it > 0 }?.toString()) { nav.go(Routes.PAY_METHODS) }
+                    SettingsRow(str(R.string.account_payment_methods), Icons.CreditCard, a.paymentMethods.count { it.status == MethodStatus.ACTIVE }.takeIf { it > 0 }?.toString()) { nav.go(Routes.PAY_METHODS) }
                     GroupDivider()
-                    SettingsRow("Wallet and balances", Icons.WalletSimple, "${a.wallets.size}") { nav.go(Routes.WALLET) }
+                    SettingsRow(str(R.string.account_wallet_and_balances), Icons.WalletSimple, "${a.wallets.size}") { nav.go(Routes.WALLET) }
                     GroupDivider()
-                    SettingsRow("Loyalty and rewards", Icons.Award, "${Money.points(a.pointsBalance)} pts") { nav.go(Routes.LOYALTY) }
+                    SettingsRow(str(R.string.account_loyalty_and_rewards), Icons.Award, str(R.string.account_x_pts, Money.points(a.pointsBalance))) { nav.go(Routes.LOYALTY) }
                     GroupDivider()
-                    SettingsRow("Statements", Icons.Statement) { nav.go(Routes.STATEMENTS) }
+                    SettingsRow(str(R.string.account_statements), Icons.Statement) { nav.go(Routes.STATEMENTS) }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Over("Security and preferences")
+                Over(str(R.string.account_security_and_preferences))
                 Group {
-                    SettingsRow("Security", Icons.ShieldCheck, if (a.frozen) "Frozen" else null) { nav.go(Routes.SECURITY) }
+                    SettingsRow(str(R.string.account_security), Icons.ShieldCheck, if (a.frozen) str(R.string.account_frozen) else null) { nav.go(Routes.SECURITY) }
                     GroupDivider()
-                    SettingsRow("Notifications", Icons.Bell) { nav.go(Routes.NOTIFICATION_SETTINGS) }
+                    SettingsRow(str(R.string.account_notifications), Icons.Bell) { nav.go(Routes.NOTIFICATION_SETTINGS) }
                     GroupDivider()
-                    SettingsRow("Appearance", Icons.Sun, appearanceLabel(a.settings.appearance)) { appearanceOpen = true }
+                    SettingsRow(str(R.string.account_appearance), Icons.Sun, appearanceLabel(a.settings.appearance)) { appearanceOpen = true }
                     GroupDivider()
-                    SettingsRow("Language and region", Icons.Globe, a.settings.language) { nav.go(Routes.LANGUAGE) }
+                    SettingsRow(str(R.string.account_language_and_region), Icons.Globe, a.settings.language) { nav.go(Routes.LANGUAGE) }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Over("Help and account")
+                Over(str(R.string.account_help_and_account))
                 Group {
-                    SettingsRow("Help centre and chat", Icons.Chat) { nav.go(Routes.HELP) }
+                    SettingsRow(str(R.string.account_help_centre_and_chat), Icons.Chat) { nav.go(Routes.HELP) }
                     GroupDivider()
-                    SettingsRow("Account management", Icons.Filters) { nav.go(Routes.MANAGE) }
+                    SettingsRow(str(R.string.account_account_management), Icons.Filters) { nav.go(Routes.MANAGE) }
                     GroupDivider()
-                    SettingsRow("Demo controls", Icons.Bolt, "Test build", TileStyle.Lime) { nav.go(Routes.DEMO) }
-                    GroupDivider()
-                    SettingsRow("Log out", Icons.LogOut, tile = TileStyle.Err, titleColor = C.Err) { logoutConfirm = true }
+                    if (app.arro.core.DemoConfig.enabled) {
+                        SettingsRow(str(R.string.account_demo_controls), Icons.Bolt, str(R.string.account_test_build), TileStyle.Lime) { nav.go(Routes.DEMO) }
+                        GroupDivider()
+                    }
+                    SettingsRow(str(R.string.account_log_out), Icons.LogOut, tile = TileStyle.Err, titleColor = C.Err) { logoutConfirm = true }
                 }
                 Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                    Cap("Arro $version · ", size = 12f)
-                    LinkText("Terms", { nav.go(Routes.legal("terms")) }, color = C.Ink)
+                    Cap(str(R.string.account_arro_x, version), size = 12f)
+                    LinkText(str(R.string.account_terms), { nav.go(Routes.legal("terms")) }, color = C.Ink)
                     Cap(" · ", size = 12f)
-                    LinkText("Privacy", { nav.go(Routes.legal("privacy")) }, color = C.Ink)
+                    LinkText(str(R.string.account_privacy), { nav.go(Routes.legal("privacy")) }, color = C.Ink)
                 }
             }
         }
     }
 }
 
-private fun appearanceLabel(a: Appearance) = when (a) { Appearance.LIGHT -> "Light"; Appearance.DARK -> "Dark"; Appearance.SYSTEM -> "Same as phone" }
+private fun appearanceLabel(a: Appearance) = when (a) { Appearance.LIGHT -> str(R.string.account_light); Appearance.DARK -> str(R.string.account_dark); Appearance.SYSTEM -> str(R.string.account_same_as_phone) }
 
 /** Light, dark or follow the phone. The change applies straight away, so the sheet itself switches theme. */
 @Composable
@@ -262,12 +266,12 @@ private fun androidx.compose.foundation.layout.BoxScope.AppearanceSheet(visible:
     val lightBg = androidx.compose.ui.graphics.Color(0xFFFFFFFF)
     val darkBg = androidx.compose.ui.graphics.Color(0xFF0A1412)
     Sheet(visible, onDismiss) {
-        SheetHeader("Appearance", onDismiss, "Choose how Arro looks on this phone.")
+        SheetHeader(str(R.string.account_appearance), onDismiss, str(R.string.account_choose_how_arro_looks_on_this))
         Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             listOf(
-                Triple(Appearance.LIGHT, "Light", "Bright screens, the classic Arro look"),
-                Triple(Appearance.DARK, "Dark", "Easier on the eyes at night"),
-                Triple(Appearance.SYSTEM, "Same as phone", "Switches with your phone's dark mode"),
+                Triple(Appearance.LIGHT, str(R.string.account_light), str(R.string.account_bright_screens_the_classic_arro_look)),
+                Triple(Appearance.DARK, str(R.string.account_dark), str(R.string.account_easier_on_the_eyes_at_night)),
+                Triple(Appearance.SYSTEM, str(R.string.account_same_as_phone), str(R.string.account_switches_with_your_phone_s_dark)),
             ).forEach { (option, title, sub) ->
                 ListRow(title, subtitle = sub, selected = option == current, minHeight = 64.dp,
                     leading = {
@@ -285,7 +289,7 @@ private fun androidx.compose.foundation.layout.BoxScope.AppearanceSheet(visible:
                     onClick = { onChoose(option) })
             }
         }
-        ArroButton("Done", onDismiss, Modifier.padding(top = 16.dp), style = Btn.Line)
+        ArroButton(str(R.string.account_done), onDismiss, Modifier.padding(top = 16.dp), style = Btn.Line)
     }
 }
 
@@ -319,10 +323,10 @@ fun PersonalScreen() {
         gap = 14.dp,
         overlay = {
             Sheet(sheet == "email", { close() }) {
-                SheetHeader("Change email", { close() }, "Receipts, statements and password resets go here.")
+                SheetHeader(str(R.string.account_change_email), { close() }, str(R.string.account_receipts_statements_and_password_resets_go))
                 Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ArroField(email, { email = it.trim() }, label = "New email", placeholder = "name@example.com", keyboard = KeyboardType.Email, error = call.error.value)
-                    ArroButton("Save and verify", {
+                    ArroField(email, { email = it.trim() }, label = str(R.string.account_new_email), placeholder = "name@example.com", keyboard = KeyboardType.Email, error = call.error.value)
+                    ArroButton(str(R.string.account_save_and_verify), {
                         scope.launchCall(call) {
                             b.updateEmail(email); close(); b.sendEmailVerification()
                         }
@@ -330,66 +334,66 @@ fun PersonalScreen() {
                 }
             }
             Sheet(sheet == "phone", { close() }) {
-                SheetHeader("Change mobile number", { close() }, if (!codeSent) "We'll text a code to the new number to check it's yours." else "Enter the 6-digit code we sent to ${Text.formatPhone(Validation.normaliseUkMobile(phone))}.")
+                SheetHeader(str(R.string.account_change_mobile_number), { close() }, if (!codeSent) str(R.string.account_we_ll_text_a_code_to) else str(R.string.account_enter_the_6_digit_code_we, Text.formatPhone(Validation.normaliseUkMobile(phone))))
                 Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (!codeSent) {
-                        ArroField(phone, { phone = it.filter { ch -> ch.isDigit() }.take(11) }, label = "New UK mobile", placeholder = "7700 900123", keyboard = KeyboardType.Phone,
+                        ArroField(phone, { phone = it.filter { ch -> ch.isDigit() }.take(11) }, label = str(R.string.account_new_uk_mobile), placeholder = "7700 900123", keyboard = KeyboardType.Phone,
                             prefix = { DialPrefix("+44", "gb") }, error = call.error.value)
-                        ArroButton("Send code", { scope.launchCall(call) { b.sendPhoneChangeCode(phone); codeSent = true; code = "" } }, loading = call.busy.value, enabled = phone.length >= 10)
+                        ArroButton(str(R.string.account_send_code), { scope.launchCall(call) { b.sendPhoneChangeCode(phone); codeSent = true; code = "" } }, loading = call.busy.value, enabled = phone.length >= 10)
                     } else {
                         CodeInput(code, { code = it }, error = call.error.value != null, onComplete = { entered ->
-                            scope.launchCall(call) { b.confirmPhoneChange(entered); close(); codeSent = false; phone = ""; banner.show("Mobile number updated", kind = BannerKind.Success) }
+                            scope.launchCall(call) { b.confirmPhoneChange(entered); close(); codeSent = false; phone = ""; banner.show(str(R.string.account_mobile_number_updated), kind = BannerKind.Success) }
                         })
                         FieldHint(call.error.value)
-                        LinkText("Use a different number", { codeSent = false; call.error.value = null }, color = C.Ink, strong = true)
+                        LinkText(str(R.string.account_use_a_different_number), { codeSent = false; call.error.value = null }, color = C.Ink, strong = true)
                     }
                 }
             }
             Sheet(sheet == "address", { close() }, fullHeight = true) {
-                SheetHeader("Change home address", { close() }, "Moving? We may ask for proof of address if your limits are Enhanced.")
+                SheetHeader(str(R.string.account_change_home_address), { close() }, str(R.string.account_moving_we_may_ask_for_proof))
                 Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ArroField(postcode, { postcode = it.uppercase().take(8); selected = 0 }, label = "Postcode", placeholder = "E8 2PL",
+                    ArroField(postcode, { postcode = it.uppercase().take(8); selected = 0 }, label = str(R.string.account_postcode), placeholder = str(R.string.account_e8_2pl),
                         capitalization = KeyboardCapitalization.Characters, prefix = { Ic(Icons.Search, tint = C.Slate) })
-                    if (results.isEmpty() && postcode.length >= 5) Cap("No addresses found for that postcode.")
+                    if (results.isEmpty() && postcode.length >= 5) Cap(str(R.string.account_no_addresses_found_for_that_postcode))
                     results.forEachIndexed { i, ad ->
                         ListRow(ad.line1, subtitle = "${ad.city} ${ad.postcode}", selected = i == selected, minHeight = 52.dp, leading = { Radio(i == selected) }, onClick = { selected = i })
                     }
                     FieldHint(call.error.value)
-                    ArroButton("Save address", {
+                    ArroButton(str(R.string.account_save_address), {
                         scope.launchCall(call) {
                             b.updateAddress(results[selected.coerceIn(0, results.lastIndex)]); close()
-                            banner.show("Address updated", kind = BannerKind.Success)
+                            banner.show(str(R.string.account_address_updated), kind = BannerKind.Success)
                         }
                     }, loading = call.busy.value, enabled = results.isNotEmpty())
                 }
             }
         },
     ) {
-        ScreenTitle("Personal details")
-        ArroField(a.displayName.takeIf { a.profile.displayName.isNotBlank() } ?: "Not provided yet", {}, label = "Legal name", readOnly = true, trailing = lock)
+        ScreenTitle(str(R.string.account_personal_details))
+        ArroField(a.displayName.takeIf { a.profile.displayName.isNotBlank() } ?: str(R.string.account_not_provided_yet), {}, label = str(R.string.account_legal_name), readOnly = true, trailing = lock)
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ArroField(a.profile.dob.takeIf { it.isNotBlank() }?.let { Text.isoToDisplay(it) } ?: "—", {}, Modifier.weight(1f), label = "Date of birth", readOnly = true, trailing = lock)
-            ArroField(a.profile.nationality.ifBlank { "—" }, {}, Modifier.weight(1f), label = "Nationality", readOnly = true, trailing = lock)
+            ArroField(a.profile.dob.takeIf { it.isNotBlank() }?.let { Text.isoToDisplay(it) } ?: "—", {}, Modifier.weight(1f), label = str(R.string.account_date_of_birth), readOnly = true, trailing = lock)
+            ArroField(a.profile.nationality.ifBlank { "—" }, {}, Modifier.weight(1f), label = str(R.string.account_nationality), readOnly = true, trailing = lock)
         }
-        ArroField(a.email, {}, label = "Email", readOnly = true, trailing = {
-            if (a.emailVerified) Pill("Verified", PillKind.Ok)
-            else LinkText("Verify", { b.sendEmailVerification() }, color = C.Ink, strong = true)
-        }, labelTrailing = { LinkText("Change", { email = a.email; sheet = "email" }, color = C.Ink, strong = true) })
-        ArroField(Text.formatPhone(a.phone), {}, label = "Mobile number", readOnly = true,
-            trailing = { LinkText("Change", { phone = ""; codeSent = false; sheet = "phone" }, color = C.Ink, strong = true) })
+        ArroField(a.email, {}, label = str(R.string.account_email), readOnly = true, trailing = {
+            if (a.emailVerified) Pill(str(R.string.account_verified), PillKind.Ok)
+            else LinkText(str(R.string.account_verify), { b.sendEmailVerification() }, color = C.Ink, strong = true)
+        }, labelTrailing = { LinkText(str(R.string.account_change), { email = a.email; sheet = "email" }, color = C.Ink, strong = true) })
+        ArroField(Text.formatPhone(a.phone), {}, label = str(R.string.account_mobile_number), readOnly = true,
+            trailing = { LinkText(str(R.string.account_change), { phone = ""; codeSent = false; sheet = "phone" }, color = C.Ink, strong = true) })
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            FieldLabel("Home address")
+            FieldLabel(str(R.string.account_home_address))
             Row(
                 Modifier.fillMaxWidth().border(1.5.dp, C.Line, RoundedCornerShape(14.dp)).padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.Top,
             ) {
                 val ad = a.profile.address
-                Txt(if (ad != null) "${ad.line1}\n${ad.city} ${ad.postcode}" else "Not provided yet", T.Input.copy(lineHeight = 22.sp), Modifier.weight(1f))
-                LinkText("Change", { postcode = ad?.postcode ?: ""; selected = 0; sheet = "address" }, color = C.Ink, strong = true)
+                Txt(if (ad != null) "${ad.line1}\n${ad.city} ${ad.postcode}" else str(R.string.account_not_provided_yet), T.Input.copy(lineHeight = 22.sp), Modifier.weight(1f))
+                LinkText(str(R.string.account_change), { postcode = ad?.postcode ?: ""; selected = 0; sheet = "address" }, color = C.Ink, strong = true)
             }
         }
-        Note("Locked details come from your ID. To change them, chat with us and upload a new document.", NoteKind.Info, Icons.Info,
-            action = "Chat with us", onAction = { app.arro.ui.screens.support.openChat(c, nav, null) })
+        Note(str(R.string.account_locked_details_come_from_your_id), NoteKind.Info, Icons.Info,
+            action = str(R.string.account_chat_with_us), onAction = { app.arro.ui.screens.support.openChat(c, nav, null) })
     }
 }
 
@@ -416,28 +420,28 @@ fun SecurityScreen() {
         topBar = { TopBar(onBack = { nav.back() }) },
         gap = 14.dp,
         overlay = {
-            ConfirmDialog(freezeConfirm, if (a.frozen) "Unfreeze your account?" else "Freeze your account?",
-                if (a.frozen) "You'll be able to send money and pay with your cards again." else "Sending money is blocked straight away. Money already on its way still arrives. You can unfreeze at any time.",
-                if (a.frozen) "Unfreeze" else "Freeze now", {
+            ConfirmDialog(freezeConfirm, if (a.frozen) str(R.string.account_unfreeze_your_account) else str(R.string.account_freeze_your_account),
+                if (a.frozen) str(R.string.account_you_ll_be_able_to_send) else str(R.string.account_sending_money_is_blocked_straight_away),
+                if (a.frozen) str(R.string.account_unfreeze) else str(R.string.account_freeze_now), {
                     b.setFrozen(!a.frozen); freezeConfirm = false
-                    banner.show(if (a.frozen) "Account unfrozen" else "Account frozen", kind = if (a.frozen) BannerKind.Success else BannerKind.Info)
+                    banner.show(if (a.frozen) str(R.string.account_account_unfrozen) else str(R.string.account_account_frozen), kind = if (a.frozen) BannerKind.Success else BannerKind.Info)
                 }, { freezeConfirm = false }, danger = !a.frozen)
             val dev = a.devices.firstOrNull { it.id == signOut }
-            ConfirmDialog(dev != null, "Sign out ${dev?.name ?: ""}?", "Anyone using it will need your password and an SMS code to sign in again.", "Sign out", {
-                dev?.let { b.signOutDevice(it.id); banner.show("Signed out", it.name, BannerKind.Success) }; signOut = null
+            ConfirmDialog(dev != null, str(R.string.account_sign_out_x, dev?.name ?: ""), str(R.string.account_anyone_using_it_will_need_your), str(R.string.account_sign_out), {
+                dev?.let { b.signOutDevice(it.id); banner.show(str(R.string.account_signed_out), it.name, BannerKind.Success) }; signOut = null
             }, { signOut = null }, danger = true)
             ChangePasscodeSheet(passcodeSheet) { passcodeSheet = false }
             ChangePasswordSheet(passwordSheet) { passwordSheet = false }
         },
     ) {
-        ScreenTitle("Security")
+        ScreenTitle(str(R.string.account_security))
         if (a.frozen) {
             Panel(kind = PanelKind.Grey, padding = 14.dp) {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Tile(Icons.Lock, TileStyle.Err, 52.dp, iconSize = 24.dp)
                     Column(Modifier.weight(1f)) {
-                        Txt("Your account is frozen", T.H3)
-                        Cap("Sending is blocked until you unfreeze it.")
+                        Txt(str(R.string.account_your_account_is_frozen), T.H3)
+                        Cap(str(R.string.account_sending_is_blocked_until_you_unfreeze))
                     }
                 }
             }
@@ -445,43 +449,43 @@ fun SecurityScreen() {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Illustration(Art.Shield, 52.dp)
                 Column {
-                    Txt(if (on == protections.size) "Your account is well protected" else "$on of ${protections.size} protections are on", T.H3)
-                    Cap(if (on == protections.size) "All ${protections.size} recommended protections are on." else "Turn on the rest below to keep your money safe.", color = C.Forest)
+                    Txt(if (on == protections.size) str(R.string.account_your_account_is_well_protected) else str(R.string.account_x_of_x_protections_are_on, on, protections.size), T.H3)
+                    Cap(if (on == protections.size) str(R.string.account_all_x_recommended_protections_are_on, protections.size) else str(R.string.account_turn_on_the_rest_below_to), color = C.Forest)
                 }
             }
         }
         Group {
-            ToggleRow(if (bioAvailable) "Fingerprint or face unlock" else "Fingerprint or face unlock",
-                if (bioAvailable) "Unlock and approve transfers" else "Set up a fingerprint or face in Android settings first", a.biometricEnabled && bioAvailable, enabled = bioAvailable) { wantOn ->
+            ToggleRow(if (bioAvailable) str(R.string.account_fingerprint_or_face_unlock) else str(R.string.account_fingerprint_or_face_unlock),
+                if (bioAvailable) str(R.string.account_unlock_and_approve_transfers) else str(R.string.account_set_up_a_fingerprint_or_face), a.biometricEnabled && bioAvailable, enabled = bioAvailable) { wantOn ->
                 if (!wantOn) { b.setBiometric(false); return@ToggleRow }
                 val activity = context as? FragmentActivity ?: return@ToggleRow
-                Biometrics.prompt(activity, "Turn on $BIO_NAME unlock", "Confirm it's you", negative = "Cancel",
-                    onSuccess = { b.setBiometric(true); banner.show("Biometric unlock is on", kind = BannerKind.Success) },
-                    onError = { banner.show("Couldn't turn it on", it, BannerKind.Error) })
+                Biometrics.prompt(activity, str(R.string.account_turn_on_x_unlock, BIO_NAME), str(R.string.account_confirm_it_s_you), negative = str(R.string.account_cancel),
+                    onSuccess = { b.setBiometric(true); banner.show(str(R.string.account_biometric_unlock_is_on), kind = BannerKind.Success) },
+                    onError = { banner.show(str(R.string.account_couldn_t_turn_it_on), it, BannerKind.Error) })
             }
             GroupDivider()
-            ToggleRow("Confirm new devices by SMS", "A code to ${Text.maskPhoneShort(a.phone)}", a.security.confirmNewDevices) { v -> b.updateSecurity { it.copy(confirmNewDevices = v) } }
+            ToggleRow(str(R.string.account_confirm_new_devices_by_sms), str(R.string.account_a_code_to_x, Text.maskPhoneShort(a.phone)), a.security.confirmNewDevices) { v -> b.updateSecurity { it.copy(confirmNewDevices = v) } }
             GroupDivider()
-            ToggleRow("Passcode for transfers over £1,000", "Even when biometric unlock is on", a.security.passcodeOverThreshold) { v -> b.updateSecurity { it.copy(passcodeOverThreshold = v) } }
+            ToggleRow(str(R.string.account_passcode_for_transfers_over_1_000), str(R.string.account_even_when_biometric_unlock_is_on), a.security.passcodeOverThreshold) { v -> b.updateSecurity { it.copy(passcodeOverThreshold = v) } }
             GroupDivider()
-            ToggleRow("Show balance on home screen widgets", "Your GBP balance and recent recipients. Anyone who can see your home screen will see them", a.settings.widgetBalance) { v -> b.updateSettings { it.copy(widgetBalance = v) } }
+            ToggleRow(str(R.string.account_show_balance_on_home_screen_widgets), str(R.string.account_your_gbp_balance_and_recent_recipients), a.settings.widgetBalance) { v -> b.updateSettings { it.copy(widgetBalance = v) } }
             GroupDivider()
-            ListRow("Change passcode", flat = true, minHeight = 52.dp,
-                subtitle = a.security.passcodeChangedAt.takeIf { it > 0 }?.let { "Changed ${Text.relativeDay(it, now)}" }, trailing = { Chevron() }, onClick = { passcodeSheet = true })
+            ListRow(str(R.string.account_change_passcode), flat = true, minHeight = 52.dp,
+                subtitle = a.security.passcodeChangedAt.takeIf { it > 0 }?.let { str(R.string.account_changed_x, Text.relativeDay(it, now)) }, trailing = { Chevron() }, onClick = { passcodeSheet = true })
             GroupDivider()
-            ListRow("Change password", flat = true, minHeight = 52.dp,
-                subtitle = a.security.passwordChangedAt.takeIf { it > 0 }?.let { "Changed ${Text.relativeDay(it, now)}" }, trailing = { Chevron() }, onClick = { passwordSheet = true })
+            ListRow(str(R.string.account_change_password), flat = true, minHeight = 52.dp,
+                subtitle = a.security.passwordChangedAt.takeIf { it > 0 }?.let { str(R.string.account_changed_x, Text.relativeDay(it, now)) }, trailing = { Chevron() }, onClick = { passwordSheet = true })
         }
-        Over("Signed-in devices")
+        Over(str(R.string.account_signed_in_devices))
         Group {
             a.devices.sortedByDescending { it.current }.forEachIndexed { i, d ->
                 if (i > 0) GroupDivider()
-                ListRow(d.name, flat = true, minHeight = 56.dp, subtitle = "${d.location} · ${if (d.current) "this device" else Text.relativeDay(d.lastActive, now)}",
+                ListRow(d.name, flat = true, minHeight = 56.dp, subtitle = str(R.string.account_device_line, d.location, if (d.current) str(R.string.account_this_device) else Text.relativeDay(d.lastActive, now)),
                     leading = { Tile(if (d.laptop) Icons.Laptop else Icons.Smartphone, size = 36.dp, iconSize = 18.dp) },
-                    trailing = { if (!d.current) ArroButton("Sign out", { signOut = d.id }, style = Btn.Line, size = BtnSize.S) })
+                    trailing = { if (!d.current) ArroButton(str(R.string.account_sign_out), { signOut = d.id }, style = Btn.Line, size = BtnSize.S) })
             }
         }
-        ArroButton(if (a.frozen) "Unfreeze my account" else "Freeze my account now", { freezeConfirm = true },
+        ArroButton(if (a.frozen) str(R.string.account_unfreeze_my_account) else str(R.string.account_freeze_my_account_now), { freezeConfirm = true },
             style = if (a.frozen) Btn.Dark else Btn.Danger, icon = Icons.Lock)
     }
 }
@@ -501,19 +505,19 @@ private fun androidx.compose.foundation.layout.BoxScope.ChangePasscodeSheet(visi
     fun complete(code: String) {
         when (step) {
             0 -> scope.launchCall(call) {
-                if (b.checkPasscode(code)) { current = code; step = 1; entry = ""; error = null } else { error = "That's not your current passcode."; entry = "" }
+                if (b.checkPasscode(code)) { current = code; step = 1; entry = ""; error = null } else { error = str(R.string.account_that_s_not_your_current_passcode); entry = "" }
             }
-            1 -> if (Validation.passcodeWeak(code)) { error = "Avoid repeated or simple sequences like 123456."; entry = "" } else { first = code; step = 2; entry = ""; error = null }
-            else -> if (code != first) { error = "Those didn't match. Enter your new passcode again."; entry = ""; step = 1 } else scope.launchCall(call, onError = { e -> error = e.message; entry = ""; step = 0; true }) {
+            1 -> if (Validation.passcodeWeak(code)) { error = str(R.string.account_avoid_repeated_or_simple_sequences_like); entry = "" } else { first = code; step = 2; entry = ""; error = null }
+            else -> if (code != first) { error = str(R.string.account_those_didn_t_match_enter_your); entry = ""; step = 1 } else scope.launchCall(call, onError = { e -> error = e.message; entry = ""; step = 0; true }) {
                 b.changePasscode(current, code)
-                banner.show("Passcode changed", kind = BannerKind.Success)
+                banner.show(str(R.string.account_passcode_changed), kind = BannerKind.Success)
                 onDone()
             }
         }
     }
     Sheet(visible, onDone, fullHeight = true) {
-        SheetHeader(when (step) { 0 -> "Enter your current passcode"; 1 -> "Choose a new passcode"; else -> "Confirm your new passcode" }, onDone,
-            "Step ${step + 1} of 3")
+        SheetHeader(when (step) { 0 -> str(R.string.account_enter_your_current_passcode); 1 -> str(R.string.account_choose_a_new_passcode); else -> str(R.string.account_confirm_your_new_passcode) }, onDone,
+            str(R.string.account_step_x_of_3, step + 1))
         Column(Modifier.fillMaxWidth().padding(top = 24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(14.dp)) {
             PasscodeDots(entry.length, error = error != null)
             Txt(error ?: " ", T.Cap, color = C.Err, align = TextAlign.Center)
@@ -532,14 +536,14 @@ private fun androidx.compose.foundation.layout.BoxScope.ChangePasswordSheet(visi
     val scope = rememberCoroutineScope()
     val call = rememberCall()
     Sheet(visible, onDone, fullHeight = true) {
-        SheetHeader("Change password", onDone, "You'll stay logged in on this phone.")
+        SheetHeader(str(R.string.account_change_password), onDone, str(R.string.account_you_ll_stay_logged_in_on))
         Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PasswordField(current, { current = it }, "Current password")
-            PasswordField(next, { next = it }, "New password")
+            PasswordField(current, { current = it }, str(R.string.account_current_password))
+            PasswordField(next, { next = it }, str(R.string.account_new_password))
             PasswordStrength(next)
             FieldHint(call.error.value)
-            ArroButton("Change password", {
-                scope.launchCall(call) { b.changePassword(current, next); banner.show("Password changed", kind = BannerKind.Success); onDone() }
+            ArroButton(str(R.string.account_change_password), {
+                scope.launchCall(call) { b.changePassword(current, next); banner.show(str(R.string.account_password_changed), kind = BannerKind.Success); onDone() }
             }, loading = call.busy.value, enabled = current.isNotEmpty() && Validation.password(next).required)
         }
     }
@@ -571,54 +575,54 @@ fun VerificationScreen() {
         topBar = { TopBar(onBack = { nav.back() }) },
         footer = {
             when {
-                k.status != KycStatus.APPROVED -> ArroButton(if (k.status == KycStatus.IN_REVIEW) "See my check" else "Verify my identity", { nav.go(if (k.status == KycStatus.IN_REVIEW) Routes.KYC_STATUS else Routes.KYC) })
-                k.level == KycLevel.STANDARD && !k.enhancedRequested -> ArroButton("Raise my limits", { docsSheet = true })
-                k.enhancedRequested -> ArroButton("We're reviewing your documents", {}, enabled = false)
+                k.status != KycStatus.APPROVED -> ArroButton(if (k.status == KycStatus.IN_REVIEW) str(R.string.account_see_my_check) else str(R.string.account_verify_my_identity), { nav.go(if (k.status == KycStatus.IN_REVIEW) Routes.KYC_STATUS else Routes.KYC) })
+                k.level == KycLevel.STANDARD && !k.enhancedRequested -> ArroButton(str(R.string.account_raise_my_limits), { docsSheet = true })
+                k.enhancedRequested -> ArroButton(str(R.string.account_we_re_reviewing_your_documents), {}, enabled = false)
                 else -> {}
             }
         },
         overlay = {
             Sheet(docsSheet, { docsSheet = false }, fullHeight = true) {
-                SheetHeader("Raise your limits", { docsSheet = false }, "Upload two documents. We usually review them within a working day.")
+                SheetHeader(str(R.string.account_raise_your_limits), { docsSheet = false }, str(R.string.account_upload_two_documents_we_usually_review))
                 Column(Modifier.padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    ListRow("Proof of address", subtitle = addressDoc?.let { "Added · tap to replace" } ?: "Bank statement or utility bill from the last 3 months",
+                    ListRow(str(R.string.account_proof_of_address), subtitle = addressDoc?.let { str(R.string.account_added_tap_to_replace) } ?: str(R.string.account_bank_statement_or_utility_bill_from),
                         leading = { Tile(if (addressDoc != null) Icons.Check else Icons.Document, if (addressDoc != null) TileStyle.Ok else TileStyle.Tint) },
                         trailing = { Chevron() }, onClick = { picking = "address"; picker() })
-                    ListRow("Proof of income", subtitle = incomeDoc?.let { "Added · tap to replace" } ?: "A recent payslip, tax return or business accounts",
+                    ListRow(str(R.string.account_proof_of_income), subtitle = incomeDoc?.let { str(R.string.account_added_tap_to_replace) } ?: str(R.string.account_a_recent_payslip_tax_return_or),
                         leading = { Tile(if (incomeDoc != null) Icons.Check else Icons.CashSimple, if (incomeDoc != null) TileStyle.Ok else TileStyle.Tint) },
                         trailing = { Chevron() }, onClick = { picking = "income"; picker() })
-                    Note("Photos or screenshots are fine. Make sure your name and the date are visible.", NoteKind.Info, Icons.Info)
+                    Note(str(R.string.account_photos_or_screenshots_are_fine_make), NoteKind.Info, Icons.Info)
                     FieldHint(call.error.value)
-                    ArroButton("Submit documents", {
+                    ArroButton(str(R.string.account_submit_documents), {
                         scope.launchCall(call) {
                             b.requestEnhanced(); docsSheet = false
-                            banner.show("Documents sent", "We'll let you know when your limits go up.", BannerKind.Success)
+                            banner.show(str(R.string.account_documents_sent), str(R.string.account_we_ll_let_you_know_when), BannerKind.Success)
                         }
                     }, loading = call.busy.value, enabled = addressDoc != null && incomeDoc != null)
                 }
             }
         },
     ) {
-        ScreenTitle("Verification\nand limits")
+        ScreenTitle(str(R.string.account_verification_and_limits_2))
         ArroCard(padding = 14.dp) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Illustration(if (k.status == KycStatus.REJECTED) Art.IdCardWarn else Art.IdCard, 60.dp)
                 Column(Modifier.weight(1f)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Txt(if (a.verified) k.level.label else "Not verified", T.H3)
+                        Txt(if (a.verified) k.level.label else str(R.string.account_not_verified), T.H3)
                         when (k.status) {
-                            KycStatus.APPROVED -> Pill("Verified", PillKind.Ok, dot = true)
-                            KycStatus.IN_REVIEW -> Pill("Checking", PillKind.Info, dot = true)
-                            KycStatus.REJECTED -> Pill("Action needed", PillKind.Warn, dot = true)
-                            KycStatus.NOT_STARTED -> Pill("To do", PillKind.Neutral)
+                            KycStatus.APPROVED -> Pill(str(R.string.account_verified), PillKind.Ok, dot = true)
+                            KycStatus.IN_REVIEW -> Pill(str(R.string.account_checking), PillKind.Info, dot = true)
+                            KycStatus.REJECTED -> Pill(str(R.string.account_action_needed), PillKind.Warn, dot = true)
+                            KycStatus.NOT_STARTED -> Pill(str(R.string.account_to_do), PillKind.Neutral)
                         }
                     }
                     Cap(when (k.status) {
-                        KycStatus.APPROVED -> "${k.docType.label} checked ${Text.date(k.decidedAt.takeIf { it > 0 } ?: k.submittedAt.takeIf { it > 0 } ?: a.createdAt)}" +
-                            (if (k.docExpiry.isNotBlank()) " · expires ${k.docExpiry}" else "")
-                        KycStatus.IN_REVIEW -> "We're checking your ${k.docType.label.lowercase()}. Usually a few minutes."
-                        KycStatus.REJECTED -> k.rejectReason.ifBlank { "We need a clearer photo of your ID." }
-                        KycStatus.NOT_STARTED -> "Verify your identity to start sending. It takes about 3 minutes."
+                        KycStatus.APPROVED -> str(R.string.account_x_checked_x, k.docType.label, Text.date(k.decidedAt.takeIf { it > 0 } ?: k.submittedAt.takeIf { it > 0 } ?: a.createdAt)) +
+                            (if (k.docExpiry.isNotBlank()) str(R.string.account_expires_x, k.docExpiry) else "")
+                        KycStatus.IN_REVIEW -> str(R.string.account_we_re_checking_your_x_usually, k.docType.label.lowercase())
+                        KycStatus.REJECTED -> k.rejectReason.ifBlank { str(R.string.account_we_need_a_clearer_photo_of) }
+                        KycStatus.NOT_STARTED -> str(R.string.account_verify_your_identity_to_start_sending)
                     }, Modifier.padding(top = 2.dp))
                 }
             }
@@ -626,21 +630,21 @@ fun VerificationScreen() {
         if (a.verified) {
             val level = k.level
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                LimitLine("Per transfer", null, level.perTransferMinor)
-                LimitLine("This month", usage.monthMinor, level.perMonthMinor)
-                LimitLine("This year", usage.yearMinor, level.perYearMinor)
+                LimitLine(str(R.string.account_per_transfer), null, level.perTransferMinor)
+                LimitLine(str(R.string.account_this_month), usage.monthMinor, level.perMonthMinor)
+                LimitLine(str(R.string.account_this_year), usage.yearMinor, level.perYearMinor)
             }
             if (level == KycLevel.STANDARD) Panel(gap = 10.dp) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Txt("Enhanced", T.H3, Modifier.weight(1f))
-                    Pill(if (k.enhancedRequested) "In review" else "Next level", if (k.enhancedRequested) PillKind.Info else PillKind.Neutral, dot = k.enhancedRequested)
+                    Txt(str(R.string.account_enhanced), T.H3, Modifier.weight(1f))
+                    Pill(if (k.enhancedRequested) str(R.string.account_in_review) else str(R.string.account_next_level), if (k.enhancedRequested) PillKind.Info else PillKind.Neutral, dot = k.enhancedRequested)
                 }
-                Cap("Send up to ${Money.format(KycLevel.ENHANCED.perTransferMinor, Currency.GBP, false)} per transfer and ${Money.format(KycLevel.ENHANCED.perMonthMinor, Currency.GBP, false)} a month.")
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.Document, size = 16.dp); Txt("Proof of address from the last 3 months", T.Body14) }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.CashSimple, size = 16.dp); Txt("Proof of income, like a payslip", T.Body14) }
-            } else Note("You're on our highest level. Need more? Chat with us about a business account.", NoteKind.Lime, Icons.ShieldCheck)
+                Cap(str(R.string.account_send_up_to_x_per_transfer, Money.format(KycLevel.ENHANCED.perTransferMinor, Currency.GBP, false), Money.format(KycLevel.ENHANCED.perMonthMinor, Currency.GBP, false)))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.Document, size = 16.dp); Txt(str(R.string.account_proof_of_address_from_the_last), T.Body14) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.CashSimple, size = 16.dp); Txt(str(R.string.account_proof_of_income_like_a_payslip), T.Body14) }
+            } else Note(str(R.string.account_you_re_on_our_highest_level), NoteKind.Lime, Icons.ShieldCheck)
         } else {
-            Note("Until you're verified you can explore the app, add recipients and check rates, but not send money.", NoteKind.Info, Icons.Info)
+            Note(str(R.string.account_until_you_re_verified_you_can), NoteKind.Info, Icons.Info)
         }
     }
 }
@@ -653,7 +657,7 @@ private fun LimitLine(label: String, used: Long?, limit: Long) {
             if (used == null) Txt(Money.format(limit, Currency.GBP, false), T.Num.copy(fontSize = 14.sp))
             else Txt(androidx.compose.ui.text.buildAnnotatedString {
                 pushStyle(androidx.compose.ui.text.SpanStyle(fontWeight = FontWeight.SemiBold)); append(Money.format(used, Currency.GBP, false)); pop()
-                append(" of ${Money.format(limit, Currency.GBP, false)}")
+                append(str(R.string.account_of_x, Money.format(limit, Currency.GBP, false)))
             }, T.Body14.copy(fontFeatureSettings = "tnum"))
         }
         if (used != null) {
@@ -683,42 +687,42 @@ fun NotificationSettingsScreen() {
         gap = 14.dp,
         overlay = {
             val tp = timePicker
-            PickerSheet(tp != null, if (tp == "from") "Quiet from" else "Quiet until", hours, if (tp == "from") s.quietFrom else s.quietTo, { h ->
+            PickerSheet(tp != null, if (tp == "from") str(R.string.account_quiet_from) else str(R.string.account_quiet_until), hours, if (tp == "from") s.quietFrom else s.quietTo, { h ->
                 b.updateSettings { if (tp == "from") it.copy(quietFrom = h) else it.copy(quietTo = h) }
             }, { timePicker = null })
         },
     ) {
-        ScreenTitle("Notifications", "Choose what we tell you about, and how.")
-        if (!permitted) Note("Notifications for Arro are turned off on this phone, so you won't hear when money arrives.", NoteKind.Warn, Icons.Bell, action = "Turn on", onAction = {
+        ScreenTitle(str(R.string.account_notifications), str(R.string.account_choose_what_we_tell_you_about))
+        if (!permitted) Note(str(R.string.account_notifications_for_arro_are_turned_off), NoteKind.Warn, Icons.Bell, action = str(R.string.account_turn_on), onAction = {
             if (Build.VERSION.SDK_INT >= 33) launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
             else runCatching { context.startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
         })
-        Over("Transfers")
+        Over(str(R.string.account_transfers))
         Group {
-            ToggleRow("Transfer updates", "Sent, delivered or delayed · push and email", s.transferUpdates) { v -> b.updateSettings { it.copy(transferUpdates = v) } }
+            ToggleRow(str(R.string.account_transfer_updates), str(R.string.account_sent_delivered_or_delayed_push_and), s.transferUpdates) { v -> b.updateSettings { it.copy(transferUpdates = v) } }
             GroupDivider()
-            ToggleRow("Text recipients on arrival", "Free SMS to the person you paid", s.smsRecipients) { v -> b.updateSettings { it.copy(smsRecipients = v) } }
+            ToggleRow(str(R.string.account_text_recipients_on_arrival), str(R.string.account_free_sms_to_the_person_you), s.smsRecipients) { v -> b.updateSettings { it.copy(smsRecipients = v) } }
             GroupDivider()
-            ToggleRow("Rate alerts", "When a rate you're watching hits", s.rateAlerts) { v -> b.updateSettings { it.copy(rateAlerts = v) } }
+            ToggleRow(str(R.string.account_rate_alerts), str(R.string.account_when_a_rate_you_re_watching), s.rateAlerts) { v -> b.updateSettings { it.copy(rateAlerts = v) } }
         }
-        Over("Account")
+        Over(str(R.string.account_account))
         Group {
-            ListRow("Security alerts", flat = true, minHeight = 58.dp, subtitle = "Always on to keep you safe", trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap("On") }
+            ListRow(str(R.string.account_security_alerts), flat = true, minHeight = 58.dp, subtitle = str(R.string.account_always_on_to_keep_you_safe), trailing = {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) { Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap(str(R.string.account_on)) }
             })
             GroupDivider()
-            ToggleRow("Monthly statements", "By email, on the 1st", s.statements) { v -> b.updateSettings { it.copy(statements = v) } }
+            ToggleRow(str(R.string.account_monthly_statements), str(R.string.account_by_email_on_the_1st), s.statements) { v -> b.updateSettings { it.copy(statements = v) } }
             GroupDivider()
-            ToggleRow("News and offers", "New countries and promotions", s.news) { v -> b.updateSettings { it.copy(news = v) } }
+            ToggleRow(str(R.string.account_news_and_offers), str(R.string.account_new_countries_and_promotions), s.news) { v -> b.updateSettings { it.copy(news = v) } }
         }
-        Over("Quiet hours")
+        Over(str(R.string.account_quiet_hours))
         Group {
-            ToggleRow("${s.quietFrom} to ${s.quietTo}", "Security alerts still come through", s.quietHours) { v -> b.updateSettings { it.copy(quietHours = v) } }
+            ToggleRow(str(R.string.account_x_to_x, s.quietFrom, s.quietTo), str(R.string.account_security_alerts_still_come_through), s.quietHours) { v -> b.updateSettings { it.copy(quietHours = v) } }
             if (s.quietHours) {
                 GroupDivider()
-                ListRow("Starts", flat = true, minHeight = 52.dp, trailing = { Row(verticalAlignment = Alignment.CenterVertically) { Cap(s.quietFrom); Chevron() } }, onClick = { timePicker = "from" })
+                ListRow(str(R.string.account_starts), flat = true, minHeight = 52.dp, trailing = { Row(verticalAlignment = Alignment.CenterVertically) { Cap(s.quietFrom); Chevron() } }, onClick = { timePicker = "from" })
                 GroupDivider()
-                ListRow("Ends", flat = true, minHeight = 52.dp, trailing = { Row(verticalAlignment = Alignment.CenterVertically) { Cap(s.quietTo); Chevron() } }, onClick = { timePicker = "to" })
+                ListRow(str(R.string.account_ends), flat = true, minHeight = 52.dp, trailing = { Row(verticalAlignment = Alignment.CenterVertically) { Cap(s.quietTo); Chevron() } }, onClick = { timePicker = "to" })
             }
         }
     }
@@ -735,31 +739,31 @@ fun LanguageScreen() {
     val state by appState()
     val a = state.account ?: return
     val s = a.settings
-    val languages = listOf("English (UK)", "Kinyarwanda", "Français", "Kiswahili", "Português")
+    val languages = listOf(str(R.string.account_english_uk), str(R.string.account_kinyarwanda), str(R.string.account_fran_ais), str(R.string.account_kiswahili), str(R.string.account_portugu_s))
     ArroScreen(topBar = { TopBar(onBack = { nav.back() }) }, gap = 14.dp) {
-        ScreenTitle("Language\nand region")
-        Over("App language")
+        ScreenTitle(str(R.string.account_language_and_region_2))
+        Over(str(R.string.account_app_language))
         Group {
             languages.forEachIndexed { i, lang ->
                 if (i > 0) GroupDivider()
                 val available = i == 0
-                ListRow(lang, flat = true, minHeight = 52.dp, subtitle = if (available) null else "Coming soon",
+                ListRow(lang, flat = true, minHeight = 52.dp, subtitle = if (available) null else str(R.string.account_coming_soon),
                     trailing = { Radio(s.language == lang) },
                     onClick = {
                         if (available) b.updateSettings { it.copy(language = lang) }
-                        else banner.show("$lang is coming soon", "We'll let you know when Arro speaks $lang. Recipients already get SMS in their language.")
+                        else banner.show(str(R.string.account_x_is_coming_soon, lang), str(R.string.account_we_ll_let_you_know_when_2, lang))
                     })
             }
         }
-        Over("Region and display")
+        Over(str(R.string.account_region_and_display))
         Group {
-            ListRow("Country of residence", flat = true, minHeight = 52.dp, trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Flag("gb", 18.dp); Cap("United Kingdom") }
+            ListRow(str(R.string.account_country_of_residence), flat = true, minHeight = 52.dp, trailing = {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) { Flag("gb", 18.dp); Cap(str(R.string.account_united_kingdom)) }
             })
             GroupDivider()
-            ListRow("Number format", flat = true, minHeight = 52.dp, trailing = { Cap("1,234.56") })
+            ListRow(str(R.string.account_number_format), flat = true, minHeight = 52.dp, trailing = { Cap("1,234.56") })
             GroupDivider()
-            ListRow("Date format", flat = true, minHeight = 52.dp, trailing = { Cap(Text.numericDate(b.now)) })
+            ListRow(str(R.string.account_date_format), flat = true, minHeight = 52.dp, trailing = { Cap(Text.numericDate(b.now)) })
         }
     }
 }
@@ -780,37 +784,37 @@ fun ReferScreen() {
         background = C.Night,
         topBar = { TopBar(onBack = { nav.back() }) },
         footer = {
-            ArroButton("Share invite link", {
-                Share.text(context, "I use Arro to send money home. Your first transfer has no Arro fee: $link (code $code)", "Try Arro")
+            ArroButton(str(R.string.account_share_invite_link), {
+                Share.text(context, str(R.string.account_i_use_arro_to_send_money, link, code), str(R.string.account_try_arro))
             }, style = Btn.Lime, icon = Icons.Share)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                LinkText("Terms apply", { nav.go(Routes.legal("referral")) }, color = C.DarkCap, underline = true)
-                Cap(" · Rewards are paid into your GBP balance", color = C.DarkCap, size = 12f)
+                LinkText(str(R.string.account_terms_apply), { nav.go(Routes.legal("referral")) }, color = C.DarkCap, underline = true)
+                Cap(str(R.string.account_rewards_are_paid_into_your_gbp), color = C.DarkCap, size = 12f)
             }
         },
     ) {
         Box(Modifier.fillMaxWidth().height(220.dp), contentAlignment = Alignment.Center) {
             Box(Modifier.size(320.dp).offset(y = 30.dp).background(Brush.radialGradient(listOf(C.Lime.copy(alpha = 0.18f), C.Lime.copy(alpha = 0f))), CircleShape))
-            Illustration(Art.Gift, 200.dp, description = "A gift box")
+            Illustration(Art.Gift, 200.dp, description = str(R.string.account_a_gift_box))
         }
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScreenTitle("Invite friends,\nget £10", size = TitleSize.XL, color = C.Lime, align = TextAlign.Center)
-            Txt("Friends' first transfer has no Arro fee. You get £10 when they send £100 or more.", T.Lede, color = C.DarkCap, align = TextAlign.Center)
+            ScreenTitle(str(R.string.account_invite_friends_get_10), size = TitleSize.XL, color = C.Lime, align = TextAlign.Center)
+            Txt(str(R.string.account_friends_first_transfer_has_no_arro), T.Lede, color = C.DarkCap, align = TextAlign.Center)
         }
         Row(
             Modifier.padding(top = 10.dp).fillMaxWidth().dashedBorder().padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Cap("Your invite code", color = C.DarkCap, size = 12f)
+                Cap(str(R.string.account_your_invite_code), color = C.DarkCap, size = 12f)
                 Txt(code, T.Big22.copy(letterSpacing = 1.3.sp), Modifier.padding(top = 2.dp), color = C.OnNight)
             }
-            ArroButton("Copy", { Share.copy(context, "Arro invite code", code); banner.show("Invite code copied", kind = BannerKind.Success) },
+            ArroButton(str(R.string.account_copy), { Share.copy(context, str(R.string.account_arro_invite_code), code); banner.show(str(R.string.account_invite_code_copied), kind = BannerKind.Success) },
                 style = Btn.LineOnDark, size = BtnSize.S, icon = Icons.Copy)
         }
         Row(Modifier.fillMaxWidth().padding(horizontal = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-            Cap("${a.referral.friendsJoined} ${if (a.referral.friendsJoined == 1) "friend" else "friends"} joined", color = C.DarkCap)
-            Txt("${Money.format(a.referral.earnedMinor, Currency.GBP)} earned", T.Body14.copy(fontWeight = FontWeight.SemiBold), color = C.Lime)
+            Cap(if (a.referral.friendsJoined == 1) str(R.string.account_one_friend_joined) else str(R.string.account_x_friends_joined, a.referral.friendsJoined), color = C.DarkCap)
+            Txt(str(R.string.account_x_earned, Money.format(a.referral.earnedMinor, Currency.GBP)), T.Body14.copy(fontWeight = FontWeight.SemiBold), color = C.Lime)
         }
     }
 }
@@ -843,59 +847,59 @@ fun ManageScreen() {
         gap = 14.dp,
         overlay = {
             Sheet(privacy, { privacy = false }) {
-                SheetHeader("Privacy choices", { privacy = false }, "Change these whenever you like. They never affect your transfers.")
+                SheetHeader(str(R.string.account_privacy_choices), { privacy = false }, str(R.string.account_change_these_whenever_you_like_they))
                 Group(Modifier.padding(top = 14.dp)) {
-                    ToggleRow("Help improve Arro", "Anonymous usage analytics", a.settings.analytics) { v -> b.updateSettings { it.copy(analytics = v) } }
+                    ToggleRow(str(R.string.account_help_improve_arro), str(R.string.account_anonymous_usage_analytics), a.settings.analytics) { v -> b.updateSettings { it.copy(analytics = v) } }
                     GroupDivider()
-                    ToggleRow("Marketing", "Offers by email and push, never shared", a.settings.marketing) { v -> b.updateSettings { it.copy(marketing = v) } }
+                    ToggleRow(str(R.string.account_marketing), str(R.string.account_offers_by_email_and_push_never), a.settings.marketing) { v -> b.updateSettings { it.copy(marketing = v) } }
                 }
             }
-            ConfirmDialog(pause, "Pause your account?", "You'll be logged out and nobody can send money or log in until you log in again with your password.", "Pause account", {
+            ConfirmDialog(pause, str(R.string.account_pause_your_account), str(R.string.account_you_ll_be_logged_out_and), str(R.string.account_pause_account), {
                 pause = false; b.pauseAccount()
             }, { pause = false })
             Sheet(close, { close = false; understood = false }) {
-                SheetHeader("Close your Arro account", { close = false; understood = false }, "This can't be undone.")
+                SheetHeader(str(R.string.account_close_your_arro_account), { close = false; understood = false }, str(R.string.account_this_can_t_be_undone))
                 Column(Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     val balances = a.wallets.filter { it.balanceMinor != 0L }
-                    if (balances.isNotEmpty()) Note("You still have ${balances.joinToString { Money.format(it.balanceMinor, it.cur) }}. Send or convert it first.", NoteKind.Warn, Icons.Warning,
-                        action = "Go to wallet", onAction = { close = false; nav.go(Routes.WALLET) })
-                    Cap("We'll delete your recipients, cards and settings. Transfer records are kept for 5 years, as the law requires.")
-                    CheckRow(understood, { understood = it }, "I understand my account will be closed for good")
+                    if (balances.isNotEmpty()) Note(str(R.string.account_you_still_have_x_send_or, balances.joinToString { Money.format(it.balanceMinor, it.cur) }), NoteKind.Warn, Icons.Warning,
+                        action = str(R.string.account_go_to_wallet), onAction = { close = false; nav.go(Routes.WALLET) })
+                    Cap(str(R.string.account_we_ll_delete_your_recipients_cards))
+                    CheckRow(understood, { understood = it }, str(R.string.account_i_understand_my_account_will_be))
                     FieldHint(call.error.value)
-                    ArroButton("Close my account", { scope.launchCall(call) { b.closeAccount() } }, style = Btn.Danger, loading = call.busy.value, enabled = understood)
+                    ArroButton(str(R.string.account_close_my_account), { scope.launchCall(call) { b.closeAccount() } }, style = Btn.Danger, loading = call.busy.value, enabled = understood)
                 }
             }
         },
     ) {
-        ScreenTitle("Account\nmanagement")
-        Over("Your data")
+        ScreenTitle(str(R.string.account_account_management_2))
+        Over(str(R.string.account_your_data))
         Group {
-            ListRow("Download my data", flat = true, subtitle = "Everything we hold about you, as a JSON file", leading = { Tile(Icons.Download, size = 36.dp, iconSize = 18.dp) }, trailing = { Chevron() },
+            ListRow(str(R.string.account_download_my_data), flat = true, subtitle = str(R.string.account_everything_we_hold_about_you_as), leading = { Tile(Icons.Download, size = 36.dp, iconSize = 18.dp) }, trailing = { Chevron() },
                 onClick = {
                     scope.launchCall(call) {
                         val f = withContext(Dispatchers.IO) { Share.cacheFile(context, "arro-my-data.json").apply { writeText(b.exportData()) } }
-                        banner.show("Your data is ready", Share.saveToDownloads(context, f, "application/json"), BannerKind.Success)
+                        banner.show(str(R.string.account_your_data_is_ready), Share.saveToDownloads(context, f, "application/json"), BannerKind.Success)
                     }
                 })
             GroupDivider()
-            ListRow("Privacy choices", flat = true, subtitle = "Analytics and marketing consent", leading = { Tile(Icons.Eye, size = 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { privacy = true })
+            ListRow(str(R.string.account_privacy_choices), flat = true, subtitle = str(R.string.account_analytics_and_marketing_consent), leading = { Tile(Icons.Eye, size = 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { privacy = true })
         }
-        Over("Your account")
+        Over(str(R.string.account_your_account))
         Group {
-            ListRow("Close a currency account", flat = true, subtitle = a.wallets.filter { !it.main }.joinToString(" or ") { it.currency }.ifBlank { "You only have your main GBP account" },
+            ListRow(str(R.string.account_close_a_currency_account), flat = true, subtitle = a.wallets.filter { !it.main }.joinToString(" or ") { it.currency }.ifBlank { str(R.string.account_you_only_have_your_main_gbp) },
                 leading = { Tile(Icons.WalletSimple, size = 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { nav.go(Routes.WALLET) })
             GroupDivider()
-            ListRow("Pause my account", flat = true, subtitle = "Block sending and logins until you return", leading = { Tile(Icons.Pause, TileStyle.Warn, 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { pause = true })
+            ListRow(str(R.string.account_pause_my_account), flat = true, subtitle = str(R.string.account_block_sending_and_logins_until_you), leading = { Tile(Icons.Pause, TileStyle.Warn, 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { pause = true })
             GroupDivider()
-            ListRow("Close my account", flat = true, titleStyle = T.RowTitle.copy(color = C.Err), subtitle = "Permanent. You'll need a zero balance first.",
+            ListRow(str(R.string.account_close_my_account), flat = true, titleStyle = T.RowTitle.copy(color = C.Err), subtitle = str(R.string.account_permanent_you_ll_need_a_zero),
                 leading = { Tile(Icons.Trash, TileStyle.Err, 36.dp, iconSize = 18.dp) }, trailing = { Chevron() }, onClick = { call.error.value = null; close = true })
         }
-        Note("Even after closing, the law requires us to keep transfer records for 5 years. We never use them for marketing.", NoteKind.Info, Icons.Info)
-        Over("Legal")
+        Note(str(R.string.account_even_after_closing_the_law_requires), NoteKind.Info, Icons.Info)
+        Over(str(R.string.account_legal))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Chip("Terms of use", false, { nav.go(Routes.legal("terms")) })
-            Chip("Privacy policy", false, { nav.go(Routes.legal("privacy")) })
-            Chip("Complaints", false, { nav.go(Routes.legal("complaints")) })
+            Chip(str(R.string.account_terms_of_use), false, { nav.go(Routes.legal("terms")) })
+            Chip(str(R.string.account_privacy_policy), false, { nav.go(Routes.legal("privacy")) })
+            Chip(str(R.string.account_complaints), false, { nav.go(Routes.legal("complaints")) })
         }
     }
 }
@@ -921,95 +925,95 @@ fun DemoScreen() {
     val runningLock = a?.anyOfferLock(now)
     val waitingFriend = a?.referral?.friends?.firstOrNull { it.status == app.arro.core.FriendStatus.SIGNED_UP }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, title = "Demo controls") },
+        topBar = { TopBar(onBack = { nav.back() }, title = str(R.string.account_demo_controls)) },
         gap = 14.dp,
         overlay = {
-            PickerSheet(outagePicker, "Make a provider unavailable", listOf("None") + providers.map { it.name }, providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: "None", { name ->
+            PickerSheet(outagePicker, str(R.string.account_make_a_provider_unavailable), listOf(str(R.string.account_none)) + providers.map { it.name }, providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: str(R.string.account_none), { name ->
                 val id = providers.firstOrNull { it.name == name }?.id ?: ""
                 b.setDemo { it.copy(outageProviderId = id) }
-                banner.show(if (id.isEmpty()) "All providers available" else "$name is now offline", if (id.isEmpty()) "" else "Sending with it shows the unavailable screen.")
+                banner.show(if (id.isEmpty()) str(R.string.account_all_providers_available) else str(R.string.account_x_is_now_offline, name), if (id.isEmpty()) "" else str(R.string.account_sending_with_it_shows_the_unavailable))
             }, { outagePicker = false }, subtitles = providers.associate { it.name to Catalog.country(it.country).name })
-            ConfirmDialog(erase, "Erase everything?", "This deletes the account, transfers and settings stored on this phone and starts again from the welcome screen.", "Erase", {
+            ConfirmDialog(erase, str(R.string.account_erase_everything), str(R.string.account_this_deletes_the_account_transfers_and), str(R.string.account_erase), {
                 erase = false; b.resetEverything(); nav.resetTo(Routes.WELCOME)
             }, { erase = false }, danger = true)
         },
     ) {
-        ScreenTitle("Try every path", "These controls exist only in this test build. No real money moves; the backend runs on this phone.")
+        ScreenTitle(str(R.string.account_try_every_path), str(R.string.account_these_controls_exist_only_in_this))
         Group {
-            ToggleRow("Fast mode", "Transfers, checks and refunds finish in about a minute instead of real time", demo.fast) { v -> b.setDemo { it.copy(fast = v) } }
+            ToggleRow(str(R.string.account_fast_mode), str(R.string.account_transfers_checks_and_refunds_finish_in), demo.fast) { v -> b.setDemo { it.copy(fast = v) } }
             GroupDivider()
-            ListRow("Provider outage", flat = true, minHeight = 58.dp, subtitle = providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: "None", trailing = { Chevron() }, onClick = { outagePicker = true })
+            ListRow(str(R.string.account_provider_outage), flat = true, minHeight = 58.dp, subtitle = providers.firstOrNull { it.id == demo.outageProviderId }?.name ?: str(R.string.account_none), trailing = { Chevron() }, onClick = { outagePicker = true })
             GroupDivider()
-            ToggleRow("Ask for a retake on the next ID check", "Tests the rejected-photo path", demo.rejectNextKyc) { v -> b.setDemo { it.copy(rejectNextKyc = v) } }
+            ToggleRow(str(R.string.account_ask_for_a_retake_on_the), str(R.string.account_tests_the_rejected_photo_path), demo.rejectNextKyc) { v -> b.setDemo { it.copy(rejectNextKyc = v) } }
         }
-        Over("Lock Rate and rewards")
+        Over(str(R.string.account_lock_rate_and_rewards))
         Group {
-            ToggleRow("Random rate offers", "Offers appear 25 to 90 seconds after unlocking, then every few minutes while the app is open", demo.rateOffers) { v -> b.setDemo { it.copy(rateOffers = v) } }
+            ToggleRow(str(R.string.account_random_rate_offers), str(R.string.account_offers_appear_25_to_90_seconds), demo.rateOffers) { v -> b.setDemo { it.copy(rateOffers = v) } }
             GroupDivider()
-            ListRow("Show a rate offer now", flat = true, minHeight = 56.dp, subtitle = if (offerCall.busy.value) "Getting live rates…" else "GBP → ${offerCur.code}, open for 3 minutes",
+            ListRow(str(R.string.account_show_a_rate_offer_now), flat = true, minHeight = 56.dp, subtitle = if (offerCall.busy.value) str(R.string.account_getting_live_rates) else str(R.string.account_gbp_x_open_for_3_minutes, offerCur.code),
                 leading = { Tile(Icons.Bolt, TileStyle.Lime, 36.dp, iconSize = 18.dp) }, enabled = a?.verified == true && !offerCall.busy.value,
                 onClick = {
-                    scope.launchCall(offerCall, onError = { e -> banner.show("No offer", e.message ?: "", BannerKind.Error); true }) {
+                    scope.launchCall(offerCall, onError = { e -> banner.show(str(R.string.account_no_offer), e.message ?: "", BannerKind.Error); true }) {
                         b.demoOfferNow(); nav.go(Routes.lockRate(offerCur.code))
                     }
                 })
             GroupDivider()
-            ListRow("End my locked rate now", flat = true, minHeight = 56.dp,
-                subtitle = runningLock?.let { "${it.to} locked until ${Text.time(it.expiresAt)}" } ?: "No locked rate running",
+            ListRow(str(R.string.account_end_my_locked_rate_now), flat = true, minHeight = 56.dp,
+                subtitle = runningLock?.let { str(R.string.account_x_locked_until_x, it.to, Text.time(it.expiresAt)) } ?: str(R.string.account_no_locked_rate_running),
                 leading = { Tile(Icons.Clock, size = 36.dp, iconSize = 18.dp) }, enabled = runningLock != null,
                 onClick = { b.demoEndLocks() })
             GroupDivider()
             listOf(1.0, -1.0).forEachIndexed { i, pct ->
                 if (i > 0) GroupDivider()
-                ListRow("Move the market ${if (pct > 0) "up" else "down"} 1%", flat = true, minHeight = 56.dp,
-                    subtitle = "GBP → ${offerCur.code} mid-market rate, until the next live update",
+                ListRow(str(R.string.account_move_the_market_x_1, if (pct > 0) str(R.string.account_up) else str(R.string.account_down)), flat = true, minHeight = 56.dp,
+                    subtitle = str(R.string.account_gbp_x_mid_market_rate_until, offerCur.code),
                     leading = { Tile(Icons.Trending, size = 36.dp, iconSize = 18.dp) },
                     onClick = {
                         b.demoMoveMarket(offerCur, pct)
-                        banner.show("Market moved ${if (pct > 0) "up" else "down"} 1%", "Live rate now ${Money.rateLine(Currency.GBP, offerCur, b.customerRate(offerCur))}. Locked rates don't change.")
+                        banner.show(str(R.string.account_market_moved_x_1, if (pct > 0) str(R.string.account_up) else str(R.string.account_down)), str(R.string.account_live_rate_now_x_locked_rates, Money.rateLine(Currency.GBP, offerCur, b.customerRate(offerCur))))
                     })
             }
             GroupDivider()
-            ListRow("A friend joins with my code", flat = true, minHeight = 56.dp, subtitle = "Adds a sample friend to Referrals",
+            ListRow(str(R.string.account_a_friend_joins_with_my_code), flat = true, minHeight = 56.dp, subtitle = str(R.string.account_adds_a_sample_friend_to_referrals),
                 leading = { Tile(Icons.Users, size = 36.dp, iconSize = 18.dp) }, enabled = a != null,
-                onClick = { val f = b.demoFriendJoins(); banner.show("${f.name} joined", "Sample data. Their first £100+ transfer earns you £10.", BannerKind.Success) })
+                onClick = { val f = b.demoFriendJoins(); banner.show(str(R.string.account_x_joined, f.name), str(R.string.account_sample_data_their_first_100_transfer), BannerKind.Success) })
             GroupDivider()
-            ListRow("Their first £120 transfer is delivered", flat = true, minHeight = 56.dp,
-                subtitle = waitingFriend?.let { "${it.name} · pays £10 into your GBP balance" } ?: "No friend waiting",
+            ListRow(str(R.string.account_their_first_120_transfer_is_delivered), flat = true, minHeight = 56.dp,
+                subtitle = waitingFriend?.let { str(R.string.account_x_pays_10_into_your_gbp, it.name) } ?: str(R.string.account_no_friend_waiting),
                 leading = { Tile(Icons.Gift, size = 36.dp, iconSize = 18.dp) }, enabled = waitingFriend != null,
                 onClick = {
                     val paid = waitingFriend?.let { b.referralTransferDelivered(it.id, 12_000) } ?: 0
-                    if (paid == 0L) banner.show("No reward paid", "Verify your identity first, or the yearly limit of ${app.arro.core.Loyalty.REFERRAL_YEARLY_CAP} rewards was reached.", BannerKind.Info)
+                    if (paid == 0L) banner.show(str(R.string.account_no_reward_paid), str(R.string.account_verify_your_identity_first_or_the, app.arro.core.Loyalty.REFERRAL_YEARLY_CAP), BannerKind.Info)
                 })
         }
         Group {
-            ListRow("Finish everything that's waiting", flat = true, minHeight = 56.dp, subtitle = "Deliver transfers, refunds and ID checks now",
+            ListRow(str(R.string.account_finish_everything_that_s_waiting), flat = true, minHeight = 56.dp, subtitle = str(R.string.account_deliver_transfers_refunds_and_id_checks),
                 leading = { Tile(Icons.Bolt, TileStyle.Lime, 36.dp, iconSize = 18.dp) }, enabled = a != null,
-                onClick = { b.fastForward(); banner.show("Done", "Everything waiting has moved on.", BannerKind.Success) })
+                onClick = { b.fastForward(); banner.show(str(R.string.account_done), str(R.string.account_everything_waiting_has_moved_on), BannerKind.Success) })
             GroupDivider()
-            ListRow("Lift the 24-hour sending pause", flat = true, minHeight = 56.dp, subtitle = if ((a?.sendPauseUntil ?: 0) > b.now) "Paused until ${Text.time(a!!.sendPauseUntil)}" else "Not paused",
+            ListRow(str(R.string.account_lift_the_24_hour_sending_pause), flat = true, minHeight = 56.dp, subtitle = if ((a?.sendPauseUntil ?: 0) > b.now) str(R.string.account_paused_until_x, Text.time(a!!.sendPauseUntil)) else str(R.string.account_not_paused),
                 leading = { Tile(Icons.Clock, size = 36.dp, iconSize = 18.dp) }, enabled = a != null,
-                onClick = { b.clearSendPause(); banner.show("Sending pause lifted", kind = BannerKind.Success) })
+                onClick = { b.clearSendPause(); banner.show(str(R.string.account_sending_pause_lifted), kind = BannerKind.Success) })
             GroupDivider()
-            ListRow("Load the sample account", flat = true, minHeight = 56.dp, subtitle = "Eric Nshuti, with a year of history",
+            ListRow(str(R.string.account_load_the_sample_account), flat = true, minHeight = 56.dp, subtitle = str(R.string.account_eric_nshuti_with_a_year_of),
                 leading = { Tile(Icons.User, size = 36.dp, iconSize = 18.dp) },
-                onClick = { b.loadDemoAccount(); banner.show("Sample account loaded", "Passcode ${Seed.DEMO_PASSCODE}", BannerKind.Success); nav.resetTo(Routes.HOME) })
+                onClick = { b.loadDemoAccount(); banner.show(str(R.string.account_sample_account_loaded), str(R.string.account_passcode_x, Seed.DEMO_PASSCODE), BannerKind.Success); nav.resetTo(Routes.HOME) })
             GroupDivider()
-            ListRow("Erase everything on this phone", flat = true, minHeight = 56.dp, titleStyle = T.RowTitle.copy(color = C.Err),
+            ListRow(str(R.string.account_erase_everything_on_this_phone), flat = true, minHeight = 56.dp, titleStyle = T.RowTitle.copy(color = C.Err),
                 leading = { Tile(Icons.Trash, TileStyle.Err, 36.dp, iconSize = 18.dp) }, onClick = { erase = true })
         }
         Panel(gap = 8.dp) {
-            Txt("Test triggers", T.H3)
+            Txt(str(R.string.account_test_triggers), T.H3)
             listOf(
-                "Sample login" to "${Seed.DEMO_EMAIL} · ${Seed.DEMO_PASSWORD}",
-                "Passcode" to Seed.DEMO_PASSCODE,
-                "Delivery fails, then refunds" to "Payout number or account ending 000",
-                "Name check: not found" to "Number ending 404",
-                "Name check: mismatch" to "Number ending 999",
-                "Security hold" to "Any transfer over £1,000",
-                "Card declined by the bank" to "Card number ending 0002",
-                "Credit card (1.75% fee)" to "Mastercard starting 51 to 53",
-                "Rate offers" to "Signed in and verified, with the app open. Or use Show a rate offer now",
+                str(R.string.account_sample_login) to "${Seed.DEMO_EMAIL} · ${Seed.DEMO_PASSWORD}",
+                str(R.string.account_passcode) to Seed.DEMO_PASSCODE,
+                str(R.string.account_delivery_fails_then_refunds) to str(R.string.account_payout_number_or_account_ending_000),
+                str(R.string.account_name_check_not_found) to str(R.string.account_number_ending_404),
+                str(R.string.account_name_check_mismatch) to str(R.string.account_number_ending_999),
+                str(R.string.account_security_hold) to str(R.string.account_any_transfer_over_1_000),
+                str(R.string.account_card_declined_by_the_bank) to str(R.string.account_card_number_ending_0002),
+                str(R.string.account_credit_card_1_75_fee) to str(R.string.account_mastercard_starting_51_to_53),
+                str(R.string.account_rate_offers) to str(R.string.account_signed_in_and_verified_with_the),
             ).forEach { (k, v) ->
                 Column {
                     Txt(k, T.Body14.copy(fontWeight = FontWeight.Medium))
@@ -1026,39 +1030,39 @@ fun DemoScreen() {
 fun LegalScreen(doc: String) {
     val nav = LocalNav.current
     val (title, sections) = when (doc) {
-        "privacy" -> "Privacy policy" to listOf(
-            "What we collect" to "Your name, contact details, identity documents, the people you send to and the transfers you make. We need these to provide the service and to meet anti-money-laundering law.",
-            "How we use it" to "To move your money, keep your account secure, prevent fraud and meet our legal duties. With your consent, we also use anonymous analytics to improve the app.",
-            "Who we share it with" to "Payment partners, payout providers in the recipient's country, identity verification services and regulators when the law requires. We never sell your data.",
-            "How long we keep it" to "Transfer records for 5 years after your account closes, as the law requires. Everything else is deleted when you close your account.",
-            "Your rights" to "You can download your data, correct it, or ask us to delete it, from Account management or by chatting with us.",
+        "privacy" -> str(R.string.account_privacy_policy) to listOf(
+            str(R.string.account_what_we_collect) to str(R.string.account_your_name_contact_details_identity_documents),
+            str(R.string.account_how_we_use_it) to str(R.string.account_to_move_your_money_keep_your),
+            str(R.string.account_who_we_share_it_with) to str(R.string.account_payment_partners_payout_providers_in_the),
+            str(R.string.account_how_long_we_keep_it) to str(R.string.account_transfer_records_for_5_years_after),
+            str(R.string.account_your_rights) to str(R.string.account_you_can_download_your_data_correct),
         )
-        "complaints" -> "Complaints" to listOf(
-            "Tell us" to "Chat with us in the app or email complaints@[DOMAIN]. We'll acknowledge your complaint within 1 working day.",
-            "Our response" to "We aim to resolve complaints within 15 business days. In exceptional cases it can take up to 35 business days, and we'll tell you why.",
-            "If you're not happy" to "You can refer your complaint to the Financial Ombudsman Service, free of charge, within 6 months of our final response.",
+        "complaints" -> str(R.string.account_complaints) to listOf(
+            str(R.string.account_tell_us) to str(R.string.account_chat_with_us_in_the_app),
+            str(R.string.account_our_response) to str(R.string.account_we_aim_to_resolve_complaints_within),
+            str(R.string.account_if_you_re_not_happy) to str(R.string.account_you_can_refer_your_complaint_to),
         )
-        "referral" -> "Invite rewards" to listOf(
-            "Who can take part" to "Verified Arro customers in the UK. Your friend must be new to Arro and use your invite link or code when they sign up.",
-            "The reward" to "Your friend's first transfer has no Arro fee, up to £1,000. You get £10 in your GBP balance once their first transfer of £100 or more is delivered.",
-            "Limits" to "Up to 20 rewards a year. We may withhold rewards if we see misuse.",
+        "referral" -> str(R.string.account_invite_rewards) to listOf(
+            str(R.string.account_who_can_take_part) to str(R.string.account_verified_arro_customers_in_the_uk),
+            str(R.string.account_the_reward) to str(R.string.account_your_friend_s_first_transfer_has),
+            str(R.string.account_limits) to str(R.string.account_up_to_20_rewards_a_year),
         )
-        else -> "Terms of use" to listOf(
-            "About us" to "Arro Ltd is authorised by [REGULATOR] as [LICENCE TYPE], reference [LICENCE NO.]. Registered office: [ADDRESS].",
-            "Your account" to "You must be 18 or over and live in the UK. Keep your password and passcode secret; we will never ask for them.",
-            "Sending money" to "We show the fee, exchange rate and amount your recipient gets before you pay. Your rate is locked for 30 minutes.",
-            "Cancellations and refunds" to "You can cancel a transfer that hasn't been delivered and get a full refund, fee included.",
-            "Safeguarding" to "Money you hold with Arro is safeguarded in a separate account at [BANK], so it's protected if anything happens to us.",
+        else -> str(R.string.account_terms_of_use) to listOf(
+            str(R.string.account_about_us) to str(R.string.account_arro_ltd_is_authorised_by_regulator),
+            str(R.string.account_your_account) to str(R.string.account_you_must_be_18_or_over),
+            str(R.string.account_sending_money) to str(R.string.account_we_show_the_fee_exchange_rate),
+            str(R.string.account_cancellations_and_refunds) to str(R.string.account_you_can_cancel_a_transfer_that),
+            str(R.string.account_safeguarding) to str(R.string.account_money_you_hold_with_arro_is),
         )
     }
     ArroScreen(topBar = { TopBar(onBack = { nav.back() }) }, gap = 14.dp) {
-        ScreenTitle(title, "Last updated 1 Oct 2026 · Draft text for testing")
+        ScreenTitle(title, str(R.string.account_last_updated_1_oct_2026_draft))
         sections.forEach { (h, body) ->
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Txt(h, T.H3)
                 Txt(body, T.Body.copy(lineHeight = 23.sp), color = C.Ink)
             }
         }
-        Note("This is placeholder legal text for a test build, not a real agreement.", NoteKind.Warn, Icons.Info)
+        Note(str(R.string.account_this_is_placeholder_legal_text_for), NoteKind.Warn, Icons.Info)
     }
 }

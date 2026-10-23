@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,10 +89,10 @@ fun BoxScope.DateSheet(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            HeaderChip(monthName(view.monthValue), mode == DateMode.Months, "Choose month") {
+            HeaderChip(monthName(view.monthValue), mode == DateMode.Months, str(R.string.ui_date_picker_choose_month)) {
                 mode = if (mode == DateMode.Months) DateMode.Days else DateMode.Months
             }
-            HeaderChip(view.year.toString(), mode == DateMode.Years, "Choose year") {
+            HeaderChip(view.year.toString(), mode == DateMode.Years, str(R.string.ui_date_picker_choose_year)) {
                 mode = if (mode == DateMode.Years) DateMode.Days else DateMode.Years
             }
             Spring()
@@ -98,9 +100,9 @@ fun BoxScope.DateSheet(
                 val canBack = view.minusMonths(1) >= YearMonth.from(min)
                 val canNext = view.plusMonths(1) <= YearMonth.from(max)
                 RoundIcon(Icons.ChevronRight, { if (canBack) view = view.minusMonths(1) }, Modifier.rotate(180f).alpha(if (canBack) 1f else 0.35f),
-                    style = IconBtn.Line, size = 40.dp, iconSize = 18.dp, description = "Previous month")
+                    style = IconBtn.Line, size = 40.dp, iconSize = 18.dp, description = str(R.string.ui_date_picker_previous_month))
                 RoundIcon(Icons.ChevronRight, { if (canNext) view = view.plusMonths(1) }, Modifier.alpha(if (canNext) 1f else 0.35f),
-                    style = IconBtn.Line, size = 40.dp, iconSize = 18.dp, description = "Next month")
+                    style = IconBtn.Line, size = 40.dp, iconSize = 18.dp, description = str(R.string.ui_date_picker_next_month))
             }
         }
         Box(Modifier.fillMaxWidth().height(GridHeight).padding(top = 12.dp)) {
@@ -115,10 +117,10 @@ fun BoxScope.DateSheet(
         }
         if (note != null) Cap(note, Modifier.padding(top = 4.dp), size = 12.5f)
         ArroButton(
-            pending?.let { "Use ${longDate(it)}" } ?: when (mode) {
-                DateMode.Years -> "Choose the year"
-                DateMode.Months -> "Choose the month"
-                DateMode.Days -> "Choose the day"
+            pending?.let { str(R.string.ui_date_picker_use_x, longDate(it)) } ?: when (mode) {
+                DateMode.Years -> str(R.string.ui_date_picker_choose_the_year)
+                DateMode.Months -> str(R.string.ui_date_picker_choose_the_month)
+                DateMode.Days -> str(R.string.ui_date_picker_choose_the_day)
             },
             { pending?.let { onPick(it); onDismiss() } },
             Modifier.padding(top = 14.dp),
@@ -151,7 +153,7 @@ private fun DayGrid(view: YearMonth, pending: LocalDate?, min: LocalDate, max: L
     val days = view.lengthOfMonth()
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth()) {
-            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { d ->
+            listOf(str(R.string.ui_date_picker_mon), str(R.string.ui_date_picker_tue), str(R.string.ui_date_picker_wed), str(R.string.ui_date_picker_thu), str(R.string.ui_date_picker_fri), str(R.string.ui_date_picker_sat), str(R.string.ui_date_picker_sun)).forEach { d ->
                 Cap(d.take(1), Modifier.weight(1f), align = TextAlign.Center, size = 12f)
             }
         }
@@ -171,7 +173,7 @@ private fun DayGrid(view: YearMonth, pending: LocalDate?, min: LocalDate, max: L
                                     .clip(CircleShape)
                                     .background(if (on) C.Primary else Color.Transparent, CircleShape)
                                     .then(if (allowed) Modifier.clickable(role = Role.Button) { onDay(date) } else Modifier)
-                                    .semantics { contentDescription = longDate(date) + if (allowed) "" else ", not available" },
+                                    .semantics { contentDescription = longDate(date) + if (allowed) "" else str(R.string.ui_date_picker_not_available) },
                                 contentAlignment = Alignment.Center,
                             ) {
                                 Txt(n.toString(), T.Body.copy(fontFeatureSettings = "tnum", fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal),

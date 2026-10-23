@@ -1,5 +1,7 @@
 package app.arro.ui.screens.system
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -53,8 +55,8 @@ fun BoxScope.OfflineBar(lastOnline: Long) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Ic(Icons.WifiOff, size = 16.dp, tint = C.WarnFill)
-        Txt("No internet connection", T.Cap, Modifier.weight(1f), color = C.OnNight)
-        Txt("Last updated ${Text.time(lastOnline)}", T.Cap, color = C.DarkCap)
+        Txt(str(R.string.system_no_internet_connection), T.Cap, Modifier.weight(1f), color = C.OnNight)
+        Txt(str(R.string.system_last_updated_x, Text.time(lastOnline)), T.Cap, color = C.DarkCap)
     }
 }
 
@@ -63,23 +65,23 @@ fun BoxScope.OfflineBar(lastOnline: Long) {
 fun OfflineState(balanceText: String, onRetry: () -> Unit, onContinue: () -> Unit) {
     Column(Modifier.fillMaxWidth().background(C.Tint).padding(bottom = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(Modifier.fillMaxWidth().padding(top = 90.dp).height(260.dp), contentAlignment = Alignment.Center) {
-            Halo(220.dp) { Illustration(app.arro.ui.components.Art.Offline, 240.dp, description = "A cloud with a line through it") }
+            Halo(220.dp) { Illustration(app.arro.ui.components.Art.Offline, 240.dp, description = str(R.string.system_a_cloud_with_a_line_through)) }
         }
         Column(Modifier.padding(horizontal = 20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            ScreenTitle("You're offline", size = TitleSize.XL, align = TextAlign.Center)
-            Txt("Check your Wi-Fi or mobile data. Transfers already sent keep moving without you.", T.Lede, color = C.Slate, align = TextAlign.Center)
+            ScreenTitle(str(R.string.system_you_re_offline), size = TitleSize.XL, align = TextAlign.Center)
+            Txt(str(R.string.system_check_your_wi_fi_or_mobile), T.Lede, color = C.Slate, align = TextAlign.Center)
         }
         Row(
             Modifier.padding(start = 20.dp, end = 20.dp, top = 20.dp).fillMaxWidth()
                 .background(C.White, RoundedCornerShape(20.dp)).padding(horizontal = 16.dp, vertical = 14.dp),
             horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
         ) {
-            Cap("Balance when last online")
+            Cap(str(R.string.system_balance_when_last_online))
             Txt(balanceText, T.Num)
         }
         Column(Modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            ArroButton("Try again", onRetry, icon = Icons.Refresh)
-            ArroButton("Show my last saved details", onContinue, style = Btn.Text)
+            ArroButton(str(R.string.system_try_again), onRetry, icon = Icons.Refresh)
+            ArroButton(str(R.string.system_show_my_last_saved_details), onContinue, style = Btn.Text)
         }
     }
 }

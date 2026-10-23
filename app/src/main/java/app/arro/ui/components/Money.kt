@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -111,13 +113,13 @@ fun QuickAction(label: String, @DrawableRes icon: Int, onClick: () -> Unit, modi
 fun QuickActions(items: List<Triple<String, Int, () -> Unit>>, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items.forEachIndexed { i, (label, icon, action) ->
-            QuickAction(label, icon, action, Modifier.weight(1f), lime = i == items.lastIndex && label == "Rates")
+            QuickAction(label, icon, action, Modifier.weight(1f), lime = i == items.lastIndex && label == str(R.string.ui_money_rates))
         }
     }
 }
 
 enum class Tab(val label: String, @DrawableRes val icon: Int) {
-    Home("Home", Icons.Home), Recipients("Recipients", Icons.Users), Activity("Activity", Icons.Activity), Account("Account", Icons.User)
+    Home(str(R.string.ui_money_home), Icons.Home), Recipients(str(R.string.ui_money_recipients), Icons.Users), Activity(str(R.string.ui_money_activity), Icons.Activity), Account(str(R.string.ui_money_account), Icons.User)
 }
 
 /** Floating tab bar: a pill with four destinations and a separate Send button. */
@@ -180,7 +182,7 @@ fun TabBar(selected: Tab, onSelect: (Tab) -> Unit, onSend: () -> Unit, modifier:
                         .clip(CircleShape)
                         .background(C.Primary, CircleShape)
                         .clickable(role = Role.Button, onClick = onSend)
-                        .semantics { contentDescription = "Send money" },
+                        .semantics { contentDescription = str(R.string.ui_money_send_money) },
                     contentAlignment = Alignment.Center,
                 ) { Ic(Icons.ArrowUpRightBold, size = 26.dp, tint = C.PrimaryAccent) }
             }

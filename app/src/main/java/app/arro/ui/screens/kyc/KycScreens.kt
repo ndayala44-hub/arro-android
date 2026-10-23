@@ -1,5 +1,7 @@
 package app.arro.ui.screens.kyc
 
+import app.arro.R
+import app.arro.ui.str
 import android.graphics.BitmapFactory
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageCapture
@@ -160,26 +162,26 @@ fun KycIntroScreen() {
         background = C.Tint,
         topBar = {
             TopBar(onBack = { if (!nav.popBackStack()) nav.resetTo(Routes.HOME) }, right = {
-                ArroButton("Do this later", { nav.resetTo(Routes.HOME) }, style = Btn.Text, size = BtnSize.S, fill = false)
+                ArroButton(str(R.string.kyc_do_this_later), { nav.resetTo(Routes.HOME) }, style = Btn.Text, size = BtnSize.S, fill = false)
             })
         },
         footer = {
-            ArroButton(if (step == 1) "Start verification" else "Continue verification", {
+            ArroButton(if (step == 1) str(R.string.kyc_start_verification) else str(R.string.kyc_continue_verification), {
                 nav.go(when (step) { 1 -> Routes.KYC_PERSONAL; 2 -> Routes.KYC_ADDRESS; else -> Routes.KYC_DOCUMENT })
             })
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-                Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap(" Encrypted and used only to verify you", size = 12f)
+                Ic(Icons.Lock, size = 14.dp, tint = C.Slate); Cap(str(R.string.kyc_encrypted_and_used_only_to_verify), size = 12f)
             }
         },
     ) {
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.IdCard, 168.dp, description = "An ID card with a verified badge") }
-        ScreenTitle("Let's confirm\nit's you", "The law requires us to verify your identity before you send money abroad. It takes about 3 minutes.")
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.IdCard, 168.dp, description = str(R.string.kyc_an_id_card_with_a_verified)) }
+        ScreenTitle(str(R.string.kyc_let_s_confirm_it_s_you), str(R.string.kyc_the_law_requires_us_to_verify))
         Group {
             val items = listOf(
-                "Personal details" to "Name, date of birth, nationality",
-                "Home address" to "Find it by postcode",
-                "Photo of your ID" to "Passport, driving licence or ID card",
-                "A quick selfie" to "Matched once against your ID photo",
+                str(R.string.kyc_personal_details) to str(R.string.kyc_name_date_of_birth_nationality),
+                str(R.string.kyc_home_address) to str(R.string.kyc_find_it_by_postcode),
+                str(R.string.kyc_photo_of_your_id) to str(R.string.kyc_passport_driving_licence_or_id_card),
+                str(R.string.kyc_a_quick_selfie) to str(R.string.kyc_matched_once_against_your_id_photo),
             )
             items.forEachIndexed { i, (t, s) ->
                 if (i > 0) GroupDivider()
@@ -211,17 +213,17 @@ fun KycPersonalScreen() {
     var dob by rememberSaveable { mutableStateOf(p.dob) }
     val dobDate = runCatching { java.time.LocalDate.parse(dob) }.getOrNull()
     val today = Text.localDate(System.currentTimeMillis())
-    var nationality by rememberSaveable { mutableStateOf(p.nationality.ifBlank { "British" }) }
+    var nationality by rememberSaveable { mutableStateOf(p.nationality.ifBlank { str(R.string.kyc_british) }) }
     var occupation by rememberSaveable { mutableStateOf(p.occupation) }
     var picker by remember { mutableStateOf("") }
     var errors by remember { mutableStateOf(mapOf<String, String?>()) }
     fun submit() {
         val (iso, dobErr) = Validation.dob(dobDate, today)
         val e = mapOf(
-            "first" to Validation.personName(first, "first name"),
-            "last" to Validation.personName(last, "last name"),
+            "first" to Validation.personName(first, str(R.string.kyc_first_name)),
+            "last" to Validation.personName(last, str(R.string.kyc_last_name)),
             "dob" to dobErr,
-            "occupation" to if (occupation.isBlank()) "Choose your occupation." else null,
+            "occupation" to if (occupation.isBlank()) str(R.string.kyc_choose_your_occupation) else null,
         )
         errors = e
         if (e.values.any { it != null } || iso == null) return
@@ -229,45 +231,45 @@ fun KycPersonalScreen() {
         nav.go(Routes.KYC_ADDRESS)
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("1 of 4 · Details") }) },
-        footer = { ArroButton("Continue", { submit() }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.kyc_n_1_of_4_details)) }) },
+        footer = { ArroButton(str(R.string.kyc_continue), { submit() }) },
         overlay = {
-            PickerSheet(picker == "nat", "Nationality", Catalog.nationalities, nationality, { nationality = it }, { picker = "" },
+            PickerSheet(picker == "nat", str(R.string.kyc_nationality), Catalog.nationalities, nationality, { nationality = it }, { picker = "" },
                 leading = { o -> Flag(flagForNationality(o)) })
-            PickerSheet(picker == "occ", "Occupation", Catalog.occupations, occupation, { occupation = it; errors = errors - "occupation" }, { picker = "" })
+            PickerSheet(picker == "occ", str(R.string.kyc_occupation), Catalog.occupations, occupation, { occupation = it; errors = errors - "occupation" }, { picker = "" })
             DateSheet(
                 visible = picker == "dob",
-                title = "Date of birth",
+                title = str(R.string.kyc_date_of_birth),
                 selected = dobDate,
                 min = today.minusYears(110),
                 max = today.minusYears(18),
                 onPick = { dob = it.toString(); errors = errors - "dob" },
                 onDismiss = { picker = "" },
-                subtitle = "Exactly as it appears on your ID.",
-                note = "You need to be 18 or over to use Arro.",
+                subtitle = str(R.string.kyc_exactly_as_it_appears_on_your),
+                note = str(R.string.kyc_you_need_to_be_18_or),
                 startYear = today.year - 30,
             )
         },
     ) {
         StepBars(1, 4)
-        ScreenTitle("Your details", "Enter them exactly as they appear on your ID.")
+        ScreenTitle(str(R.string.kyc_your_details), str(R.string.kyc_enter_them_exactly_as_they_appear))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            ArroField(first, { first = it }, Modifier.weight(1f), label = "First and middle names", error = errors["first"],
+            ArroField(first, { first = it }, Modifier.weight(1f), label = str(R.string.kyc_first_and_middle_names), error = errors["first"],
                 capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
-            ArroField(last, { last = it }, Modifier.weight(1f), label = "Last name", error = errors["last"],
+            ArroField(last, { last = it }, Modifier.weight(1f), label = str(R.string.kyc_last_name_2), error = errors["last"],
                 capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
         }
-        SelectField("Date of birth", dobDate?.let { longDate(it) }, { picker = "dob" }, placeholder = "Choose on a calendar",
+        SelectField(str(R.string.kyc_date_of_birth), dobDate?.let { longDate(it) }, { picker = "dob" }, placeholder = str(R.string.kyc_choose_on_a_calendar),
             error = errors["dob"], focused = picker == "dob", leading = { Ic(Icons.Calendar, tint = C.Slate) })
-        SelectField("Nationality", nationality, { picker = "nat" }, leading = { Flag(flagForNationality(nationality)) })
-        SelectField("Occupation", occupation.ifBlank { null }, { picker = "occ" }, error = errors["occupation"],
-            hint = "We ask because regulations require us to know how you earn the money you send.")
+        SelectField(str(R.string.kyc_nationality), nationality, { picker = "nat" }, leading = { Flag(flagForNationality(nationality)) })
+        SelectField(str(R.string.kyc_occupation), occupation.ifBlank { null }, { picker = "occ" }, error = errors["occupation"],
+            hint = str(R.string.kyc_we_ask_because_regulations_require_us))
     }
 }
 
 private fun flagForNationality(n: String) = when (n) {
-    "British" -> "gb"; "Rwandan" -> "rw"; "Kenyan" -> "ke"; "Ugandan" -> "ug"; "Nigerian" -> "ng"; "Ghanaian" -> "gh"
-    "Indian" -> "in"; "Filipino" -> "ph"; "Irish", "French" -> "eu"; else -> ""
+    str(R.string.kyc_british) -> "gb"; str(R.string.kyc_rwandan) -> "rw"; str(R.string.kyc_kenyan) -> "ke"; str(R.string.kyc_ugandan) -> "ug"; str(R.string.kyc_nigerian) -> "ng"; str(R.string.kyc_ghanaian) -> "gh"
+    str(R.string.kyc_indian) -> "in"; str(R.string.kyc_filipino) -> "ph"; str(R.string.kyc_irish), str(R.string.kyc_french) -> "eu"; else -> ""
 }
 
 // ------------------------------------------------------------------ 2.03 Address
@@ -288,34 +290,34 @@ fun KycAddressScreen() {
     fun submit() {
         val addr = if (manual) {
             error = when {
-                line1.isBlank() -> "Enter the first line of your address."
-                city.isBlank() -> "Enter your town or city."
+                line1.isBlank() -> str(R.string.kyc_enter_the_first_line_of_your)
+                city.isBlank() -> str(R.string.kyc_enter_your_town_or_city)
                 else -> Validation.postcode(postcode)
             }
             if (error != null) return
             Address(line1.trim(), city.trim(), Validation.normalisePostcode(postcode))
         } else {
-            if (results.isEmpty()) { error = Validation.postcode(postcode) ?: "We couldn't find that postcode. Enter your address manually."; return }
+            if (results.isEmpty()) { error = Validation.postcode(postcode) ?: str(R.string.kyc_we_couldn_t_find_that_postcode); return }
             results[selected.coerceIn(0, results.lastIndex)]
         }
         b.saveAddress(addr)
         nav.go(Routes.KYC_DOCUMENT)
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("2 of 4 · Address") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.kyc_n_2_of_4_address)) }) },
         footer = {
-            Cap("We may confirm your address with a credit reference agency. It won't affect your credit score.", size = 12f)
-            ArroButton("Continue", { submit() })
+            Cap(str(R.string.kyc_we_may_confirm_your_address_with), size = 12f)
+            ArroButton(str(R.string.kyc_continue), { submit() })
         },
     ) {
         StepBars(2, 4)
-        ScreenTitle("Home address", "Where you live now. We'll send nothing by post.")
-        ArroField(postcode, { postcode = it.uppercase().take(8); selected = 0; error = null }, label = "Postcode", placeholder = "E8 2PL",
+        ScreenTitle(str(R.string.kyc_home_address), str(R.string.kyc_where_you_live_now_we_ll))
+        ArroField(postcode, { postcode = it.uppercase().take(8); selected = 0; error = null }, label = str(R.string.kyc_postcode), placeholder = str(R.string.kyc_e8_2pl),
             capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Characters,
             prefix = { Ic(Icons.Search, tint = C.Slate) }, error = if (!manual) error else null)
         if (!manual) {
             if (results.isNotEmpty()) {
-                Cap("${results.size} addresses found")
+                Cap(str(R.string.kyc_x_addresses_found, results.size))
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     results.forEachIndexed { i, ad ->
                         ListRow(ad.line1, subtitle = "${ad.city} ${ad.postcode}", selected = i == selected, minHeight = 56.dp,
@@ -323,16 +325,16 @@ fun KycAddressScreen() {
                     }
                 }
             } else if (postcode.length >= 5) {
-                Cap("No addresses found for that postcode yet.")
+                Cap(str(R.string.kyc_no_addresses_found_for_that_postcode))
             }
-            LinkText("Enter address manually", { manual = true; error = null }, color = C.Ink, strong = true)
+            LinkText(str(R.string.kyc_enter_address_manually), { manual = true; error = null }, color = C.Ink, strong = true)
         } else {
-            ArroField(line1, { line1 = it }, label = "Address line 1", placeholder = "Flat 3, 41 Kestrel Road",
+            ArroField(line1, { line1 = it }, label = str(R.string.kyc_address_line_1), placeholder = str(R.string.kyc_flat_3_41_kestrel_road),
                 capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
-            ArroField(city, { city = it }, label = "Town or city", placeholder = "London",
+            ArroField(city, { city = it }, label = str(R.string.kyc_town_or_city), placeholder = str(R.string.kyc_london),
                 capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words)
             FieldHint(error)
-            LinkText("Find it by postcode instead", { manual = false; error = null }, color = C.Ink, strong = true)
+            LinkText(str(R.string.kyc_find_it_by_postcode_instead), { manual = false; error = null }, color = C.Ink, strong = true)
         }
     }
 }
@@ -358,18 +360,18 @@ fun KycDocumentScreen() {
         }
     }
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("3 of 4 · ID") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.kyc_n_3_of_4_id)) }) },
         footer = {
-            ArroButton("Take photo", { b.chooseDocument(draft.docType, draft.docCountry); nav.go(Routes.KYC_CAPTURE) })
-            ArroButton("Upload a photo instead", { b.chooseDocument(draft.docType, draft.docCountry); upload() }, style = Btn.Text)
+            ArroButton(str(R.string.kyc_take_photo), { b.chooseDocument(draft.docType, draft.docCountry); nav.go(Routes.KYC_CAPTURE) })
+            ArroButton(str(R.string.kyc_upload_a_photo_instead), { b.chooseDocument(draft.docType, draft.docCountry); upload() }, style = Btn.Text)
         },
         overlay = {
-            PickerSheet(picker, "Issuing country", Catalog.issuingCountries, draft.docCountry, { draft.docCountry = it }, { picker = false })
+            PickerSheet(picker, str(R.string.kyc_issuing_country), Catalog.issuingCountries, draft.docCountry, { draft.docCountry = it }, { picker = false })
         },
     ) {
         StepBars(3, 4)
-        ScreenTitle("Choose your ID", "It must be in date and show your photo.")
-        SelectField("Issuing country", draft.docCountry, { picker = true }, leading = { Flag(countryFlag(draft.docCountry)) })
+        ScreenTitle(str(R.string.kyc_choose_your_id), str(R.string.kyc_it_must_be_in_date_and))
+        SelectField(str(R.string.kyc_issuing_country), draft.docCountry, { picker = true }, leading = { Flag(countryFlag(draft.docCountry)) })
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Catalog.docTypes.forEach { (type, labels) ->
                 val on = draft.docType == type
@@ -378,19 +380,19 @@ fun KycDocumentScreen() {
                     trailing = { Radio(on) })
             }
         }
-        Note("Find a well-lit spot and lay your ID on a dark, plain surface.", NoteKind.Lime, Icons.Camera)
+        Note(str(R.string.kyc_find_a_well_lit_spot_and), NoteKind.Lime, Icons.Camera)
     }
 }
 
 private fun countryFlag(name: String) = when (name) {
-    "United Kingdom" -> "gb"; "Rwanda" -> "rw"; "Kenya" -> "ke"; "Uganda" -> "ug"; "Nigeria" -> "ng"; "Ghana" -> "gh"
-    "India" -> "in"; "Philippines" -> "ph"; "Ireland" -> "eu"; else -> ""
+    str(R.string.kyc_united_kingdom) -> "gb"; str(R.string.kyc_rwanda) -> "rw"; str(R.string.kyc_kenya) -> "ke"; str(R.string.kyc_uganda) -> "ug"; str(R.string.kyc_nigeria) -> "ng"; str(R.string.kyc_ghana) -> "gh"
+    str(R.string.kyc_india) -> "in"; str(R.string.kyc_philippines) -> "ph"; str(R.string.kyc_ireland) -> "eu"; else -> ""
 }
 
 private fun qualityNotes(q: PhotoQuality) = listOf(
-    "All four corners are visible" to true,
-    (if (q.sharp) "Text and photo are in focus" else "The photo looks blurry") to q.sharp,
-    (if (q.noGlare && q.wellLit) "No glare or shadows" else if (!q.noGlare) "There's glare on the photo" else "The photo is too dark") to (q.noGlare && q.wellLit),
+    str(R.string.kyc_all_four_corners_are_visible) to true,
+    (if (q.sharp) str(R.string.kyc_text_and_photo_are_in_focus) else str(R.string.kyc_the_photo_looks_blurry)) to q.sharp,
+    (if (q.noGlare && q.wellLit) str(R.string.kyc_no_glare_or_shadows) else if (!q.noGlare) str(R.string.kyc_there_s_glare_on_the_photo) else str(R.string.kyc_the_photo_is_too_dark)) to (q.noGlare && q.wellLit),
 )
 
 // ------------------------------------------------------------------ 2.05 Document capture
@@ -411,7 +413,7 @@ fun CameraScreen(
         Box(Modifier.align(Alignment.TopCenter).widthIn(max = MaxContentWidth).fillMaxSize()) {
             content()
             TopBar(
-                left = { RoundIcon(closeIcon, onClose, style = IconBtn.OnDark, description = "Close camera") },
+                left = { RoundIcon(closeIcon, onClose, style = IconBtn.OnDark, description = str(R.string.kyc_close_camera)) },
                 title = title, titleColor = C.OnNight,
                 right = { if (right != null) right() else Spacer(Modifier.width(44.dp)) },
             )
@@ -435,13 +437,13 @@ fun KycCaptureScreen() {
     val cameraOk = hasCamera(context, front = false)
     LaunchedEffect(Unit) { if (!permission.granted && cameraOk) permission.request() }
     val twoSided = draft.docType.sides == 2
-    val docName = when (draft.docType) { DocType.PASSPORT -> "Passport photo page"; DocType.DRIVING_LICENCE -> "Driving licence"; DocType.ID_CARD -> "ID card" }
-    val title = if (twoSided) "$docName · ${if (side == 0) "front" else "back"}" else docName
+    val docName = when (draft.docType) { DocType.PASSPORT -> str(R.string.kyc_passport_photo_page); DocType.DRIVING_LICENCE -> str(R.string.kyc_driving_licence); DocType.ID_CARD -> str(R.string.kyc_id_card) }
+    val title = if (twoSided) (if (side == 0) str(R.string.kyc_doc_front, docName) else str(R.string.kyc_doc_back, docName)) else docName
     fun finish(f: File) = scope.launch {
         val q = PhotoQuality.of(f)
         if (twoSided && side == 0) {
             side = 1; busy = false
-            banner.show("Front captured", "Now turn it over and capture the back.", BannerKind.Success)
+            banner.show(str(R.string.kyc_front_captured), str(R.string.kyc_now_turn_it_over_and_capture), BannerKind.Success)
             return@launch
         }
         draft.photoPath = f.absolutePath
@@ -452,51 +454,51 @@ fun KycCaptureScreen() {
     }
     val upload = rememberPhotoPicker({ docFile(context.filesDir, side) }) { f -> busy = true; finish(f) }
     CameraScreen(title, { nav.back() }, right = {
-        RoundIcon(Icons.Bolt, { torch = !torch }, style = if (torch) IconBtn.Lime else IconBtn.OnDark, description = "Flash")
+        RoundIcon(Icons.Bolt, { torch = !torch }, style = if (torch) IconBtn.Lime else IconBtn.OnDark, description = str(R.string.kyc_flash))
     }) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(120.dp))
-            Txt(if (twoSided && side == 1) "Fit the back inside the frame" else "Fit the ${if (draft.docType == DocType.PASSPORT) "photo page" else "front"} inside the frame",
+            Txt(if (twoSided && side == 1) str(R.string.kyc_fit_the_back_inside_the_frame) else str(R.string.kyc_fit_the_x_inside_the_frame, if (draft.docType == DocType.PASSPORT) str(R.string.kyc_photo_page) else str(R.string.kyc_front)),
                 T.Cap.copy(fontSize = 15.sp), color = C.OnNight, align = TextAlign.Center)
             Box(Modifier.padding(top = 28.dp).size(338.dp, 236.dp)) {
                 if (permission.granted && cameraOk) {
                     CameraPreview(Modifier.padding(6.dp).fillMaxSize().clip(RoundedCornerShape(14.dp)), capture = capture, torch = torch,
-                        onError = { banner.show("Camera problem", it, BannerKind.Error) })
+                        onError = { banner.show(str(R.string.kyc_camera_problem), it, BannerKind.Error) })
                 } else {
                     MockDocument(Modifier.padding(14.dp).fillMaxSize().rotate(-1.2f))
                 }
                 FrameCorners()
             }
             Row(Modifier.padding(top = 24.dp)) {
-                Pill(if (busy) "Hold still, capturing" else if (permission.granted) "Ready when you are" else "Camera access needed", PillKind.Lime,
+                Pill(if (busy) str(R.string.kyc_hold_still_capturing) else if (permission.granted) str(R.string.kyc_ready_when_you_are) else str(R.string.kyc_camera_access_needed), PillKind.Lime,
                     icon = if (busy || permission.granted) Icons.Check else Icons.Camera)
             }
             Column(Modifier.padding(top = 28.dp, start = 36.dp, end = 36.dp).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                CamTip("All four corners in view"); CamTip("No glare on the photo")
+                CamTip(str(R.string.kyc_all_four_corners_in_view)); CamTip(str(R.string.kyc_no_glare_on_the_photo))
             }
             if (!permission.granted && cameraOk) {
-                ArroButton("Allow camera", { permission.request() }, Modifier.padding(top = 16.dp), style = Btn.Lime, size = BtnSize.M, fill = false)
+                ArroButton(str(R.string.kyc_allow_camera), { permission.request() }, Modifier.padding(top = 16.dp), style = Btn.Lime, size = BtnSize.M, fill = false)
             }
             Spacer(Modifier.weight(1f))
             Row(
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(start = 40.dp, end = 40.dp, bottom = 40.dp),
                 horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically,
             ) {
-                Txt("Upload", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { upload() }, color = C.OnNight)
+                Txt(str(R.string.kyc_upload), T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { upload() }, color = C.OnNight)
                 Box(
                     Modifier.size(78.dp).border(4.dp, C.OnNight, CircleShape).padding(8.dp).background(if (busy) C.LimeDeep else C.Lime, CircleShape)
                         .clip(CircleShape)
                         .clickable(enabled = !busy) {
                             busy = true
                             if (permission.granted && cameraOk) {
-                                takePhoto(context, capture, docFile(context.filesDir, side), { finish(it) }, { busy = false; banner.show("Couldn't take the photo", it, BannerKind.Error) })
+                                takePhoto(context, capture, docFile(context.filesDir, side), { finish(it) }, { busy = false; banner.show(str(R.string.kyc_couldn_t_take_the_photo), it, BannerKind.Error) })
                             } else {
                                 // No camera: use the sample image so the flow can still be tested.
                                 scope.launch { delay(600); finish(sampleDocument(context)) }
                             }
                         },
                 )
-                Txt("Tips", T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { nav.go(Routes.article("verify")) }, color = C.OnNight, align = TextAlign.End)
+                Txt(str(R.string.kyc_tips), T.Link.copy(fontSize = 14.sp), Modifier.width(64.dp).tap { nav.go(Routes.article("verify")) }, color = C.OnNight, align = TextAlign.End)
             }
         }
     }
@@ -583,25 +585,25 @@ fun KycCheckScreen() {
     val bitmap = remember(draft.photoPath) { draft.photoPath?.let { p -> PhotoQuality.decodeSmall(File(p), 900) } }
     val good = draft.quality >= 0.67f
     ArroScreen(
-        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption("3 of 4 · ID") }) },
+        topBar = { TopBar(onBack = { nav.back() }, right = { BarCaption(str(R.string.kyc_n_3_of_4_id)) }) },
         gap = 20.dp,
         footer = {
-            ArroButton("Use this photo", { nav.go(Routes.KYC_SELFIE) })
-            ArroButton("Retake", { nav.back() }, style = Btn.Line)
+            ArroButton(str(R.string.kyc_use_this_photo), { nav.go(Routes.KYC_SELFIE) })
+            ArroButton(str(R.string.kyc_retake), { nav.back() }, style = Btn.Line)
         },
     ) {
         StepBars(3, 4)
-        ScreenTitle("Is it easy to read?", "Check every detail is sharp before you send it.")
+        ScreenTitle(str(R.string.kyc_is_it_easy_to_read), str(R.string.kyc_check_every_detail_is_sharp_before))
         Box(Modifier.fillMaxWidth().background(Color(0xFF1A2624), RoundedCornerShape(20.dp)).padding(18.dp)) {
             if (bitmap != null) {
-                Image(bitmap.asImageBitmap(), "Your ID photo", Modifier.fillMaxWidth().height(196.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
+                Image(bitmap.asImageBitmap(), str(R.string.kyc_your_id_photo), Modifier.fillMaxWidth().height(196.dp).clip(RoundedCornerShape(10.dp)), contentScale = ContentScale.Crop)
             } else {
                 MockDocument(Modifier.fillMaxWidth().height(196.dp))
             }
-            Pill(if (good) "Looks good" else "Hard to read", if (good) PillKind.Lime else PillKind.Warn, modifier = Modifier.align(Alignment.TopEnd).padding(10.dp))
+            Pill(if (good) str(R.string.kyc_looks_good) else str(R.string.kyc_hard_to_read), if (good) PillKind.Lime else PillKind.Warn, modifier = Modifier.align(Alignment.TopEnd).padding(10.dp))
         }
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            val notes = draft.qualityNotes.ifEmpty { listOf("All four corners are visible" to true, "Text and photo are in focus" to true, "No glare or shadows" to true) }
+            val notes = draft.qualityNotes.ifEmpty { listOf(str(R.string.kyc_all_four_corners_are_visible) to true, str(R.string.kyc_text_and_photo_are_in_focus) to true, str(R.string.kyc_no_glare_or_shadows) to true) }
             notes.forEach { (text, ok) ->
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Tile(if (ok) Icons.Check else Icons.Alert, if (ok) TileStyle.Lime else TileStyle.Warn, size = 28.dp, round = true, iconSize = 16.dp)
@@ -609,7 +611,7 @@ fun KycCheckScreen() {
                 }
             }
         }
-        if (!good) Note("We may not be able to read this. A retake in better light usually helps.", NoteKind.Warn, Icons.Info)
+        if (!good) Note(str(R.string.kyc_we_may_not_be_able_to), NoteKind.Warn, Icons.Info)
     }
 }
 
@@ -661,11 +663,11 @@ fun KycSelfieScreen() {
     }
     LaunchedEffect(step) { if (step == 2) { delay(500); submit() } }
     val stuck = now - started > 12_000 && step < 2
-    CameraScreen("4 of 4 · Selfie", { nav.back() }, closeIcon = Icons.ArrowLeft) {
+    CameraScreen(str(R.string.kyc_n_4_of_4_selfie), { nav.back() }, closeIcon = Icons.ArrowLeft) {
         Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
             Spacer(Modifier.height(124.dp))
-            Txt(if (step == 0) "Look straight ahead" else if (step == 1) "Now turn your head" else "Got it, thank you", T.H2.copy(fontSize = 22.sp), color = C.OnNight)
-            Cap(if (step == 0) "Then slowly turn your head to the left" else if (step == 1) "Slowly, to the left" else "Checking it matches your ID", color = C.DarkCap, size = 15f)
+            Txt(if (step == 0) str(R.string.kyc_look_straight_ahead) else if (step == 1) str(R.string.kyc_now_turn_your_head) else str(R.string.kyc_got_it_thank_you), T.H2.copy(fontSize = 22.sp), color = C.OnNight)
+            Cap(if (step == 0) str(R.string.kyc_then_slowly_turn_your_head_to) else if (step == 1) str(R.string.kyc_slowly_to_the_left) else str(R.string.kyc_checking_it_matches_your_id), color = C.DarkCap, size = 15f)
             Box(Modifier.padding(top = 30.dp).size(268.dp, 340.dp), contentAlignment = Alignment.Center) {
                 Box(Modifier.padding(28.dp).fillMaxSize().clip(androidx.compose.foundation.shape.GenericShape { size, _ ->
                     addOval(androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height))
@@ -686,20 +688,20 @@ fun KycSelfieScreen() {
                 }
             }
             Row(Modifier.padding(top = 24.dp)) {
-                Pill(when (step) { 0 -> if (faceSeen) "Step 1 of 2 · hold still" else "Step 1 of 2 · finding your face"; 1 -> "Step 2 of 2 · turn left"; else -> "Done" }, PillKind.OnDark)
+                Pill(when (step) { 0 -> if (faceSeen) str(R.string.kyc_step_1_of_2_hold_still) else str(R.string.kyc_step_1_of_2_finding_your); 1 -> str(R.string.kyc_step_2_of_2_turn_left); else -> str(R.string.kyc_done) }, PillKind.OnDark)
             }
-            if (!permission.granted && cameraOk) ArroButton("Allow camera", { permission.request() }, Modifier.padding(top = 16.dp), style = Btn.Lime, size = BtnSize.M, fill = false)
+            if (!permission.granted && cameraOk) ArroButton(str(R.string.kyc_allow_camera), { permission.request() }, Modifier.padding(top = 16.dp), style = Btn.Lime, size = BtnSize.M, fill = false)
             Spacer(Modifier.weight(1f))
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Cap("Your selfie is compared once with your ID photo, then deleted after verification.", Modifier.fillMaxWidth(), color = C.DarkCap, align = TextAlign.Center, size = 12f)
+                Cap(str(R.string.kyc_your_selfie_is_compared_once_with), Modifier.fillMaxWidth(), color = C.DarkCap, align = TextAlign.Center, size = 12f)
                 val canSkip = !permission.granted || !cameraOk || stuck
-                ArroButton(if (step == 2) "Checking" else if (canSkip) "I'm ready" else "Keep still", { submit() }, style = Btn.Lime,
+                ArroButton(if (step == 2) str(R.string.kyc_checking) else if (canSkip) str(R.string.kyc_i_m_ready) else str(R.string.kyc_keep_still), { submit() }, style = Btn.Lime,
                     enabled = step == 2 || canSkip, loading = call.busy.value)
                 if (call.error.value != null) FieldHint(call.error.value)
             }
         }
     }
-    LaunchedEffect(permission.denied) { if (permission.denied) banner.show("Camera is off", "You can still continue; we'll check your selfie later.", BannerKind.Info) }
+    LaunchedEffect(permission.denied) { if (permission.denied) banner.show(str(R.string.kyc_camera_is_off), str(R.string.kyc_you_can_still_continue_we_ll), BannerKind.Info) }
 }
 
 // ------------------------------------------------------------------ 2.08 to 2.10 Review, approved, rejected
@@ -718,24 +720,24 @@ fun KycStatusScreen() {
             val f = ((now - k.submittedAt).toFloat() / total).coerceIn(0f, 1f)
             ArroScreen(
                 background = C.Tint,
-                footer = { ArroButton("Explore Arro while you wait", { nav.resetTo(Routes.HOME) }) },
+                footer = { ArroButton(str(R.string.kyc_explore_arro_while_you_wait), { nav.resetTo(Routes.HOME) }) },
             ) {
                 Box(Modifier.fillMaxWidth().padding(top = 40.dp).height(220.dp), contentAlignment = Alignment.Center) {
-                    Halo(220.dp) { Illustration(Art.Clock, 200.dp, description = "A stopwatch") }
+                    Halo(220.dp) { Illustration(Art.Clock, 200.dp, description = str(R.string.kyc_a_stopwatch)) }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ScreenTitle("Checking your\ndetails", size = TitleSize.XL)
-                    Txt("Most checks finish in under 2 minutes. Feel free to look around, we'll notify you when it's done.", T.Lede, color = C.Slate)
+                    ScreenTitle(str(R.string.kyc_checking_your_details), size = TitleSize.XL)
+                    Txt(str(R.string.kyc_most_checks_finish_in_under_2), T.Lede, color = C.Slate)
                 }
                 ArroCard(Modifier.padding(top = 8.dp)) {
                     val doc = k.docType.label
                     Timeline(listOf(
-                        TimelineItem("Personal details", time = "Received", state = StepState.Done),
-                        TimelineItem(doc, time = "Received", state = StepState.Done),
-                        TimelineItem("Matching your selfie", if (f < 0.6f) "Comparing it with your ${doc.lowercase()} photo" else null,
+                        TimelineItem(str(R.string.kyc_personal_details), time = str(R.string.kyc_received), state = StepState.Done),
+                        TimelineItem(doc, time = str(R.string.kyc_received), state = StepState.Done),
+                        TimelineItem(str(R.string.kyc_matching_your_selfie), if (f < 0.6f) str(R.string.kyc_comparing_it_with_your_x_photo, doc.lowercase()) else null,
                             state = if (f < 0.6f) StepState.Now else StepState.Done, icon = if (f < 0.6f) Icons.Refresh else null,
-                            time = if (f < 0.6f) "" else "Done"),
-                        TimelineItem("Final checks", if (f >= 0.6f) "Sanctions and fraud screening" else null,
+                            time = if (f < 0.6f) "" else str(R.string.kyc_done)),
+                        TimelineItem(str(R.string.kyc_final_checks), if (f >= 0.6f) str(R.string.kyc_sanctions_and_fraud_screening) else null,
                             state = if (f >= 0.6f) StepState.Now else StepState.Todo, icon = if (f >= 0.6f) Icons.Refresh else null),
                     ))
                 }
@@ -749,14 +751,14 @@ fun KycStatusScreen() {
                 ArroScreen(
                     background = Color.Transparent,
                     footer = {
-                        ArroButton("Send your first transfer", { c.session.send.reset(); nav.resetTo(Routes.HOME); nav.go(Routes.SEND_COUNTRY) }, style = Btn.Lime)
-                        ArroButton("Go to home", { nav.resetTo(Routes.HOME) }, style = Btn.LineOnDark)
+                        ArroButton(str(R.string.kyc_send_your_first_transfer), { c.session.send.reset(); nav.resetTo(Routes.HOME); nav.go(Routes.SEND_COUNTRY) }, style = Btn.Lime)
+                        ArroButton(str(R.string.kyc_go_to_home), { nav.resetTo(Routes.HOME) }, style = Btn.LineOnDark)
                     },
                 ) {
-                    Box(Modifier.fillMaxWidth().padding(top = 70.dp), contentAlignment = Alignment.Center) { Illustration(Art.IdCard, 240.dp, description = "An ID card with a verified badge") }
+                    Box(Modifier.fillMaxWidth().padding(top = 70.dp), contentAlignment = Alignment.Center) { Illustration(Art.IdCard, 240.dp, description = str(R.string.kyc_an_id_card_with_a_verified)) }
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ScreenTitle("You're verified", size = TitleSize.XL, color = C.Lime, align = TextAlign.Center)
-                        Txt("Welcome to Arro, ${a.firstName}. Your account is ready to send.", T.Lede, color = C.DarkCap, align = TextAlign.Center)
+                        ScreenTitle(str(R.string.kyc_you_re_verified), size = TitleSize.XL, color = C.Lime, align = TextAlign.Center)
+                        Txt(str(R.string.kyc_welcome_to_arro_x_your_account, a.firstName), T.Lede, color = C.DarkCap, align = TextAlign.Center)
                     }
                     Column(
                         Modifier.padding(top = 8.dp).fillMaxWidth().background(C.OnNight.copy(alpha = 0.06f), RoundedCornerShape(20.dp))
@@ -764,43 +766,43 @@ fun KycStatusScreen() {
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Cap("Account level", color = C.DarkCap); Pill(level.label, PillKind.Lime)
+                            Cap(str(R.string.kyc_account_level), color = C.DarkCap); Pill(level.label, PillKind.Lime)
                         }
-                        KV("Per transfer", "up to " + app.arro.core.Money.format(level.perTransferMinor, app.arro.core.Currency.GBP, false), onDark = true)
-                        KV("Per month", "up to " + app.arro.core.Money.format(level.perMonthMinor, app.arro.core.Currency.GBP, false), onDark = true)
-                        LinkText("How to raise your limits", { nav.go(Routes.VERIFICATION) }, color = C.Lime, strong = true)
+                        KV(str(R.string.kyc_per_transfer), str(R.string.kyc_up_to) + app.arro.core.Money.format(level.perTransferMinor, app.arro.core.Currency.GBP, false), onDark = true)
+                        KV(str(R.string.kyc_per_month), str(R.string.kyc_up_to) + app.arro.core.Money.format(level.perMonthMinor, app.arro.core.Currency.GBP, false), onDark = true)
+                        LinkText(str(R.string.kyc_how_to_raise_your_limits), { nav.go(Routes.VERIFICATION) }, color = C.Lime, strong = true)
                     }
                 }
             }
         }
         KycStatus.REJECTED -> ArroScreen(
             topBar = {
-                TopBar(left = { RoundIcon(Icons.Close, { nav.resetTo(Routes.HOME) }, style = IconBtn.Soft, description = "Close") }, right = {
-                    ArroButton("Get help", { nav.go(Routes.CHAT) }, style = Btn.Text, size = BtnSize.S, fill = false)
+                TopBar(left = { RoundIcon(Icons.Close, { nav.resetTo(Routes.HOME) }, style = IconBtn.Soft, description = str(R.string.kyc_close)) }, right = {
+                    ArroButton(str(R.string.kyc_get_help), { nav.go(Routes.CHAT) }, style = Btn.Text, size = BtnSize.S, fill = false)
                 })
             },
             footer = {
-                ArroButton("Retake ${k.docType.label.lowercase()} photo", {
+                ArroButton(str(R.string.kyc_retake_x_photo, k.docType.label.lowercase()), {
                     c.backend.retakeIdentity(); nav.resetTo(Routes.HOME); nav.go(Routes.KYC_DOCUMENT); nav.go(Routes.KYC_CAPTURE)
                 }, enabled = k.attemptsLeft > 0)
-                ArroButton("Use a different ID", { c.backend.retakeIdentity(); nav.resetTo(Routes.HOME); nav.go(Routes.KYC_DOCUMENT) }, style = Btn.Line, enabled = k.attemptsLeft > 0)
+                ArroButton(str(R.string.kyc_use_a_different_id), { c.backend.retakeIdentity(); nav.resetTo(Routes.HOME); nav.go(Routes.KYC_DOCUMENT) }, style = Btn.Line, enabled = k.attemptsLeft > 0)
             },
         ) {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.IdCardWarn, 168.dp, description = "An ID card with an alert badge") }
-            ScreenTitle("We need a\nclearer photo", k.rejectReason.ifBlank { "We couldn't read your ID. A retake usually fixes it." })
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Illustration(Art.IdCardWarn, 168.dp, description = str(R.string.kyc_an_id_card_with_an_alert)) }
+            ScreenTitle(str(R.string.kyc_we_need_a_clearer_photo), k.rejectReason.ifBlank { str(R.string.kyc_we_couldn_t_read_your_id) })
             ArroCard {
-                Over("Tips for a quick pass")
+                Over(str(R.string.kyc_tips_for_a_quick_pass))
                 VSpace(12.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    listOf(Icons.Bolt to "Turn your flash off", Icons.Sun to "Tilt the ${k.docType.label.lowercase()} away from lights", Icons.Square to "Use a dark, plain background").forEach { (icon, text) ->
+                    listOf(Icons.Bolt to str(R.string.kyc_turn_your_flash_off), Icons.Sun to str(R.string.kyc_tilt_the_x_away_from_lights, k.docType.label.lowercase()), Icons.Square to str(R.string.kyc_use_a_dark_plain_background)).forEach { (icon, text) ->
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                             Tile(icon, TileStyle.Warn, size = 28.dp, round = true, iconSize = 16.dp); Txt(text, T.Body14)
                         }
                     }
                 }
             }
-            Cap(if (k.attemptsLeft > 0) "${k.attemptsLeft} attempt${if (k.attemptsLeft == 1) "" else "s"} left today. Your details and selfie are saved."
-                else "You've used today's attempts. Try again tomorrow, or chat with us.")
+            Cap(if (k.attemptsLeft > 0) str(R.string.kyc_x_attempt_x_left_today_your, k.attemptsLeft, if (k.attemptsLeft == 1) "" else "s")
+                else str(R.string.kyc_you_ve_used_today_s_attempts))
         }
     }
 }

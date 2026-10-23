@@ -128,7 +128,7 @@ class ArroBackend(
         scope.launch {
             while (isActive) {
                 refreshRates()
-                delay(5 * 60_000L)
+                delay(RATES_REFRESH_MS)
             }
         }
     }
@@ -302,7 +302,7 @@ class ArroBackend(
         net(700)
         val e = email.trim().lowercase()
         val a = _state.value.account
-        val known = (a != null && a.email == e) || e == Seed.DEMO_EMAIL
+        val known = (a != null && a.email == e) || (DemoConfig.enabled && e.isNotEmpty() && e == DemoConfig.email.lowercase())
         if (!known) throw ArroException("We couldn't find an account with that email. Check it, or create an account.")
         if (a == null || a.email != e) mutate { it.copy(account = Seed.account(now)) }
         val code = Ids.code()
@@ -456,9 +456,6 @@ class ArroBackend(
 
     /** When a transfer created now would arrive, for the review screen. */
     fun estimateArrival(type: PayoutType): Long = plan(type, now)[3]
-
-    /** True when [providerId] is the one marked as briefly offline. */
-    fun isProviderDown(providerId: String?): Boolean = providerId != null && providerId == _state.value.demo.outageProviderId
 
     /** A fresh price for the same transfer, used when a rate lock runs out: holds today's rate again first. */
     fun requote(q: Quote, country: String, fundingId: String?): Quote {
@@ -1288,7 +1285,6 @@ class ArroBackend(
 
     fun markAllRead() = mutateAccount { a -> a.copy(notifications = a.notifications.map { it.copy(read = true) }) }
     fun markRead(id: String) = mutateAccount { a -> a.copy(notifications = a.notifications.map { if (it.id == id) it.copy(read = true) else it }) }
-    fun dismissSetup() = mutateAccount { it.copy(setupDismissed = true) }
     fun notifyWhenAvailable(country: String) = mutate { it.copy(notifyCountries = (it.notifyCountries + country).distinct()) }
 
     fun exportData(): String = Json { prettyPrint = true; encodeDefaults = true }.encodeToString(requireAccount().copy(passwordHash = "•", passcodeHash = "•"))
@@ -1383,6 +1379,7 @@ class ArroBackend(
 
     /** Signs in with the sample account (Eric Nshuti), replacing any data on this device. */
     fun loadDemoAccount() {
+        if (!DemoConfig.enabled) return
         mutate { it.copy(account = Seed.account(now), signedIn = true, onboardingSeen = true) }
         _unlocked.value = true
     }
@@ -1412,7 +1409,12 @@ class ArroBackend(
         const val OFFER_WINDOW_MS = 3 * 60_000L
         const val OFFER_LOCK_MINUTES = 10
         /** Offers are only priced from rates fetched within this time. */
-        const val RATES_FRESH_MS = 30 * 60_000L
+        const val RATES_FRESH_MS = 90 * 60_000L
+        /**
+         * How often rates are fetched while the app is running. The free ExchangeRate-API endpoint updates once a day
+         * and asks apps to call it no more than once an hour; the Rates screen also has a Refresh button.
+         */
+        const val RATES_REFRESH_MS = 60 * 60_000L
         /** Data version for Arro Rewards, see [migrate]. */
         const val LOYALTY_VERSION = 1
         private val SAMPLE_FRIENDS = listOf("Ngozi Okafor", "Jean Habimana", "Grace Achieng", "Musa Bello", "Priya Nair")

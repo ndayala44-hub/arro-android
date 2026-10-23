@@ -5,11 +5,13 @@ import android.content.Context
 import android.os.Build
 import app.arro.core.ArroBackend
 import app.arro.core.BackendEvent
+import app.arro.core.DemoConfig
 import app.arro.platform.Connectivity
 import app.arro.platform.FileStore
 import app.arro.platform.HttpRateSource
 import app.arro.platform.Notifier
 import app.arro.ui.Session
+import app.arro.ui.Str
 import app.arro.widget.Widgets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +30,14 @@ class ArroApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // UI text comes from strings.xml through str(); set it up before anything builds screen text.
+        Str.init(this)
+        // Sample account for the simulated backend, from gradle.properties (arro.sample.*). Not a real credential.
+        DemoConfig.enabled = BuildConfig.SAMPLE_ACCOUNT
+        DemoConfig.email = BuildConfig.SAMPLE_EMAIL
+        DemoConfig.phone = BuildConfig.SAMPLE_PHONE
+        DemoConfig.password = BuildConfig.SAMPLE_PASSWORD
+        DemoConfig.passcode = BuildConfig.SAMPLE_PASSCODE
         container = AppContainer(this)
         container.start()
     }

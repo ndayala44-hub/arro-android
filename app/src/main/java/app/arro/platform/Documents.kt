@@ -1,5 +1,6 @@
 package app.arro.platform
 
+import app.arro.ui.str
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -53,7 +54,7 @@ object Documents {
             moveTo(x + 26.5f * s, y + 12.6f * s); lineTo(x + 35.6f * s, y + 14f * s); lineTo(x + 34f * s, y + 23f * s)
         }
         c.drawPath(path, ink)
-        c.drawText("arro", x + 34f, y + 20f, paint(f.bold, 20f))
+        c.drawText(str(R.string.brand_wordmark), x + 34f, y + 20f, paint(f.bold, 20f))
     }
 
     private fun kv(c: Canvas, f: Fonts, left: Float, right: Float, y: Float, k: String, v: String, strong: Boolean = false) {
@@ -74,8 +75,11 @@ object Documents {
 
     private fun save(context: Context, doc: PdfDocument, name: String): File {
         val f = Share.cacheFile(context, name)
-        f.outputStream().use { doc.writeTo(it) }
-        doc.close()
+        try {
+            f.outputStream().use { doc.writeTo(it) }
+        } finally {
+            doc.close()
+        }
         return f
     }
 
@@ -88,36 +92,36 @@ object Documents {
         val l = 32f; val r = 388f
         c.drawColor(Color.WHITE)
         brand(c, f, l, 30f)
-        val status = when (t.status) { TransferStatus.DELIVERED -> "Delivered"; TransferStatus.REFUNDED -> "Refunded"; TransferStatus.CANCELLED -> "Cancelled"; TransferStatus.FAILED -> "Not delivered"; else -> "In progress" }
+        val status = when (t.status) { TransferStatus.DELIVERED -> str(R.string.documents_delivered); TransferStatus.REFUNDED -> str(R.string.documents_refunded); TransferStatus.CANCELLED -> str(R.string.documents_cancelled); TransferStatus.FAILED -> str(R.string.documents_not_delivered); else -> str(R.string.documents_in_progress) }
         c.drawText(status, r, 48f, paint(f.bold, 10f, if (t.status == TransferStatus.DELIVERED) OK else SLATE, Paint.Align.RIGHT))
-        c.drawText("TRANSFER RECEIPT", l, 92f, paint(f.medium, 8.5f, SLATE).apply { letterSpacing = 0.12f })
+        c.drawText(str(R.string.documents_transfer_receipt), l, 92f, paint(f.medium, 8.5f, SLATE).apply { letterSpacing = 0.12f })
         c.drawText(Money.format(t.receiveMinor, t.toCur), l, 122f, paint(f.bold, 26f))
-        c.drawText("received by ${t.recipientName}", l, 140f, paint(f.regular, 10.5f, SLATE))
+        c.drawText(str(R.string.documents_received_by_x, t.recipientName), l, 140f, paint(f.regular, 10.5f, SLATE))
         c.drawLine(l, 158f, r, 158f, Paint().apply { color = LINE; strokeWidth = 1f })
-        val sender = "${a.displayName}, ${a.profile.address?.city ?: "London"}, UK"
+        val sender = str(R.string.documents_x_x_uk, a.displayName, a.profile.address?.city ?: str(R.string.documents_london))
         val rows = listOf(
-            "Sender" to sender,
-            "Recipient" to "${t.recipientName}, ${app.arro.core.Catalog.countryOrNull(t.country)?.city ?: ""}, ${t.country}",
-            "Delivered to" to "${t.providerName} ${if (t.payoutType == PayoutType.MOBILE_MONEY) Text.formatPhone(t.payoutAccount) else t.payoutAccount}",
-            "Amount sent" to Money.format(t.sendMinor, t.fromCur),
-            "Arro fee" to Money.format(t.feeMinor, t.fromCur),
-        ) + (if (t.fundingFeeMinor > 0) listOf("Card fee" to Money.format(t.fundingFeeMinor, t.fromCur)) else emptyList()) + listOf(
-            "Total paid" to Money.format(t.totalMinor, t.fromCur),
-            "Exchange rate" to Money.rateLine(t.fromCur, t.toCur, t.rate),
-            "Paid with" to t.fundingLabel,
-            "Created" to "${Text.dateTime(t.createdAt)} ${Text.zoneName(t.createdAt)}",
-        ) + (if (t.status == TransferStatus.DELIVERED) listOf("Delivered" to "${Text.dateTime(t.deliveredAt)} ${Text.zoneName(t.deliveredAt)}") else emptyList()) + listOf(
-            "Reference" to t.reference,
-        ) + (if (t.providerRef.isNotBlank()) listOf("Provider reference" to t.providerRef) else emptyList())
+            str(R.string.documents_sender) to sender,
+            str(R.string.documents_recipient) to "${t.recipientName}, ${app.arro.core.Catalog.countryOrNull(t.country)?.city ?: ""}, ${t.country}",
+            str(R.string.documents_delivered_to) to "${t.providerName} ${if (t.payoutType == PayoutType.MOBILE_MONEY) Text.formatPhone(t.payoutAccount) else t.payoutAccount}",
+            str(R.string.documents_amount_sent) to Money.format(t.sendMinor, t.fromCur),
+            str(R.string.documents_arro_fee) to Money.format(t.feeMinor, t.fromCur),
+        ) + (if (t.fundingFeeMinor > 0) listOf(str(R.string.documents_card_fee) to Money.format(t.fundingFeeMinor, t.fromCur)) else emptyList()) + listOf(
+            str(R.string.documents_total_paid) to Money.format(t.totalMinor, t.fromCur),
+            str(R.string.documents_exchange_rate) to Money.rateLine(t.fromCur, t.toCur, t.rate),
+            str(R.string.documents_paid_with) to t.fundingLabel,
+            str(R.string.documents_created) to "${Text.dateTime(t.createdAt)} ${Text.zoneName(t.createdAt)}",
+        ) + (if (t.status == TransferStatus.DELIVERED) listOf(str(R.string.documents_delivered) to "${Text.dateTime(t.deliveredAt)} ${Text.zoneName(t.deliveredAt)}") else emptyList()) + listOf(
+            str(R.string.documents_reference) to t.reference,
+        ) + (if (t.providerRef.isNotBlank()) listOf(str(R.string.documents_provider_reference) to t.providerRef) else emptyList())
         var y = 182f
-        rows.forEach { (k, v) -> kv(c, f, l, r, y, k, v, k == "Total paid"); y += 21f }
+        rows.forEach { (k, v) -> kv(c, f, l, r, y, k, v, k == str(R.string.documents_total_paid)); y += 21f }
         y += 10f
         c.drawLine(l, y, r, y, Paint().apply { color = LINE; strokeWidth = 1f })
         y += 20f
-        val legal = "Arro Ltd is authorised by [REGULATOR] as [LICENCE TYPE], reference [LICENCE NO.]. Questions? help@[DOMAIN] · Keep this receipt for your records."
+        val legal = str(R.string.documents_arro_ltd_is_authorised_by_regulator)
         wrap(legal, paint(f.regular, 8.5f, SLATE), r - l).forEach { c.drawText(it, l, y, paint(f.regular, 8.5f, SLATE)); y += 12f }
         doc.finishPage(page)
-        return save(context, doc, "Arro-receipt-${t.reference}.pdf")
+        return save(context, doc, str(R.string.documents_arro_receipt_x_pdf, t.reference))
     }
 
     /** A refund confirmation for a cancelled or undelivered transfer. */
@@ -129,25 +133,25 @@ object Documents {
         val l = 32f; val r = 388f
         c.drawColor(Color.WHITE)
         brand(c, f, l, 30f)
-        c.drawText("Refunded", r, 48f, paint(f.bold, 10f, OK, Paint.Align.RIGHT))
-        c.drawText("REFUND RECEIPT", l, 92f, paint(f.medium, 8.5f, SLATE).apply { letterSpacing = 0.12f })
+        c.drawText(str(R.string.documents_refunded), r, 48f, paint(f.bold, 10f, OK, Paint.Align.RIGHT))
+        c.drawText(str(R.string.documents_refund_receipt), l, 92f, paint(f.medium, 8.5f, SLATE).apply { letterSpacing = 0.12f })
         c.drawText(Money.format(t.totalMinor, t.fromCur), l, 122f, paint(f.bold, 26f))
-        c.drawText("refunded to ${if (t.fundingId == ArroBackend.BALANCE) "your GBP balance" else t.fundingLabel}", l, 140f, paint(f.regular, 10.5f, SLATE))
+        c.drawText(str(R.string.documents_refunded_to_x, if (t.fundingId == ArroBackend.BALANCE) str(R.string.documents_your_gbp_balance) else t.fundingLabel), l, 140f, paint(f.regular, 10.5f, SLATE))
         var y = 182f
         listOf(
-            "Account holder" to a.displayName,
-            "Original transfer" to "To ${t.recipientName} · ${Text.date(t.createdAt)}",
-            "Original reference" to t.reference,
-            "Refund reference" to t.refundReference,
-            "Reason" to (if (t.status == TransferStatus.REFUNDED && t.failReason.isNotBlank()) "Not delivered by ${t.providerName}" else t.cancelReason.ifBlank { "Cancelled" }),
-            "Amount sent" to Money.format(t.sendMinor, t.fromCur),
-            "Fees refunded" to Money.format(t.feeMinor + t.fundingFeeMinor, t.fromCur),
-            "Total refunded" to Money.format(t.totalMinor, t.fromCur),
-            "Refund issued" to Text.dateTime(t.refundStartedAt),
-            "Completed" to if (t.refundedAt > 0) Text.date(t.refundedAt) else "In progress",
-        ).forEach { (k, v) -> kv(c, f, l, r, y, k, v, k == "Total refunded"); y += 21f }
+            str(R.string.documents_account_holder) to a.displayName,
+            str(R.string.documents_original_transfer) to str(R.string.documents_to_x_x, t.recipientName, Text.date(t.createdAt)),
+            str(R.string.documents_original_reference) to t.reference,
+            str(R.string.documents_refund_reference) to t.refundReference,
+            str(R.string.documents_reason) to (if (t.status == TransferStatus.REFUNDED && t.failReason.isNotBlank()) str(R.string.documents_not_delivered_by_x, t.providerName) else t.cancelReason.ifBlank { str(R.string.documents_cancelled) }),
+            str(R.string.documents_amount_sent) to Money.format(t.sendMinor, t.fromCur),
+            str(R.string.documents_fees_refunded) to Money.format(t.feeMinor + t.fundingFeeMinor, t.fromCur),
+            str(R.string.documents_total_refunded) to Money.format(t.totalMinor, t.fromCur),
+            str(R.string.documents_refund_issued) to Text.dateTime(t.refundStartedAt),
+            str(R.string.documents_completed) to if (t.refundedAt > 0) Text.date(t.refundedAt) else str(R.string.documents_in_progress),
+        ).forEach { (k, v) -> kv(c, f, l, r, y, k, v, k == str(R.string.documents_total_refunded)); y += 21f }
         doc.finishPage(page)
-        return save(context, doc, "Arro-refund-${t.refundReference.ifBlank { t.reference }}.pdf")
+        return save(context, doc, str(R.string.documents_arro_refund_x_pdf, t.refundReference.ifBlank { t.reference }))
     }
 
     data class Line(val at: Long, val description: String, val reference: String, val amountMinor: Long, val status: String)
@@ -158,24 +162,24 @@ object Documents {
             when (item) {
                 is FeedItem.Sent -> {
                     val t = item.transfer
-                    Line(t.createdAt, "To ${t.recipientName} · ${t.providerName}", t.reference, -t.totalMinor,
-                        when (t.status) { TransferStatus.DELIVERED -> "Delivered"; TransferStatus.REFUNDED -> "Refunded"; TransferStatus.CANCELLED -> "Cancelled"; TransferStatus.FAILED -> "Failed"; else -> "In progress" })
+                    Line(t.createdAt, str(R.string.documents_to_x_x, t.recipientName, t.providerName), t.reference, -t.totalMinor,
+                        when (t.status) { TransferStatus.DELIVERED -> str(R.string.documents_delivered); TransferStatus.REFUNDED -> str(R.string.documents_refunded); TransferStatus.CANCELLED -> str(R.string.documents_cancelled); TransferStatus.FAILED -> str(R.string.documents_failed); else -> str(R.string.documents_in_progress) })
                 }
                 is FeedItem.Entry -> {
                     val e = item.entry
                     val amount = if (e.currency == cur.code) e.amountMinor else e.counterMinor
                     Line(e.createdAt, when (e.type) {
-                        LedgerType.CONVERSION -> "Converted ${e.currency} to ${e.counterCurrency}"
+                        LedgerType.CONVERSION -> str(R.string.documents_converted_x_to_x, e.currency, e.counterCurrency)
                         LedgerType.TOP_UP -> e.title
-                        LedgerType.REWARD -> "Invite reward · ${e.subtitle}"
-                        LedgerType.REFUND -> "Refund · ${e.subtitle}"
-                    }, e.id.take(8), amount, "Completed")
+                        LedgerType.REWARD -> str(R.string.documents_invite_reward_x, e.subtitle)
+                        LedgerType.REFUND -> str(R.string.documents_refund_x, e.subtitle)
+                    }, e.id.take(8), amount, str(R.string.documents_completed))
                 }
             }
         }
 
     fun statementCsv(context: Context, a: Account, cur: Currency, from: Long, to: Long, lines: List<Line>): File {
-        val sb = StringBuilder("Date,Time,Description,Reference,Amount,Currency,Status\n")
+        val sb = StringBuilder(str(R.string.documents_date_time_description_reference_amount_currency))
         lines.forEach { l ->
             val amount = java.math.BigDecimal.valueOf(l.amountMinor).movePointLeft(cur.decimals).toPlainString()
             sb.append("${Text.numericDate(l.at)},${Text.time(l.at)},\"${l.description.replace("\"", "'")}\",${l.reference},$amount,${cur.code},${l.status}\n")
@@ -201,17 +205,17 @@ object Documents {
             val cv = c!!
             cv.drawColor(Color.WHITE)
             brand(cv, f, l, 36f)
-            cv.drawText("Statement", r, 52f, paint(f.bold, 14f, INK, Paint.Align.RIGHT))
-            cv.drawText("${cur.displayName} account · ${a.displayName}", l, 96f, paint(f.medium, 11f))
+            cv.drawText(str(R.string.documents_statement), r, 52f, paint(f.bold, 14f, INK, Paint.Align.RIGHT))
+            cv.drawText(str(R.string.documents_x_account_x, cur.displayName, a.displayName), l, 96f, paint(f.medium, 11f))
             val w0 = a.wallet(cur)
             val details = when {
                 w0 == null -> ""
                 w0.iban.isNotBlank() -> "IBAN ${w0.iban}"
-                else -> "Sort code ${w0.sortCode} · Account ${w0.accountNumber}"
+                else -> str(R.string.documents_sort_code_x_account_x, w0.sortCode, w0.accountNumber)
             }
             cv.drawText(details, l, 112f, paint(f.regular, 9.5f, SLATE))
-            cv.drawText("${Text.date(from)} to ${Text.date(to)}", r, 96f, paint(f.regular, 10f, SLATE, Paint.Align.RIGHT))
-            cv.drawText("Page $pageNo", r, 112f, paint(f.regular, 9f, SLATE, Paint.Align.RIGHT))
+            cv.drawText(str(R.string.documents_x_to_x, Text.date(from), Text.date(to)), r, 96f, paint(f.regular, 10f, SLATE, Paint.Align.RIGHT))
+            cv.drawText(str(R.string.documents_page_x, pageNo), r, 112f, paint(f.regular, 9f, SLATE, Paint.Align.RIGHT))
             y = 146f
             val hp = paint(f.medium, 8.5f, SLATE)
             cv.drawText("DATE", l, y, hp); cv.drawText("DESCRIPTION", l + 70, y, hp); cv.drawText("REFERENCE", l + 330, y, hp)
@@ -229,20 +233,20 @@ object Documents {
             cv.drawText(line.description.take(48), l + 70, y, paint(f.regular, 9.5f))
             cv.drawText(line.reference, l + 330, y, paint(f.regular, 9f, SLATE))
             cv.drawText(Money.signed(line.amountMinor, cur), r, y, paint(f.medium, 9.5f, if (line.amountMinor > 0) OK else INK, Paint.Align.RIGHT))
-            if (line.status != "Delivered" && line.status != "Completed") cv.drawText(line.status, l + 70, y + 11, paint(f.regular, 8f, SLATE))
+            if (line.status != str(R.string.documents_delivered) && line.status != str(R.string.documents_completed)) cv.drawText(line.status, l + 70, y + 11, paint(f.regular, 8f, SLATE))
             if (line.amountMinor >= 0) totalIn += line.amountMinor else totalOut += -line.amountMinor
-            y += if (line.status != "Delivered" && line.status != "Completed") 26f else 20f
+            y += if (line.status != str(R.string.documents_delivered) && line.status != str(R.string.documents_completed)) 26f else 20f
         }
-        if (lines.isEmpty()) { c!!.drawText("No transactions in this period.", l, y, paint(f.regular, 10f, SLATE)); y += 20f }
+        if (lines.isEmpty()) { c!!.drawText(str(R.string.documents_no_transactions_in_this_period), l, y, paint(f.regular, 10f, SLATE)); y += 20f }
         val cv = c!!
         y += 6f
         cv.drawLine(l, y, r, y, Paint().apply { color = LINE; strokeWidth = 1f })
         y += 20f
-        kv(cv, f, l, r, y, "Money in", Money.format(totalIn, cur)); y += 18f
-        kv(cv, f, l, r, y, "Money out", Money.format(totalOut, cur)); y += 18f
-        kv(cv, f, l, r, y, "Closing balance today", Money.format(a.wallet(cur)?.balanceMinor ?: 0, cur), true)
-        cv.drawText("Arro Ltd is authorised by [REGULATOR] as [LICENCE TYPE], reference [LICENCE NO.].", l, h - 40f, paint(f.regular, 8f, SLATE))
+        kv(cv, f, l, r, y, str(R.string.documents_money_in), Money.format(totalIn, cur)); y += 18f
+        kv(cv, f, l, r, y, str(R.string.documents_money_out), Money.format(totalOut, cur)); y += 18f
+        kv(cv, f, l, r, y, str(R.string.documents_closing_balance_today), Money.format(a.wallet(cur)?.balanceMinor ?: 0, cur), true)
+        cv.drawText(str(R.string.documents_arro_ltd_is_authorised_by_regulator_2), l, h - 40f, paint(f.regular, 8f, SLATE))
         doc.finishPage(page!!)
-        return save(context, doc, "Arro-statement-${cur.code}-${Text.localDate(from)}-to-${Text.localDate(to)}.pdf")
+        return save(context, doc, str(R.string.documents_arro_statement_x_x_to_x, cur.code, Text.localDate(from), Text.localDate(to)))
     }
 }

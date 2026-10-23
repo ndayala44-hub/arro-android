@@ -1,5 +1,6 @@
 package app.arro.ui
 
+import app.arro.R
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -50,8 +51,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-val LocalNav = staticCompositionLocalOf<NavHostController> { error("No navigation") }
-val LocalBanner = staticCompositionLocalOf<BannerState> { error("No banner host") }
+val LocalNav = staticCompositionLocalOf<NavHostController> { error(str(R.string.common_no_navigation)) }
+val LocalBanner = staticCompositionLocalOf<BannerState> { error(str(R.string.common_no_banner_host)) }
 
 @Composable
 fun container(): AppContainer = LocalContext.current.container
@@ -99,11 +100,6 @@ fun NavHostController.resetTo(route: String) = navigate(route) {
     launchSingleTop = true
 }
 
-/** Pops back to [route] if it is on the stack, otherwise navigates there. */
-fun NavHostController.backTo(route: String) {
-    if (!popBackStack(route, inclusive = false)) go(route)
-}
-
 // ---------------------------------------------------------------- async calls with busy and error state
 
 class Call(val busy: MutableState<Boolean>, val error: MutableState<String?>)
@@ -122,7 +118,7 @@ fun CoroutineScope.launchCall(call: Call, onError: ((ArroException) -> Boolean)?
         } catch (e: ArroException) {
             if (onError?.invoke(e) != true) call.error.value = e.message
         } catch (e: Exception) {
-            call.error.value = "Something went wrong. Please try again."
+            call.error.value = str(R.string.common_something_went_wrong_please_try_again)
         } finally {
             call.busy.value = false
         }

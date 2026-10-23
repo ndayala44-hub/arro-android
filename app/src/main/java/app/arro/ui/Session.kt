@@ -1,5 +1,6 @@
 package app.arro.ui
 
+import app.arro.R
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,7 +18,7 @@ class SendDraft {
     var recipientId by mutableStateOf<String?>(null)
     var methodId by mutableStateOf<String?>(null)
     var fundingId by mutableStateOf<String?>(null)
-    var reason by mutableStateOf("Family support")
+    var reason by mutableStateOf(str(R.string.session_family_support))
     var quote by mutableStateOf<Quote?>(null)
     /** Set once the transfer is created, for the processing and success screens. */
     var transferId by mutableStateOf<String?>(null)
@@ -30,7 +31,7 @@ class SendDraft {
         recipientId = null
         methodId = null
         fundingId = null
-        reason = "Family support"
+        reason = str(R.string.session_family_support)
         quote = null
         transferId = null
         arroUser = false
@@ -46,7 +47,7 @@ class RecipientDraft {
     var name by mutableStateOf("")
     var relationship by mutableStateOf("")
     var city by mutableStateOf("")
-    var accountType by mutableStateOf("Savings")
+    var accountType by mutableStateOf(str(R.string.session_savings))
     var check by mutableStateOf<NameCheck?>(null)
     /** Where to go once saved: back into the send flow, or to the recipient's profile. */
     var forSend by mutableStateOf(false)
@@ -55,7 +56,7 @@ class RecipientDraft {
         this.country = country
         this.type = type
         providerId = app.arro.core.Catalog.providersFor(country, type).firstOrNull()?.id ?: ""
-        number = ""; name = ""; relationship = ""; city = ""; accountType = "Savings"
+        number = ""; name = ""; relationship = ""; city = ""; accountType = str(R.string.session_savings)
         check = null
         this.forSend = forSend
     }
@@ -63,7 +64,7 @@ class RecipientDraft {
 
 class KycDraft {
     var docType by mutableStateOf(DocType.PASSPORT)
-    var docCountry by mutableStateOf("United Kingdom")
+    var docCountry by mutableStateOf(str(R.string.session_united_kingdom))
     var photoPath by mutableStateOf<String?>(null)
     var quality by mutableStateOf(0f)
     var qualityNotes by mutableStateOf<List<Pair<String, Boolean>>>(emptyList())

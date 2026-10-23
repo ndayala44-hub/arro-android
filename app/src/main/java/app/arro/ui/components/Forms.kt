@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,7 +48,7 @@ fun PasswordField(
         keyboard = KeyboardType.Password, imeAction = imeAction, password = !show, onDone = onDone,
         textStyle = if (show) T.Input else T.Input.copy(fontSize = 18.sp, letterSpacing = 2.sp),
         labelTrailing = labelTrailing, focusRequester = focusRequester,
-        trailing = { RoundIcon(Icons.Eye, { show = !show }, style = IconBtn.Plain, size = 36.dp, description = if (show) "Hide password" else "Show password") },
+        trailing = { RoundIcon(Icons.Eye, { show = !show }, style = IconBtn.Plain, size = 36.dp, description = if (show) str(R.string.ui_forms_hide_password) else str(R.string.ui_forms_show_password)) },
     )
 }
 
@@ -61,10 +63,10 @@ fun PasswordStrength(password: String, showRules: Boolean = true) {
             Txt(r.label, T.Cap.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold), color = color)
         }
         if (showRules) Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Rule(r.length, "At least 8 characters")
-            Rule(r.cases, "An uppercase and a lowercase letter")
-            Rule(r.number, "At least one number")
-            Rule(r.symbol, "A symbol, like ! or # (recommended)")
+            Rule(r.length, str(R.string.ui_forms_at_least_8_characters))
+            Rule(r.cases, str(R.string.ui_forms_an_uppercase_and_a_lowercase_letter))
+            Rule(r.number, str(R.string.ui_forms_at_least_one_number))
+            Rule(r.symbol, str(R.string.ui_forms_a_symbol_like_or_recommended))
         }
     }
 }

@@ -27,6 +27,7 @@ class LockAndRewardsTest {
     }
 
     private fun backend(rates: MovableRates = MovableRates(), store: StateStore = MemoryStore()): Triple<ArroBackend, FakeClock, MovableRates> {
+        useSampleAccount()
         val clock = FakeClock(start)
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         return Triple(ArroBackend(store, rates, scope, clock, Dispatchers.Unconfined, latency = false), clock, rates)
@@ -268,6 +269,7 @@ class LockAndRewardsTest {
     // ------------------------------------------------------------------ Saved data from older versions
 
     @Test fun olderSavesAreMigratedOnce() {
+        useSampleAccount()
         val json = Json { ignoreUnknownKeys = true; encodeDefaults = true }
         val old = Seed.account(start).copy(points = emptyList(), loyaltyVersion = 0, referral = Referral("ERIC-7Q4K", 2, 2_000))
         val saved = json.encodeToString(AppState(account = old, signedIn = true))

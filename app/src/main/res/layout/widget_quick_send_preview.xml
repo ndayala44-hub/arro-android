@@ -127,7 +127,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:textColor="#FF1F5130"
-                    android:text="CU"
+                    android:text="@string/widget_sample_initials_1"
                     android:textSize="15sp" />
 
                 <ImageView
@@ -150,7 +150,7 @@
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:textColor="@color/widget_ink"
-                android:text="Claudine"
+                android:text="@string/widget_sample_name_1"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -175,7 +175,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:textColor="#FF134F86"
-                    android:text="WK"
+                    android:text="@string/widget_sample_initials_2"
                     android:textSize="15sp" />
 
                 <ImageView
@@ -198,7 +198,7 @@
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:textColor="@color/widget_ink"
-                android:text="Wanjiru"
+                android:text="@string/widget_sample_name_2"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -223,7 +223,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:textColor="#FF7A3A0C"
-                    android:text="GA"
+                    android:text="@string/widget_sample_initials_3"
                     android:textSize="15sp" />
 
                 <ImageView
@@ -246,7 +246,7 @@
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:textColor="@color/widget_ink"
-                android:text="Grace"
+                android:text="@string/widget_sample_name_3"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -271,7 +271,7 @@
                     android:gravity="center"
                     android:maxLines="1"
                     android:textColor="#FF8A1E33"
-                    android:text="DM"
+                    android:text="@string/widget_sample_initials_4"
                     android:textSize="15sp" />
 
                 <ImageView
@@ -294,7 +294,7 @@
                 android:gravity="center_horizontal"
                 android:maxLines="1"
                 android:textColor="@color/widget_ink"
-                android:text="Diane"
+                android:text="@string/widget_sample_name_4"
                 android:textSize="12sp" />
         </LinearLayout>
 

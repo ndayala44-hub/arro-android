@@ -1,5 +1,7 @@
 package app.arro.ui.components
 
+import app.arro.R
+import app.arro.ui.str
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -207,7 +209,7 @@ fun BoxScope.Sheet(
 fun SheetHeader(title: String, onClose: () -> Unit, subtitle: String? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Txt(title, T.H2.copy(fontSize = T.Title.fontSize * 0.77f), Modifier.weight(1f))
-        RoundIcon(Icons.Close, onClose, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = "Close")
+        RoundIcon(Icons.Close, onClose, style = IconBtn.Soft, size = 36.dp, iconSize = 16.dp, description = str(R.string.ui_layout_close))
     }
     if (subtitle != null) Cap(subtitle, Modifier.padding(top = 4.dp))
 }
@@ -221,7 +223,7 @@ fun BoxScope.ConfirmDialog(
     confirm: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
-    dismiss: String = "Cancel",
+    dismiss: String = str(R.string.ui_layout_cancel),
     danger: Boolean = false,
     loading: Boolean = false,
 ) {

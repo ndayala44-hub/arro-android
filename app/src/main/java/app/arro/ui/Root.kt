@@ -1,5 +1,6 @@
 package app.arro.ui
 
+import app.arro.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -105,24 +106,24 @@ fun ArroRoot() {
     LaunchedEffect(Unit) {
         c.banners.collect { e ->
             when (e) {
-                is BackendEvent.Code -> banner.show("Message from Arro", e.purpose, BannerKind.Code, "Copy") {
-                    Share.copy(context, "Arro code", e.code)
+                is BackendEvent.Code -> banner.show(str(R.string.root_message_from_arro), e.purpose, BannerKind.Code, str(R.string.root_copy)) {
+                    Share.copy(context, str(R.string.root_arro_code), e.code)
                 }
-                is BackendEvent.TransferUpdate -> banner.show(e.title, e.body, BannerKind.Info, "View") { nav.go(Routes.track(e.transferId)) }
-                is BackendEvent.RateHit -> banner.show(e.title, e.body, BannerKind.Info, "Rates") { nav.go(Routes.RATES) }
+                is BackendEvent.TransferUpdate -> banner.show(e.title, e.body, BannerKind.Info, str(R.string.root_view)) { nav.go(Routes.track(e.transferId)) }
+                is BackendEvent.RateHit -> banner.show(e.title, e.body, BannerKind.Info, str(R.string.root_rates)) { nav.go(Routes.RATES) }
                 is BackendEvent.KycDecided -> if (nav.currentDestination?.route != Routes.KYC_STATUS) {
-                    banner.show(if (e.approved) "You're verified" else "We need a clearer photo",
-                        if (e.approved) "Your account is ready to send." else "Retake your ID photo to finish verifying.",
-                        if (e.approved) BannerKind.Success else BannerKind.Error, "View") { nav.go(Routes.KYC_STATUS) }
+                    banner.show(if (e.approved) str(R.string.root_you_re_verified) else str(R.string.root_we_need_a_clearer_photo),
+                        if (e.approved) str(R.string.root_your_account_is_ready_to_send) else str(R.string.root_retake_your_id_photo_to_finish),
+                        if (e.approved) BannerKind.Success else BannerKind.Error, str(R.string.root_view)) { nav.go(Routes.KYC_STATUS) }
                 }
                 is BackendEvent.ChatReply -> if (nav.currentDestination?.route != Routes.CHAT) {
-                    banner.show("Amina replied", e.text.take(90), BannerKind.Info, "Open") { nav.go(Routes.CHAT) }
+                    banner.show(str(R.string.root_amina_replied), e.text.take(90), BannerKind.Info, str(R.string.root_open)) { nav.go(Routes.CHAT) }
                 }
                 is BackendEvent.Info -> banner.show(e.title, e.body, BannerKind.Success)
                 is BackendEvent.OfferAvailable -> if (nav.currentDestination?.route != Routes.LOCK_RATE) {
-                    banner.show(e.title, e.body, BannerKind.Info, "View") { nav.go(Routes.lockRate(e.to)) }
+                    banner.show(e.title, e.body, BannerKind.Info, str(R.string.root_view)) { nav.go(Routes.lockRate(e.to)) }
                 }
-                is BackendEvent.LockEnded -> banner.show(e.title, e.body, BannerKind.Info, "New offer") { nav.go(Routes.lockRate(e.to)) }
+                is BackendEvent.LockEnded -> banner.show(e.title, e.body, BannerKind.Info, str(R.string.root_new_offer)) { nav.go(Routes.lockRate(e.to)) }
             }
         }
     }

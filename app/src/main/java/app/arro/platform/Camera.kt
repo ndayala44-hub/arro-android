@@ -1,5 +1,7 @@
 package app.arro.platform
 
+import app.arro.R
+import app.arro.ui.str
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
@@ -88,7 +90,7 @@ fun CameraPreview(
                 p.unbindAll()
                 val cases = listOfNotNull(preview, capture, analysis)
                 camera = p.bindToLifecycle(owner, selector, *cases.toTypedArray())
-            }.onFailure { onError(it.message ?: "The camera isn't available.") }
+            }.onFailure { onError(it.message ?: str(R.string.camera_the_camera_isn_t_available)) }
         }, ContextCompat.getMainExecutor(context))
         onDispose {
             runCatching { provider?.unbindAll() }
@@ -106,7 +108,7 @@ fun takePhoto(context: Context, capture: ImageCapture, file: File, onDone: (File
     val options = ImageCapture.OutputFileOptions.Builder(file).build()
     capture.takePicture(options, ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) = onDone(file)
-        override fun onError(exception: ImageCaptureException) = onError(exception.message ?: "Couldn't take the photo.")
+        override fun onError(exception: ImageCaptureException) = onError(exception.message ?: str(R.string.camera_couldn_t_take_the_photo))
     })
 }
 
