@@ -32,6 +32,10 @@ jobs:
           chmod +x gradlew
           ./gradlew --no-daemon testDebugUnitTest assembleDebug assembleRelease assembleDebugAndroidTest
           mkdir -p "$GITHUB_WORKSPACE/out"
+          # Android Lint, for the quality report. A lint failure doesn't stop the assets being published.
+          ./gradlew --no-daemon lintDebug || echo "lint reported errors"
+          cp app/build/reports/lint-results-debug.html "$GITHUB_WORKSPACE/out/" || true
+          cp app/build/reports/lint-results-debug.xml "$GITHUB_WORKSPACE/out/" || true
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/Arro-1.0.0-demo.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/app-debug.apk"
           cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk "$GITHUB_WORKSPACE/out/app-debug-androidTest.apk"
@@ -66,5 +70,6 @@ jobs:
         run: |
           gh release delete codecanyon-assets --yes --cleanup-tag || true
           gh release create codecanyon-assets out/Arro-1.0.0-demo.apk out/screenshots.tar out/instrument.txt \
+            $(ls out/lint-results-debug.* 2>/dev/null) \
             --prerelease --target "${{ github.sha }}" --title "CodeCanyon assets" \
             --notes "Demo APK (release build, debug-signed) and screenshot tour from ${{ github.sha }}."
