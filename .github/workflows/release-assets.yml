@@ -1,11 +1,10 @@
 name: Release assets
 
-# Builds the demo APK from a clean copy of the source package, runs the screenshot tour on an emulator and
-# publishes both as the "codecanyon-assets" pre-release. Runs on demand, or on pushes to codecanyon-release.
+# Builds the demo APK from a clean copy of the source package, runs the screenshot tour on an emulator, runs
+# Android Lint, and publishes the results as the "release-assets" pre-release. Runs only when you start it
+# (Actions > Release assets > Run workflow).
 on:
   workflow_dispatch:
-  push:
-    branches: [codecanyon-release]
 
 permissions:
   contents: write
@@ -56,7 +55,21 @@ jobs:
           profile: pixel_6
           disable-animations: true
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
-          script: ./.github/scripts/screenshots.sh
+          script: ./.github/scripts/screenshots.sh out
+
+      # The same tour on Android 16, the version the app targets. Its result is published too, but a slow or
+      # flaky emulator here doesn't stop the release.
+      - name: Screenshot tour on an Android 16 emulator
+        continue-on-error: true
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: ./.github/scripts/screenshots.sh out/api36
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -68,8 +81,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete codecanyon-assets --yes --cleanup-tag || true
-          gh release create codecanyon-assets out/Arro-1.0.0-demo.apk out/screenshots.tar out/instrument.txt \
-            $(ls out/lint-results-debug.* 2>/dev/null) \
-            --prerelease --target "${{ github.sha }}" --title "CodeCanyon assets" \
+          gh release delete release-assets --yes --cleanup-tag || true
+          [ -f out/api36/instrument.txt ] && cp out/api36/instrument.txt out/instrument-api36.txt
+          [ -f out/api36/screenshots.tar ] && cp out/api36/screenshots.tar out/screenshots-api36.tar
+          gh release create release-assets out/Arro-1.0.0-demo.apk out/screenshots.tar out/instrument.txt \
+            $(ls out/lint-results-debug.* out/instrument-api36.txt out/screenshots-api36.tar 2>/dev/null) \
+            --prerelease --target "${{ github.sha }}" --title "Release assets" \
             --notes "Demo APK (release build, debug-signed) and screenshot tour from ${{ github.sha }}."

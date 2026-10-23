@@ -161,6 +161,7 @@ enum class PillKind {
 
 /** Status pill with optional dot (.pill). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun Pill(text: String, kind: PillKind = PillKind.Neutral, dot: Boolean = false, @DrawableRes icon: Int? = null, modifier: Modifier = Modifier) {
     Row(
         modifier.height(24.dp).background(kind.bg, RoundedCornerShape(999.dp)).padding(horizontal = 10.dp),
@@ -175,6 +176,7 @@ fun Pill(text: String, kind: PillKind = PillKind.Neutral, dot: Boolean = false, 
 
 /** Filter chip (.chip). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun Chip(text: String, selected: Boolean = false, onClick: (() -> Unit)? = null, modifier: Modifier = Modifier, @DrawableRes icon: Int? = null, flag: String? = null) {
     val shape = RoundedCornerShape(999.dp)
     Row(
@@ -255,6 +257,7 @@ enum class NoteKind {
 
 /** Inline notice with icon (.note). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun Note(text: String, kind: NoteKind = NoteKind.Info, @DrawableRes icon: Int = Icons.Info, modifier: Modifier = Modifier, action: String? = null, onAction: (() -> Unit)? = null) {
     Row(
         modifier.fillMaxWidth().background(kind.bg, RoundedCornerShape(14.dp)).padding(horizontal = 14.dp, vertical = 12.dp),

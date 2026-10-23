@@ -78,7 +78,7 @@ Error codes added: `offer_ended`, `no_offer`, `offline` (offers), `points` (rede
 
 ## Testing
 
-Automated (`./gradlew testDebugUnitTest`, 29 tests; 12 new in `LockAndRewardsTest`):
+Automated (`./gradlew testDebugUnitTest`, 30 tests; 12 new in `LockAndRewardsTest`):
 
 - a locked offer rate is used even after a live refresh and a market move; used once; next quote is at today's rate
 - an ended lock is refused at send time, announced once, and a fresh quote holds today's rate again

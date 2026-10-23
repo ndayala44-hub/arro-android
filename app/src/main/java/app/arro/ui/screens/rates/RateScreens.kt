@@ -328,7 +328,7 @@ private fun RateChart(series: List<Double>, selected: Int?, onSelect: (Int?) -> 
     val hiIdx = series.indexOf(hi)
     Column {
         Cap(str(R.string.rates_high_x, Money.rate(hi, decimals)), size = 11f)
-        BoxWithConstraints(Modifier.fillMaxWidth().height(150.dp).padding(vertical = 4.dp)) {
+        Box(Modifier.fillMaxWidth().height(150.dp).padding(vertical = 4.dp)) {
             val n = series.size
             fun indexAt(x: Float, width: Float) = ((x / width) * (n - 1)).roundToInt().coerceIn(0, n - 1)
             Canvas(

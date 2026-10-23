@@ -274,6 +274,24 @@ class CoreTest {
         try { b.approveCard(declined.id); fail("0002 should be declined") } catch (e: ArroException) { assertEquals("declined", e.code) }
         assertNull(b.state.value.account!!.paymentMethod(declined.id))
     }
+
+    @Test fun erasingEverythingDeletesSavedPhotosAndFiles() {
+        useSampleAccount()
+        var deleted = 0
+        val store = object : StateStore {
+            override val persistent = false
+            override fun read(): String? = null
+            override fun write(text: String) {}
+            override fun deleteFiles() { deleted++ }
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val b = ArroBackend(store, RateSource { null }, scope, FakeClock(start), Dispatchers.Unconfined, latency = false)
+        b.loadDemoAccount()
+        assertEquals(0, deleted)
+        b.resetEverything()
+        assertEquals(1, deleted)
+        assertNull(b.state.value.account)
+    }
 }
 
 /** Collects the next verification code emitted by the backend. */

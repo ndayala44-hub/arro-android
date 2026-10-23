@@ -14,12 +14,12 @@ A complete, native Android app for sending money abroad, written in Kotlin and J
 
 ## Requirements
 
-- Android Studio Ladybug (2024.2.1) or newer, with JDK 17
-- Android SDK Platform 35 and Build-Tools 35.0.0
+- Android Studio Meerkat (2024.3.1) or newer, with JDK 17
+- Android SDK Platform 36 and Build-Tools 35.0.0
 - Internet for the first build
-- Runs on Android 8.0 (API 26) to Android 15 (API 35)
+- Runs on Android 8.0 (API 26) to Android 16 (API 36)
 
-Versions used: Gradle 8.11.1 (wrapper), Android Gradle Plugin 8.7.3, Kotlin 2.0.21, Compose BOM 2024.12.01.
+Versions used: Gradle 8.11.1 (wrapper), Android Gradle Plugin 8.9.1, Kotlin 2.0.21, Compose BOM 2024.12.01.
 
 ## Quick start
 
@@ -52,7 +52,7 @@ app/src/main/java/app/arro/
   ui/         Theme, components, navigation and screens by area
   widget/     Home screen widgets
 app/src/main/res/        Strings, colours, fonts, icons, illustrations, widget layouts
-app/src/test/            29 unit tests for the backend
+app/src/test/            30 unit tests for the backend
 app/src/androidTest/     Screenshot tour (drives the app on a device and saves screenshots)
 .github/workflows/       Build and release-assets workflows
 licenses/                Font licence

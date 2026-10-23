@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -96,6 +97,7 @@ private fun androidx.compose.foundation.layout.RowScope.Key(label: String, h: Dp
 
 /** Six code boxes (.otp). The current box gets the focus ring. */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun OtpBoxes(code: String, length: Int = 6, error: Boolean = false, modifier: Modifier = Modifier) {
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         repeat(length) { i ->
@@ -120,6 +122,7 @@ fun OtpBoxes(code: String, length: Int = 6, error: Boolean = false, modifier: Mo
 
 /** Passcode dots (.dots). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun PasscodeDots(filled: Int, total: Int = 6, dark: Boolean = false, error: Boolean = false, modifier: Modifier = Modifier) {
     val ring = when { error -> C.Err; dark -> C.Lime; else -> C.Ink }
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -145,7 +148,7 @@ fun Toggle(on: Boolean, onChange: (Boolean) -> Unit, modifier: Modifier = Modifi
             .clickable(enabled = enabled, role = Role.Switch) { onChange(!on) },
     ) {
         Box(
-            Modifier.offset(x = knobX, y = 3.dp).size(24.dp)
+            Modifier.offset { IntOffset(knobX.roundToPx(), 3.dp.roundToPx()) }.size(24.dp)
                 .shadow(2.dp, CircleShape)
                 .background(if (on) C.PrimaryAccent else C.White, CircleShape),
         )
@@ -164,6 +167,7 @@ fun Radio(on: Boolean, modifier: Modifier = Modifier) {
 
 /** Checkbox (.check). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun CheckBox(on: Boolean, onChange: ((Boolean) -> Unit)? = null, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(7.dp)
     Box(

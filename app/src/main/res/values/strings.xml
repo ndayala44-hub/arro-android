@@ -19,7 +19,6 @@
     <string name="widget_loading">Arro</string>
     <string name="widget_balance_label_gbp">GBP balance</string>
     <string name="widget_send_money">Send money</string>
-    <string name="widget_send_again">Send again</string>
     <string name="widget_recents_hidden">Turn on “Show balance on home screen widgets” in Arro, Security, to see the people you send to here.</string>
     <string name="widget_refresh">Refresh rate</string>
     <string name="widget_lock_rate">Lock a rate</string>
@@ -2066,6 +2065,8 @@
     <string name="widget_offline_from_x">Offline · from %1$s</string>
     <string name="widget_you_re_offline">You\'re offline</string>
     <string name="widget_rate_unavailable">Rate unavailable</string>
+    <string name="widget_lock_rate_short">Lock rate</string>
+    <string name="widget_lock">Lock</string>
     <!-- Text with counts and joined phrases, written out whole so they can be translated -->
     <string name="auth_bio_name">fingerprint or face</string>
     <string name="brand_wordmark" translatable="false">arro</string>

@@ -25,13 +25,16 @@ Arro is built on open-source libraries from Google, JetBrains and others. You do
 
 ML Kit is free to use but is not open source. It's covered by Google's ML Kit terms (developers.google.com/ml-kit/terms). Its models run on the device; Google may collect usage information about ML Kit, so mention it in your privacy policy.
 
+These libraries bring in others of their own (more AndroidX libraries, and Google Play services components for ML Kit). Those are under the Apache License 2.0 or Google's Android SDK and ML Kit terms. Android Studio's Gradle view, or `./gradlew app:dependencies`, lists every one.
+
 ## Build and test tools (not in the app)
 
 | Tool | Version | Licence |
 |---|---|---|
 | Gradle (wrapper) | 8.11.1 | Apache License 2.0 |
-| Android Gradle Plugin | 8.7.3 | Apache License 2.0 |
+| Android Gradle Plugin | 8.9.1 | Apache License 2.0 |
 | JUnit | 4.13.2 | Eclipse Public License 1.0 |
+| kotlinx.coroutines test | 1.9.0 | Apache License 2.0 |
 | AndroidX Test (core, runner, ext JUnit) | 1.6.1 / 1.6.2 / 1.2.1 | Apache License 2.0 |
 
 ## Fonts

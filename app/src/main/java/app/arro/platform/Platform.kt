@@ -46,13 +46,27 @@ import java.net.URI
 import java.time.LocalTime
 
 /** Keeps the backend's JSON document in internal storage, written atomically. */
-class FileStore(private val file: File) : StateStore {
+/**
+ * Saves the app state as JSON in [file]. [deleteFiles] also removes what the screens save next to it: ID photos
+ * (`kyc/`), chat, evidence and document photos, and files made for sharing in [cacheDir]`/shared`.
+ */
+class FileStore(private val file: File, private val cacheDir: File? = null) : StateStore {
     override val persistent = true
+    override fun deleteFiles() {
+        val dir = file.parentFile ?: return
+        File(dir, "kyc").deleteRecursively()
+        dir.listFiles { f -> f.isFile && PHOTO_PREFIXES.any { f.name.startsWith(it) } }?.forEach { it.delete() }
+        cacheDir?.let { File(it, "shared").deleteRecursively() }
+    }
     override fun read(): String? = if (file.exists()) file.readText() else null
     @Synchronized override fun write(text: String) {
         val tmp = File(file.parentFile, file.name + ".tmp")
         tmp.writeText(text)
         if (!tmp.renameTo(file)) { file.writeText(text); tmp.delete() }
+    }
+
+    private companion object {
+        val PHOTO_PREFIXES = listOf("chat-", "evidence-", "enhanced-")
     }
 }
 
@@ -121,7 +135,6 @@ class Notifier(private val app: Application) {
     }
 
     fun createChannels() {
-        if (Build.VERSION.SDK_INT < 26) return
         val nm = app.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannel(NotificationChannel(TRANSFERS, app.getString(R.string.channel_transfers), NotificationManager.IMPORTANCE_DEFAULT).apply {
             description = app.getString(R.string.channel_transfers_desc)

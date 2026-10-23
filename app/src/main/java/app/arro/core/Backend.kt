@@ -28,6 +28,8 @@ interface StateStore {
     val persistent: Boolean
     fun read(): String?
     fun write(text: String)
+    /** Deletes the photos and documents saved next to the state: ID photos, attachments and shared files. */
+    fun deleteFiles() {}
 }
 
 class MemoryStore : StateStore {
@@ -1281,6 +1283,7 @@ class ArroBackend(
         net(1000)
         _unlocked.value = false
         mutate { AppState(onboardingSeen = true, rates = it.rates, demo = it.demo) }
+        store.deleteFiles()
     }
 
     fun markAllRead() = mutateAccount { a -> a.copy(notifications = a.notifications.map { it.copy(read = true) }) }
@@ -1389,6 +1392,7 @@ class ArroBackend(
         _unlocked.value = false
         _registration.value = Registration()
         mutate { AppState(rates = it.rates) }
+        store.deleteFiles()
     }
 
     private fun hash(salt: String, value: String): String {

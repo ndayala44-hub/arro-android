@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -648,7 +649,7 @@ fun UnlockScreen(expired: Boolean) {
                     Cap(error ?: str(R.string.auth_enter_your_passcode), color = if (error != null) Color(0xFFFF9B8F) else C.DarkCap)
                     val dx = remember { Animatable(0f) }
                     LaunchedEffect(shake) { if (shake > 0) { for (x in listOf(14f, -12f, 9f, -6f, 3f, 0f)) dx.animateTo(x, tween(45)) } }
-                    PasscodeDots(code.length, dark = true, error = error != null, modifier = Modifier.padding(top = 18.dp).offset(x = dx.value.dp))
+                    PasscodeDots(code.length, dark = true, error = error != null, modifier = Modifier.padding(top = 18.dp).offset { IntOffset(dx.value.dp.roundToPx(), 0) })
                 }
                 Spacer(Modifier.weight(1f))
                 Keypad(

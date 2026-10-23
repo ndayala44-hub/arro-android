@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Picker preview for the Quick Send widget, with sample people. Not used for real data. -->
+<!-- Widgets are drawn with RemoteViews, so: android:tint (app:tint needs AppCompat), empty FrameLayouts as
+     flexible space (Space isn't allowed), nested frames for the avatar and flag, and no compound drawables. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UseAppTint,UselessLeaf,UselessParent,UseCompoundDrawables"
         android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/widget_bg"

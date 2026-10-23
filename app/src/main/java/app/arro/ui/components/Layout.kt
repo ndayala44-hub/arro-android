@@ -159,6 +159,7 @@ enum class TitleSize { XL, L, Default, S }
 
 /** Section header with an optional action link (.sec). */
 @Composable
+@Suppress("ModifierParameter") // screens pass the earlier arguments by position
 fun SectionHeader(title: String, action: String? = null, onAction: (() -> Unit)? = null, modifier: Modifier = Modifier, size: Float = 16f) {
     Row(modifier.fillMaxWidth().padding(bottom = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
         Txt(title, T.H2.copy(fontSize = androidx.compose.ui.unit.TextUnit(size, androidx.compose.ui.unit.TextUnitType.Sp)))

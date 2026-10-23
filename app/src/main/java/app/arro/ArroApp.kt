@@ -46,7 +46,7 @@ class ArroApp : Application() {
 /** Long-lived objects shared by every screen. */
 class AppContainer(val app: Application) {
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    val backend = ArroBackend(FileStore(File(app.filesDir, "arro_state.json")), HttpRateSource(), scope)
+    val backend = ArroBackend(FileStore(File(app.filesDir, "arro_state.json"), app.cacheDir), HttpRateSource(), scope)
     val session = Session()
     val notifier = Notifier(app)
     val connectivity = Connectivity(app)

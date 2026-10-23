@@ -14,4 +14,5 @@ First release.
 - All screen text in `res/values/strings.xml`, ready for translation.
 - Simulated backend with one public API (`ArroBackend`), saved data with upgrades, live exchange rates from ExchangeRate-API, sample account and Demo controls.
 - Sample account settings in `gradle.properties`; release signing through `keystore.properties`.
-- 29 unit tests, a screenshot tour for store images, and GitHub Actions workflows.
+- Targets Android 16 (API 36); runs on Android 8.0 (API 26) and newer.
+- 30 unit tests, a screenshot tour for store images, and GitHub Actions workflows.

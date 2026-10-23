@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Live rate or current offer, 2 x 2 and narrower. -->
+<!-- Widgets are drawn with RemoteViews, so: android:tint (app:tint needs AppCompat), empty FrameLayouts as
+     flexible space (Space isn't allowed), nested frames for the avatar and flag, and no compound drawables. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UseAppTint,UselessLeaf,UselessParent,UseCompoundDrawables"
     android:id="@android:id/background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -38,7 +42,7 @@
             android:paddingVertical="2dp"
             android:text="@string/widget_badge_live"
             android:textColor="@color/widget_ink"
-            android:textSize="10sp" />
+            android:textSize="11sp" />
 
         <ImageView
             android:id="@+id/rate_refresh"

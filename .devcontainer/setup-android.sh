@@ -30,8 +30,8 @@ export PATH="$SDK/cmdline-tools/latest/bin:$SDK/platform-tools:$PATH"
 echo "Accepting SDK licences..."
 yes | sdkmanager --licenses >/dev/null 2>&1 || true
 
-echo "Installing platform 35 and build tools..."
-sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0" >/dev/null
+echo "Installing platform 36 and build tools..."
+sdkmanager --install "platform-tools" "platforms;android-36" "build-tools;35.0.0" >/dev/null
 
 echo "sdk.dir=$SDK" > "$ROOT/local.properties"
 chmod +x "$ROOT/gradlew"
