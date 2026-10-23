@@ -151,6 +151,16 @@ object Widgets {
         }
     }
 
+    /** One widget's views at a single size, from the current data. Used by the screenshot tour and previews. */
+    internal fun previewViews(context: Context, which: String, wide: Boolean): RemoteViews {
+        val d = data(context.container)
+        return when (which) {
+            "balance" -> balanceViews(context, d)
+            "quick" -> quickSendViews(context, d, if (wide) 4 else 2, true)
+            else -> rateViews(context, d, wide, false)
+        }
+    }
+
     // ------------------------------------------------------------------ layouts
 
     /** Responsive layouts: Android 12+ picks by size itself; older versions use the reported width. */

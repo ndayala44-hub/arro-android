@@ -1,0 +1,70 @@
+name: Release assets
+
+# Builds the demo APK from a clean copy of the source package, runs the screenshot tour on an emulator and
+# publishes both as the "codecanyon-assets" pre-release. Runs on demand, or on pushes to codecanyon-release.
+on:
+  workflow_dispatch:
+  push:
+    branches: [codecanyon-release]
+
+permissions:
+  contents: write
+
+jobs:
+  assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build from a clean copy of the source package
+        run: |
+          git archive --format=zip -o "$RUNNER_TEMP/source.zip" HEAD
+          mkdir -p "$RUNNER_TEMP/fresh" && unzip -q "$RUNNER_TEMP/source.zip" -d "$RUNNER_TEMP/fresh"
+          cd "$RUNNER_TEMP/fresh"
+          chmod +x gradlew
+          ./gradlew --no-daemon testDebugUnitTest assembleDebug assembleRelease assembleDebugAndroidTest
+          mkdir -p "$GITHUB_WORKSPACE/out"
+          cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/out/Arro-1.0.0-demo.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/out/app-debug.apk"
+          cp app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk "$GITHUB_WORKSPACE/out/app-debug-androidTest.apk"
+          cp "$RUNNER_TEMP/source.zip" "$GITHUB_WORKSPACE/out/source-from-git.zip"
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Screenshot tour on an emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -camera-front none
+          script: ./.github/scripts/screenshots.sh
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: release-assets
+          path: out/
+
+      - name: Publish the pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete codecanyon-assets --yes --cleanup-tag || true
+          gh release create codecanyon-assets out/Arro-1.0.0-demo.apk out/screenshots.tar out/instrument.txt \
+            --prerelease --target "${{ github.sha }}" --title "CodeCanyon assets" \
+            --notes "Demo APK (release build, debug-signed) and screenshot tour from ${{ github.sha }}."
